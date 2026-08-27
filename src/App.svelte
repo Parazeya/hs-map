@@ -1,5 +1,6 @@
 <script>
-  import { KIND, asset, load, nameOf } from './lib/map.js';
+  import { KIND, asset, called, load, nameOf } from './lib/map.js';
+  import { talk } from './lib/say.js';
   import WorldMap from './WorldMap.svelte';
   import Sidebar from './Sidebar.svelte';
   import Tooltip from './Tooltip.svelte';
@@ -9,6 +10,8 @@
   let data = $state(null);
   let failed = $state(null);
   let lang = $state('en');
+
+  const t = $derived(data ? talk(lang, data.words) : (s) => s);
 
   let active = $state(null);      // clicked, and stays put
   let hovered = $state(null);     // under the pointer
@@ -114,13 +117,13 @@
 <!-- The title bar was a strip of chrome across a map that is only 800px tall to
      begin with. Its two controls earn their place; the words did not. -->
 {#snippet controls()}
-  <select bind:value={lang} title="Zone names">
+  <select bind:value={lang} title={t('Zone names')}>
     {#each data.langs as code (code)}
       <option value={code}>{code.toUpperCase()}</option>
     {/each}
   </select>
-  <button type="button" onclick={() => { active = null; map.fit(); }}>Fit</button>
-  <a class="go" href={asset('codex.html')} title="every item in the game">Items ▶</a>
+  <button type="button" onclick={() => { active = null; map.fit(); }}>{t('Fit')}</button>
+  <a class="go" href={asset('codex.html')} title={t('every item in the game')}>{t('Items')} ▶</a>
 {/snippet}
 
 {#if failed}
@@ -138,17 +141,19 @@
         <Tooltip
           {data}
           {at}
-          title={boss}
-          subtitle={(b.kind === 'source' ? 'not a boss' : 'boss')
-            + (b.inferno_only ? ' · only gives these up on Inferno' : '')}
+          {lang}
+          title={called(b, boss, lang)}
+          subtitle={t(b.kind === 'source' ? 'not a boss' : 'boss')
+            + (b.inferno_only ? ` · ${t('only gives these up on Inferno')}` : '')}
           rows={b.drops.map((d) => ({ name: d.item, inferno: d.inferno, odds: data.items[d.item]?.rate }))}
         />
       {:else if hovered && hovered.room !== active?.room}
         <Tooltip
           {data}
           {at}
+          {lang}
           title={nameOf(hovered, lang)}
-          subtitle={[KIND[hovered.kind], hovered.act ? `act ${hovered.act}` : null, hovered.code]
+          subtitle={[t(KIND[hovered.kind]), hovered.act ? `${t('act')} ${hovered.act}` : null, hovered.code]
             .filter(Boolean).join(' · ')}
           rows={hovered.drops.map((n) => ({
             name: n,
@@ -156,11 +161,11 @@
             odds: data.items[n]?.chase ?? data.items[n]?.rate,
           }))}
           boss={hovered.boss ?? null}
-          foot={hovered.drops.length ? 'the odds are for standing in this zone' : null}
+          foot={hovered.drops.length ? t('the odds are for standing in this zone') : null}
         />
       {/if}
 
-      <BossBar {data} bind:hovered={boss} lit={from?.who ?? null} {controls} />
+      <BossBar {data} {lang} bind:hovered={boss} lit={from?.who ?? null} {controls} />
 
     </main>
 

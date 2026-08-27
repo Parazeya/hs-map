@@ -1,11 +1,13 @@
 <script>
-  import { nameOf, odds, titleCase } from './lib/map.js';
+  import { called, nameOf, odds, titleCase } from './lib/map.js';
+  import { talk } from './lib/say.js';
   import ItemIcon from './ItemIcon.svelte';
 
   let { data, name, lang, top } = $props();
 
   const it = $derived(data.items[name] ?? {});
   const cls = $derived('r-' + String(it.rarity ?? 'common').toLowerCase());
+  const t = $derived(talk(lang, data.words));
 
   /** Which markers carry it — the map is the point, after all. */
   const wheres = $derived.by(() => {
@@ -21,7 +23,7 @@
   <header>
     <ItemIcon item={it} sheet={data.sheet} box={40} />
     <div>
-      <h3 class={cls}>{titleCase(name)}</h3>
+      <h3 class={cls}>{called(it, name, lang)}</h3>
       <p class="kind">
         <span class="tier">{data.tiers[(it.tier ?? 1) - 1] ?? '?'}</span>
         <span class={cls}>{it.rarity}</span>
@@ -36,7 +38,7 @@
   </dl>
 
   {#if it.places?.length}
-    <h4>drops from</h4>
+    <h4>{t('drops from')}</h4>
     <ul>{#each it.places as p (p)}<li>{p}</li>{/each}</ul>
   {/if}
 

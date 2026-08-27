@@ -23,6 +23,7 @@ from pathlib import Path
 import against_game
 import bosses
 import encyclopedia
+import words as vocabulary
 import icons
 import merge_game
 import portraits
@@ -255,6 +256,18 @@ def route(nodes):
     return out
 
 
+def types_said(say, items):
+    """Each item type in the eleven, from the game's own `item_type_*` rows."""
+    out = {}
+    for rec in items.values():
+        kind = rec.get("type")
+        if kind and kind not in out:
+            told = say.by_key.get("item_type_" + re.sub(r"[^a-z]", "", kind.lower()))
+            if told:
+                out[kind] = told
+    return out
+
+
 def codex(dw, raw_items, langs, tables):
     """The encyclopedia's own data and its own sheet of icons.
 
@@ -272,7 +285,9 @@ def codex(dw, raw_items, langs, tables):
     items, vocab, kits = encyclopedia.build(
         raw_items, GAME / "translationsItem.csv", langs, place, icons.tidy, tables)
 
+    say = vocabulary.Words(GAME)
     out = {"langs": langs, "sheet": {"w": sheet[0], "h": sheet[1]},
+           "words": say.vocab(), "types": types_said(say, items),
            "stats": vocab, "sets": kits, "items": items}
     path = DATA / "codex.json"
     path.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")),
@@ -410,6 +425,26 @@ def main():
     (HERE / "build" / "chosen.json").write_text(
         json.dumps(chosen, ensure_ascii=False, indent=2), encoding="utf-8")
 
+    # What the game calls each of these, in the eleven it ships. Only what it
+    # actually carries — a name it has none for stays in English, and the count
+    # below says how many that is.
+    say = vocabulary.Words(GAME)
+    for name, it in items.items():
+        told = say.of(name)
+        if told:
+            it["names"] = told
+    for name, row in who.items():
+        told = say.of(name)
+        if told:
+            row["names"] = told
+    for n in nodes:
+        n["drops"] = n["drops"]          # untouched; names ride on the items
+    print(f"words    {sum(1 for i in items.values() if i.get('names'))} of {len(items)} items and "
+          f"{sum(1 for b in who.values() if b.get('names'))} of {len(who)} sources named in 11 languages")
+    if say.missed:
+        rest = sorted(say.missed)
+        print(f"         {len(rest)} the game has no name for, e.g. {', '.join(rest[:4])}")
+
     # the private notes the build passed between its own steps do not go out
     for it in items.values():
         it.pop("_machinery", None)
@@ -423,6 +458,7 @@ def main():
         "langs": langs,
         "tiers": t["TIER_LETTERS"],
         "sheet": {"w": sheet[0], "h": sheet[1]},
+        "words": say.vocab(),
         "nodes": nodes,
         "links": links,
         "linkTile": list(tile),
