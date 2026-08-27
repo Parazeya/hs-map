@@ -3,7 +3,7 @@
   import ItemIcon from '../ItemIcon.svelte';
   import Detail from './Detail.svelte';
 
-  const SHEET = 'img/codex.png';
+  const SHEET = 'img/codex.webp';
 
   let data = $state(null);
   let failed = $state(null);

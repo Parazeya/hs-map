@@ -184,7 +184,7 @@
   onpointercancel={up}
 >
   <div class="world" style="transform: translate({view.x}px, {view.y}px) scale({view.k})">
-    <img class="map" src={asset('img/map.png')} width={data.map.w} height={data.map.h} alt="" draggable="false">
+    <img class="map" src={asset('img/map.webp')} width={data.map.w} height={data.map.h} alt="" draggable="false">
 
     <!-- under the markers, and before them, so a path never covers one -->
     {#each paths as p (p.key)}
@@ -194,7 +194,7 @@
           left: {p.x}px; top: {p.y}px; width: {p.len}px;
           height: {data.linkTile[1]}px; margin-top: {-data.linkTile[1] / 2}px;
           transform: rotate({p.turn}rad);
-          background-image: url({asset('img/link.png')});
+          background-image: url({asset('img/link.webp')});
         "
       ></span>
     {/each}
@@ -228,15 +228,15 @@
              drop-shadow: a filter on any marker forces the whole scaled layer,
              all sixty-three of them, to be rasterised again, and the rest of
              the map visibly flickers every time the pointer moves -->
-        <img class="glow" src={asset('img/glow.png')} alt="" draggable="false">
+        <img class="glow" src={asset('img/glow.webp')} alt="" draggable="false">
         {#if on || hit}<span class="fx"></span>{/if}
-        <img class="pin" src={asset(`img/${ART[node.kind]}.png`)} alt="" draggable="false">
+        <img class="pin" src={asset(`img/${ART[node.kind]}.webp`)} alt="" draggable="false">
         <!-- The act boss stands at the end of its act, and the game marks that
              on its own map screen with this skull. Only the mark is here: the
              boss and what it drops are in the tooltip, where there is room to
              read them. -->
         {#if node.boss}
-          <img class="skull" src={asset('img/skull.png')} alt="" draggable="false">
+          <img class="skull" src={asset('img/skull.webp')} alt="" draggable="false">
         {/if}
       </button>
     {/each}
@@ -343,7 +343,7 @@
   .fx {
     width: 137px;
     height: 113px;
-    background: url('/img/fx-zone.12x6.png') 0 0 / 1644px 113px no-repeat;
+    background: url('/img/fx-zone.12x6.webp') 0 0 / 1644px 113px no-repeat;
     transform: translate(-50%, -50%);
     animation: fx 2s steps(12) infinite;
   }

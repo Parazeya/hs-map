@@ -209,7 +209,8 @@ def build(dw, names, out_png, contact_png=None):
     for boss, im in order:
         px, py, _, _ = place[boss]
         sheet.paste(im, (px, py))
-    sheet.save(out_png)
+    # lossless WebP: see build.py's `picture` for why
+    sheet.save(out_png.with_suffix(".webp"), lossless=True, quality=100, method=6)
 
     if contact_png:
         contact(cut, chosen, contact_png)
