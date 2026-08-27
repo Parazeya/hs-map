@@ -1,5 +1,6 @@
 <script>
   import { odds, titleCase } from '../lib/map.js';
+  import { places } from '../lib/say.js';
   import ItemIcon from '../ItemIcon.svelte';
 
   let { data, item, lang, sheet, t = (s) => s, pick = null } = $props();
@@ -19,6 +20,16 @@
   const name = $derived(item ? (item.names?.[lang] || item.name) : '');
   const lore = $derived(item ? (item.lore?.[lang] || item.lore?.en || null) : null);
   const cls = (r) => 'r-' + String(r ?? 'common').toLowerCase().replace(/\s+/g, '-');
+
+  /**
+   * A stat as the game names it, or as this project reads it off the identifier.
+   *
+   * 212 of the 322 are the game's own — see words.Words.stats for how the two
+   * are joined — which is nine in ten of the lines anyone actually meets.
+   */
+  const place = $derived(places(lang, data?.words));
+  const byStat = $derived(Object.fromEntries((data?.stats ?? []).map((v) => [v.sid, v])));
+  const said = $derived((s) => byStat[s.sid]?.names?.[lang] || s.text);
 
   /**
    * One stat as a line: its range, then what it is.
@@ -88,7 +99,7 @@
           <li>
             <span class="v">{span(s.min, s.max, s.unit ?? '')}</span>
             <span class="t">
-              {s.text}{#if s.spell}: {s.spell}{/if}{#if s.cls && s.cls !== 'Any'} ({s.cls}){/if}
+              {said(s)}{#if s.spell}: {s.spell}{/if}{#if s.cls && s.cls !== 'Any'} ({s.cls}){/if}
               {#if s.min2 != null || s.max2 != null}
                 <span class="second">at {span(s.min2, s.max2)}</span>
               {/if}
@@ -107,7 +118,7 @@
           <li>
             <span class="v">{span(s.min, s.max, s.unit ?? '')}</span>
             <span class="t">
-              {s.text}{#if s.spell}: {s.spell}{/if}{#if s.cls && s.cls !== 'Any'} ({s.cls}){/if}
+              {said(s)}{#if s.spell}: {s.spell}{/if}{#if s.cls && s.cls !== 'Any'} ({s.cls}){/if}
               {#if s.min2 != null || s.max2 != null}
                 <span class="second">at {span(s.min2, s.max2)}</span>
               {/if}
@@ -135,7 +146,7 @@
     {#if item.places?.length}
       <h2>{t('Drop location')}</h2>
       <ul class="places">
-        {#each item.places as p (p)}<li>{titleCase(p)}</li>{/each}
+        {#each item.places as p (p)}<li>{place(titleCase(p))}</li>{/each}
       </ul>
     {/if}
 

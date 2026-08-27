@@ -122,7 +122,10 @@
   const statList = $derived.by(() => {
     if (!data) return [];
     const q = statQuery.trim().toLowerCase();
-    return data.stats.filter((v) => !q || v.text.toLowerCase().includes(q) || v.sid.includes(q));
+    return data.stats.filter((v) => !q
+      || v.text.toLowerCase().includes(q)
+      || (v.names?.[lang] ?? '').toLowerCase().includes(q)
+      || v.sid.includes(q));
   });
 
   const nameOf = (it) => it.names?.[lang] || it.name;
@@ -204,7 +207,7 @@
       <div class="stats">
         {#each statList as v (v.sid)}
           <button class:on={stat === v.sid} onclick={() => (stat = stat === v.sid ? null : v.sid)}>
-            <span class="t">{v.text}{v.unit ?? ''}</span>
+            <span class="t">{v.names?.[lang] || v.text}{v.unit ?? ''}</span>
             <span class="n">{v.n}</span>
           </button>
         {/each}

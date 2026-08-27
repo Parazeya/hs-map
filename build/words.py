@@ -35,7 +35,37 @@ ALSO = {
     "eternal battlefield": "Eternal Battle Field",
     "grim reaper": "Grim Reaper",
     "the sheep king": "The Sheep King",
+    # the tables drop the second name where the game keeps only the other one
+    "uber reaper": "Shade of Death",
+    "uber damien": "Fallen Damien",
 }
+
+#: A stat this project words itself, and the key the game words it under.
+#:
+#: For the handful the matching below cannot reach, because the two describe the
+#: same thing in different words: the snapshot's `socketed_flat` against the
+#: game's `sockets`, its `chance_when_striking` against `when_strike`.
+STAT_NAMED = {
+    "socketed_flat": "sockets",
+    "attacks_per_second_base": "attacks_per_second",
+    "chance_when_striking": "when_strike",
+    "chance_when_attacking": "when_attacking",
+    "chance_when_casting": "when_casting",
+    "chance_when_struck": "when_struck",
+    "chance_after_blocking": "when_blocking",
+    "chance_after_each_kill": "when_kill",
+    "cooldown_recovery_percent": "stat_cooldown_reduction",
+}
+
+#: Words that say how a number is meant rather than what it is, on either side.
+STAT_NOISE = {"increased", "total", "chance", "for", "a", "to", "by", "the", "of",
+              "percent", "flat", "base", "none", "p", "t"}
+
+#: What the snapshot shortens, and what the game spells out.
+STAT_LONG = {"dmg": "damage", "crit": "critical", "aoe": "area", "cd": "cooldown",
+             "hp": "life", "mp": "mana", "res": "resist", "resistances": "resist",
+             "resistance": "resist"}
+
 
 #: The vocabulary the pages need beyond names, and the key the game keeps it
 #: under. Only what the game actually has: `stats`, `lore` and `fit` are not in
@@ -105,6 +135,56 @@ class Words:
                     return said
         self.missed.add(english)
         return None
+
+    @staticmethod
+    def _toks(text):
+        """A name reduced to what it is about, so two spellings can be compared."""
+        out = set()
+        for w in re.split(r"[^A-Za-z0-9]+", text or ""):
+            w = w.lower()
+            if not w or w in STAT_NOISE:
+                continue
+            w = STAT_LONG.get(w, w)
+            if len(w) > 3 and w.endswith("s") and not w.endswith("ss"):
+                w = w[:-1]          # the game pluralises where the snapshot does not
+            out.add(w)
+        return frozenset(out)
+
+    def stats(self, sids):
+        """`{sid: {lang: text}}` for the stats the game has a name for.
+
+        The snapshot's `sid` appears in no file the game ships, so this is a
+        join on meaning: both sides are reduced to the words that say what the
+        stat is about — dropping "increased", "total", "chance", the unit — and
+        matched exactly, then, failing that, on three quarters of their words.
+
+        What is left keeps the English this project reads off the identifier,
+        which is a plain answer rather than a wrong one.
+        """
+        by_key, by_text = {}, {}
+        for key, said in self.by_key.items():
+            if key.startswith("stat_") or key in STAT_NAMED.values():
+                by_key.setdefault(self._toks(key[5:] if key.startswith("stat_") else key), key)
+                by_text.setdefault(self._toks(said["en"]), key)
+
+        def best(t):
+            top, score = None, 0.0
+            for table in (by_key, by_text):
+                for keys, key in table.items():
+                    if keys:
+                        o = len(t & keys) / len(t | keys)
+                        if o > score:
+                            top, score = key, o
+            return top if score >= 0.75 else None
+
+        out = {}
+        for sid in sids:
+            t = self._toks(sid)
+            key = STAT_NAMED.get(sid) or by_key.get(t) or by_text.get(t) or best(t)
+            said = self.by_key.get(key) if key else None
+            if said:
+                out[sid] = said
+        return out
 
     def vocab(self):
         """The small words, keyed by their English, for the pages to look up."""
