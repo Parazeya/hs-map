@@ -1,0 +1,1582 @@
+{
+ "Possessed Luna": {
+  "items": [
+   "Arrow of Niflheim",
+   "Chaos Gemstone",
+   "Crackling Thunder",
+   "Eagle's Claw",
+   "Emblem of the Daemon",
+   "Gaze of the Oblivion",
+   "Headsman's Bloodthirster",
+   "High Roller's Deathcrown",
+   "Komodo's Bloodstrap",
+   "Manafunneler's Conjurer",
+   "Pit Ravager's Cetratus",
+   "Stranded Boot"
+  ],
+  "tkeys": [
+   "w_bow_arrow_of_niflheim",
+   "charms_chaos_gemstone",
+   "w_spell_crackling_thunder",
+   "amulets_eagles_claw",
+   "rings_emblem_of_the_daemon",
+   "helmet_gaze_of_the_oblivion",
+   "w_melee_kings_executioner",
+   "helmet_high_rollers_crown",
+   "belts_komodo_dragon_leather_belt",
+   "w_spell_mystical_wand_of_manastream",
+   "shields_fallen_gladiators_shield",
+   "boots_lost_at_sea"
+  ],
+  "notes": "kind: boss; enemy uberLuna (translationsEnemy e_uberLuna_1, enemyType 204), object Uber_Luna"
+ },
+ "Act VIII Boss Dungeons": {
+  "items": [
+   "Book of Cold Death",
+   "Fenrir's Bloodfang",
+   "Fighter Magi's Grips",
+   "Muspelheim Guardian's Scorched Plate",
+   "Necrocaller's Grips",
+   "Oculus of Ages",
+   "Odin's Battlearmor",
+   "Odin's Eternal Visage",
+   "The Downfall of Felps",
+   "Thorn of Helheim"
+  ],
+  "tkeys": [
+   "w_spell_book_of_cold_death",
+   "w_melee_fenrirs_bloodfang",
+   "gloves_fighter_magis_grips",
+   "armors_muspelheim_guardians_scorched_plate",
+   "gloves_necrocallers_grips",
+   "w_spell_the_oculus",
+   "armors_odins_battlearmor",
+   "helmet_odins_eternal_visage",
+   "rings_the_downfall_of_felps",
+   "w_spell_thorn_of_helheim"
+  ],
+  "notes": "kind: area"
+ },
+ "Act I Boss Dungeons": {
+  "items": [
+   "Belt of Skulls",
+   "Gurag's Heart Charm",
+   "Gurag's Pebble",
+   "Gurag's Stone Crusher",
+   "Stone of Premonition",
+   "Tarethiel's Ancient Wisdom",
+   "Tectonic Grips",
+   "Tombstone",
+   "Ukko's Revenge"
+  ],
+  "tkeys": [
+   "belts_belt_of_skulls",
+   "charms_gurags_heart_charm",
+   "amulets_gurags_soul",
+   "w_melee_gurags_stone_crusher",
+   "rings_stone_of_jordan",
+   "charms_tarethiels_ancient_wisdom",
+   "gloves_tectonic_grips",
+   "shields_tombstone",
+   "w_throwing_ukkos_revenge"
+  ],
+  "notes": "kind: area"
+ },
+ "Act III Boss Dungeons": {
+  "items": [
+   "Anubis Oculus",
+   "Anubis Torso",
+   "Anubis' Mighty Hands",
+   "Astral Projector",
+   "Demon's Mirror",
+   "Manahungerers",
+   "Nikita's KJ-33 Helmet",
+   "Philosopher's Stone",
+   "Storm In A Vial"
+  ],
+  "tkeys": [
+   "amulets_anubis_oculus",
+   "armors_anubis_torso",
+   "gloves_anubis_mighty_hands",
+   "w_bow_astral_projector",
+   "shields_demons_mirror",
+   "gloves_manahungerers",
+   "helmet_nikitas_kj33_helmet",
+   "amulets_philosophers_stone",
+   "charms_storm_in_vial"
+  ],
+  "notes": "kind: area"
+ },
+ "Act V Boss Dungeons": {
+  "items": [
+   "Genji's Battle Armor",
+   "Genji's Battle Helmet",
+   "Genji's Sword of Fate",
+   "Grasp of the Phoenix",
+   "Monsoon",
+   "Nobunaga's Battle Slicer",
+   "Orange Grayon",
+   "Scarred Battle Darts",
+   "Shield of the Abyss"
+  ],
+  "tkeys": [
+   "armors_genjis_battle_armor",
+   "helmet_genjis_battle_helmet",
+   "w_melee_genjis_sword_of_fate",
+   "gloves_grasp_of_phoenix",
+   "w_bow_monsoon",
+   "w_melee_nobunagas_battle_slicer",
+   "charms_orange_grayon",
+   "w_throwing_scarred_battle_darts",
+   "shields_shield_of_abyss"
+  ],
+  "notes": "kind: area"
+ },
+ "Act IV Dungeons": {
+  "items": [
+   "Elixir of Unworldly Cognition",
+   "Frostbitten Necrosis",
+   "Hypothermia",
+   "Serpent's Tooth",
+   "Set's Lightning Sash",
+   "Sharpshooter's Cloak",
+   "The Absence of Constraint",
+   "Winter's Bite"
+  ],
+  "tkeys": [
+   "consumable_elixir_of_unworldly_cognition",
+   "gloves_frostbitten_necrosis",
+   "w_spell_hypothermia",
+   "w_throwing_serpents_tooth",
+   "belts_sets_lightning_sash",
+   "armors_sharpshooters_cloak",
+   "rings_absence_of_constraint",
+   "w_melee_winters_bite"
+  ],
+  "notes": "kind: area"
+ },
+ "Act VI Boss Dungeons": {
+  "items": [
+   "Candy Shredder",
+   "Dracula's Demise",
+   "Harlequinn's Veil",
+   "Recurving Corrosion",
+   "Satan's Chalice",
+   "Satan's Cuirass",
+   "Satan's Molten Steps",
+   "Satan's Precious"
+  ],
+  "tkeys": [
+   "w_chainsaw_candy_shredder",
+   "w_gun_draculas_demise",
+   "helmet_harlequins_veil",
+   "w_bow_recurving_corrosion",
+   "charms_satans_chalice",
+   "armors_satans_cuirass",
+   "boots_satans_molten_steps",
+   "amulets_satans_precious"
+  ],
+  "notes": "kind: area"
+ },
+ "Act VII Boss Dungeons": {
+  "items": [
+   "AK-47",
+   "Blood of Abaddon",
+   "Mevius' Mighty Gauntlets",
+   "Mevius' Mighty Helmet",
+   "Mevius' Mighty Marchers",
+   "Mevius' Mighty Plate",
+   "Pearlescent Dream",
+   "Spellweavers"
+  ],
+  "tkeys": [
+   "w_gun_ak47",
+   "w_spell_blood_of_abaddon",
+   "gloves_mevius_mighty_gauntlets",
+   "helmet_mevius_mighty_helmet",
+   "boots_mevius_mighty_marchers",
+   "armors_mevius_mighty_plate",
+   "boots_pearlescent_dream",
+   "gloves_spellweavers"
+  ],
+  "notes": "kind: area"
+ },
+ "Blood Maiden": {
+  "items": [
+   "Blood Maggot Pendant",
+   "Conjured Tentacle",
+   "Infected Grasp",
+   "Jar of Parasites",
+   "Overgrowth",
+   "Parasite Loop",
+   "Parasite Queen´s Tiara",
+   "Parasitic Heart"
+  ],
+  "tkeys": [
+   "amulets_blood_maggot_pendant",
+   "w_spell_conjured_tentacle",
+   "gloves_infected_grasp",
+   "charms_jar_of_parasites",
+   "shields_overgrowth",
+   "rings_parasite_loop",
+   "helmet_parasite_queens_tiara",
+   "charms_parasitic_heart"
+  ],
+  "notes": "kind: boss; enemy uberBloodMaiden (translationsEnemy e_uberBloodMaiden_1, enemyType 211)"
+ },
+ "Captain Grimtide": {
+  "items": [
+   "Captain´s Anchor",
+   "Captain´s Attire",
+   "Ethereal Musket",
+   "Ghastly Skull",
+   "Ghostplunderer´s Marchers",
+   "Grimtide´s Necklace",
+   "Grimtide´s Scimitar",
+   "Skeleton Crew´s Band"
+  ],
+  "tkeys": [
+   "charms_captains_anchor",
+   "armors_captains_attire",
+   "w_gun_ethereal_musket",
+   "charms_ghastly_skull",
+   "boots_ghostplunderers_marchers",
+   "amulets_grimtides_necklace",
+   "w_melee_grimtides_scimitar",
+   "rings_skeleton_crews_band"
+  ],
+  "notes": "kind: boss; enemy uberCaptainGrimtide (translationsEnemy e_uberCaptainGrimtide_1, enemyType 210)"
+ },
+ "Phantom Leviathan": {
+  "items": [
+   "Ghost Armada",
+   "Leviathan´s Blood",
+   "Leviathan´s Crown",
+   "Leviathan´s Ribcage",
+   "Leviathan´s Spine",
+   "Phantom Scimitar",
+   "Phantom Strike",
+   "Phantom´s Step"
+  ],
+  "tkeys": [
+   "charms_ghost_armada",
+   "consumable_leviathans_blood",
+   "helmet_leviathans_crown",
+   "armors_leviathans_ribcage",
+   "w_spell_leviathans_spine",
+   "w_melee_phantom_scimitar",
+   "w_bow_phantom_strike",
+   "boots_phantoms_step"
+  ],
+  "notes": "kind: boss; enemy uberPhantomLeviathan (translationsEnemy e_uberPhantomLeviathan_1, enemyType 212)"
+ },
+ "Act II Boss Dungeons": {
+  "items": [
+   "Arcanum Asphyxiators",
+   "Death's Grasp",
+   "Death's Scythe",
+   "Doomweed Vial",
+   "Graxy's Lucky Lure",
+   "Plague Bringer's Touch",
+   "Reaper's Hood"
+  ],
+  "tkeys": [
+   "gloves_arcanum_asphyxiators",
+   "gloves_deaths_grasp",
+   "w_melee_deaths_scythe",
+   "w_flask_doomweed_vial",
+   "charms_graxys_mom_lure",
+   "gloves_plague_bringers_touch",
+   "helmet_reapers_hood"
+  ],
+  "notes": "kind: area"
+ },
+ "Act IV Boss Dungeons": {
+  "items": [
+   "Damien's Cage",
+   "Damien's Head",
+   "Damien's Soulstone",
+   "Diablo",
+   "Elixir of Unworldly Cognition",
+   "Frostbitten Necrosis",
+   "Spell Eater"
+  ],
+  "tkeys": [
+   "charms_damiens_cage",
+   "w_spell_damiens_head",
+   "amulets_damiens_soulstone",
+   "w_chainsaw_diablo",
+   "consumable_elixir_of_unworldly_cognition",
+   "gloves_frostbitten_necrosis",
+   "w_spell_spell_eater"
+  ],
+  "notes": "kind: area"
+ },
+ "Common Chest": {
+  "items": [
+   "Belt of Infinite Wealth",
+   "Compass of Wealth",
+   "Death's Mirror",
+   "Leprechauns Greed",
+   "Midas' Hands",
+   "Mystique Allure ",
+   "The Bucket"
+  ],
+  "tkeys": [
+   "belts_belt_of_infinite_wealth",
+   "amulets_compass_of_wealth",
+   "w_melee_deaths_mirror",
+   "shields_leprechauns_greed",
+   "gloves_midas_hands",
+   "armors_mystique_allure",
+   "helmet_the_bucket"
+  ],
+  "notes": "kind: chest"
+ },
+ "Crystal Chest": {
+  "items": [
+   "Belt of Infinite Wealth",
+   "Compass of Wealth",
+   "Death's Mirror",
+   "Leprechauns Greed",
+   "Midas' Hands",
+   "Mystique Allure ",
+   "The Bucket"
+  ],
+  "tkeys": [
+   "belts_belt_of_infinite_wealth",
+   "amulets_compass_of_wealth",
+   "w_melee_deaths_mirror",
+   "shields_leprechauns_greed",
+   "gloves_midas_hands",
+   "armors_mystique_allure",
+   "helmet_the_bucket"
+  ],
+  "notes": "kind: chest"
+ },
+ "Golden Chest": {
+  "items": [
+   "Belt of Infinite Wealth",
+   "Compass of Wealth",
+   "Death's Mirror",
+   "Leprechauns Greed",
+   "Midas' Hands",
+   "Mystique Allure ",
+   "The Bucket"
+  ],
+  "tkeys": [
+   "belts_belt_of_infinite_wealth",
+   "amulets_compass_of_wealth",
+   "w_melee_deaths_mirror",
+   "shields_leprechauns_greed",
+   "gloves_midas_hands",
+   "armors_mystique_allure",
+   "helmet_the_bucket"
+  ],
+  "notes": "kind: chest"
+ },
+ "Rogue Chaos Tower": {
+  "items": [
+   "Adamant Roamers",
+   "Astral Roamers",
+   "Brutal Roamers",
+   "Chilling Roamers",
+   "Scorching Roamers",
+   "Thunder Roamers",
+   "Venom Roamers"
+  ],
+  "tkeys": [
+   "boots_adamant_roamers",
+   "boots_astral_roamers",
+   "boots_brutal_roamers",
+   "boots_chilling_roamers",
+   "boots_scorching_roamers",
+   "boots_thunder_roamers",
+   "boots_venom_roamers"
+  ],
+  "notes": "kind: boss; enemy uberChaosTower (translationsEnemy e_uberChaosTower_1, enemyType 206), object Uber_Chaos_Tower"
+ },
+ "Shade of Death": {
+  "items": [
+   "Beacon of Shadows",
+   "Shadow Beacon",
+   "Shadow Carver",
+   "Shadow Lantern",
+   "Shadowfury",
+   "Signet of Shadows",
+   "Wraith's Cloak"
+  ],
+  "tkeys": [
+   "w_spell_beacon_of_shadows",
+   "amulets_shadow_beacon",
+   "w_melee_shadow_carver",
+   "shields_shadow_lantern",
+   "w_bow_shadowfury",
+   "rings_signet_of_shadows",
+   "armors_wraiths_cloak"
+  ],
+  "notes": "kind: boss; enemy shadowreaper (translationsEnemy e_shadowreaper_1, enemyType 198), object Reaper_Uber; the game also labels drops from this same boss \"Uber Reaper (Inferno Difficulty)\""
+ },
+ "Sheeponia": {
+  "items": [
+   "Hello its me, Steve!",
+   "Sheep King's Wool",
+   "Steve's Bang",
+   "Steve's Mighty Sword",
+   "Steve's Necklace",
+   "Steve's Punchbow",
+   "Steve's Wand of Fortune"
+  ],
+  "tkeys": [
+   "charms_steve",
+   "charms_sheep_kings_wool",
+   "w_gun_steves_bang",
+   "w_melee_steves_mighty_sword",
+   "amulets_steves_necklace",
+   "w_bow_steves_punchbow",
+   "w_spell_steves_wand_of_fortune"
+  ],
+  "notes": "kind: zone; room Sheep_rm"
+ },
+ "Act II Dungeons": {
+  "items": [
+   "Arcanum Asphyxiators",
+   "Graxy's Lucky Lure",
+   "Necrocaller's Grips",
+   "Plague Bringer's Touch",
+   "Soulburn Belt",
+   "Sowyer's Javelin of Devastation"
+  ],
+  "tkeys": [
+   "gloves_arcanum_asphyxiators",
+   "charms_graxys_mom_lure",
+   "gloves_necrocallers_grips",
+   "gloves_plague_bringers_touch",
+   "belts_soulburn_belt",
+   "w_throwing_sawyers_javelin_of_devastation"
+  ],
+  "notes": "kind: area"
+ },
+ "Act V Dungeons": {
+  "items": [
+   "Grasp of the Phoenix",
+   "Master's Magnum",
+   "Monsoon",
+   "Orange Grayon",
+   "Revenant's Lasher",
+   "Scarred Battle Darts"
+  ],
+  "tkeys": [
+   "gloves_grasp_of_phoenix",
+   "w_gun_masters_magnum",
+   "w_bow_monsoon",
+   "charms_orange_grayon",
+   "w_melee_revenants_lasher",
+   "w_throwing_scarred_battle_darts"
+  ],
+  "notes": "kind: area"
+ },
+ "Act VII Dungeons": {
+  "items": [
+   "Blood of Abaddon",
+   "Executioner's Cocoon",
+   "Fumacinha's Favela Flipflop",
+   "Glacier Talons",
+   "Pearlescent Dream",
+   "Spellweavers"
+  ],
+  "tkeys": [
+   "w_spell_blood_of_abaddon",
+   "armors_executioneers_cocoon",
+   "boots_fumas_favela_flipflop",
+   "w_claw_glacier_talon",
+   "boots_pearlescent_dream",
+   "gloves_spellweavers"
+  ],
+  "notes": "kind: area"
+ },
+ "Act VIII Zone 1-5": {
+  "items": [
+   "Arcanist's Wrath",
+   "Book of Cold Death",
+   "Oculus of Ages",
+   "Pendant of Eternity",
+   "Storm In A Vial",
+   "The Downfall of Felps"
+  ],
+  "tkeys": [
+   "armors_arcanists_wrath",
+   "w_spell_book_of_cold_death",
+   "w_spell_the_oculus",
+   "amulets_pendant_of_eternity",
+   "charms_storm_in_vial",
+   "rings_the_downfall_of_felps"
+  ],
+  "notes": "kind: area"
+ },
+ "Amun Ra": {
+  "items": [
+   "Blood Moon Crescent",
+   "Crow's Whisper",
+   "Eternal Death",
+   "Eternity",
+   "Sobek's Fall",
+   "Thoth's Agony"
+  ],
+  "tkeys": [
+   "w_melee_blood_moon_crescent",
+   "w_spell_crows_whisper",
+   "helmet_eternal_death",
+   "w_bow_eternity",
+   "charms_sobeks_fall",
+   "amulets_thoths_agony"
+  ],
+  "notes": "kind: boss; enemy uberAnubis (translationsEnemy e_uberAnubis_1, enemyType 205), object Uber_Anubis"
+ },
+ "Architect of Ruin": {
+  "items": [
+   "Cane of Creation",
+   "Chronobreakers",
+   "Face of Existence",
+   "Fractal of Existence",
+   "Rift Vectors",
+   "The Event Horizon"
+  ],
+  "tkeys": [
+   "w_spell_cane_of_creation",
+   "gloves_chronobreakers",
+   "helmet_face_of_existence",
+   "amulets_fractal_of_existence",
+   "boots_rift_vectors",
+   "shields_the_event_horizon"
+  ],
+  "notes": "kind: boss; enemy uberArchitect (translationsEnemy e_uberArchitect_1, enemyType 208)"
+ },
+ "Chaos Tower": {
+  "items": [
+   "Gem King's Cleaver",
+   "Gem King's Garb",
+   "Gryphon's Claw",
+   "Isarius Ironthorn Breastplate",
+   "Light Bringer's Mark",
+   "Noxious Hunter's Reward"
+  ],
+  "tkeys": [
+   "w_melee_gem_kings_cleaver",
+   "armors_gem_kings_garb",
+   "amulets_gryphons_claw",
+   "armors_isarius_ironthorn_breastplate",
+   "amulets_light_bringers_mark",
+   "armors_noxious_hunters_reward"
+  ],
+  "notes": "kind: zone; room chaos_tower_enter; object Chaos_Tower"
+ },
+ "King Rakhul": {
+  "items": [
+   "Amulet of Colosseum",
+   "Eye of Rakhul",
+   "Gladiator King's Belt",
+   "Rakhul's Legion Crusher",
+   "Rakhul's Ritual Band",
+   "Rakhul's Stone Hands"
+  ],
+  "tkeys": [
+   "amulets_amulet_of_colosseum",
+   "charms_eye_of_rakhul",
+   "belts_gladiator_kings_belt",
+   "w_melee_rakhuls_legion_crusher",
+   "rings_rakhuls_ritual_band",
+   "gloves_rakhuls_stone_hands"
+  ],
+  "notes": "kind: boss; enemy uberKingRakhul (translationsEnemy e_uberKingRakhul_1, enemyType 201), object King_Rakhul"
+ },
+ "Act III Dungeons": {
+  "items": [
+   "Astral Projector",
+   "Desert's Storm",
+   "Manahungerers",
+   "Philosopher's Stone",
+   "Storm In A Vial"
+  ],
+  "tkeys": [
+   "w_bow_astral_projector",
+   "boots_deserts_storm",
+   "gloves_manahungerers",
+   "amulets_philosophers_stone",
+   "charms_storm_in_vial"
+  ],
+  "notes": "kind: area"
+ },
+ "Act IV Zone 1-3": {
+  "items": [
+   "Mana Bender's Will",
+   "Rugal's Sash of Undertaking",
+   "Scourge Loop",
+   "Sharpshooter's Cloak",
+   "Stone of Premonition"
+  ],
+  "tkeys": [
+   "rings_mana_benders_will",
+   "belts_rugals_sash_of_undertaking",
+   "rings_scourge_loop",
+   "armors_sharpshooters_cloak",
+   "rings_stone_of_jordan"
+  ],
+  "notes": "kind: area"
+ },
+ "Act IV Zone 1-5": {
+  "items": [
+   "Deathquill",
+   "Elixir of Unworldly Cognition",
+   "Frostbitten Necrosis",
+   "Hypothermia",
+   "Set's Lightning Sash"
+  ],
+  "tkeys": [
+   "w_bow_deathquill",
+   "consumable_elixir_of_unworldly_cognition",
+   "gloves_frostbitten_necrosis",
+   "w_spell_hypothermia",
+   "belts_sets_lightning_sash"
+  ],
+  "notes": "kind: area"
+ },
+ "Act VI Dungeons": {
+  "items": [
+   "Death Knight's Gauntlets",
+   "Freya's Frozen Buckle",
+   "Harlequinn's Veil",
+   "Recurving Corrosion",
+   "Wind Walker's Step"
+  ],
+  "tkeys": [
+   "gloves_death_knights_gauntlets",
+   "belts_freyas_frozen_buckle",
+   "helmet_harlequins_veil",
+   "w_bow_recurving_corrosion",
+   "boots_wind_walkers_step"
+  ],
+  "notes": "kind: area"
+ },
+ "Act VI Zone 1-5": {
+  "items": [
+   "Candy Shredder",
+   "Death Knight's Gauntlets",
+   "Dracula's Demise",
+   "Freya's Frozen Buckle",
+   "Harlequinn's Veil"
+  ],
+  "tkeys": [
+   "w_chainsaw_candy_shredder",
+   "gloves_death_knights_gauntlets",
+   "w_gun_draculas_demise",
+   "belts_freyas_frozen_buckle",
+   "helmet_harlequins_veil"
+  ],
+  "notes": "kind: area"
+ },
+ "Act VIII Dungeons": {
+  "items": [
+   "Book of Cold Death",
+   "Muspelheim Guardian's Scorched Plate",
+   "Oculus of Ages",
+   "Serpent's Embrace",
+   "The Downfall of Felps"
+  ],
+  "tkeys": [
+   "w_spell_book_of_cold_death",
+   "armors_muspelheim_guardians_scorched_plate",
+   "w_spell_the_oculus",
+   "belts_serpents_embrace",
+   "rings_the_downfall_of_felps"
+  ],
+  "notes": "kind: area"
+ },
+ "Boss Dungeons": {
+  "items": [
+   "Eden's Harvester",
+   "Pagan God's Blasphemy",
+   "Quickening Zephyr",
+   "Shishkebab",
+   "Sähköpuimuri"
+  ],
+  "tkeys": [
+   "w_chainsaw_edens_harvester",
+   "w_spell_pagan_gods_blasphemy",
+   "rings_quickening_zephyr",
+   "w_melee_shishkebab",
+   "w_melee_sahkopuimuri"
+  ],
+  "notes": "kind: area"
+ },
+ "Sung Lee": {
+  "items": [
+   "Brawler's Fighting Mitts",
+   "Shadow Occultist's Wraps",
+   "Sung Lee's Destroyer Flail",
+   "Sung Lee's Flask of Carnage",
+   "Sung Lee's Unleashed Rage"
+  ],
+  "tkeys": [
+   "gloves_brawlers_fighting_mitts",
+   "gloves_shadow_occultists_wraps",
+   "w_melee_sung_lees_destroyer_flail",
+   "consumable_sung_lees_unleashed_rage",
+   "rings_sung_lees_unleashed_rage"
+  ],
+  "notes": "kind: boss; enemy uberSungLee (translationsEnemy e_uberSungLee_1, enemyType 199), object Sung_Lee"
+ },
+ "Act I Dungeons": {
+  "items": [
+   "Ancient Aegis",
+   "Belt of Skulls",
+   "Tectonic Grips",
+   "Ukko's Revenge"
+  ],
+  "tkeys": [
+   "shields_ancient_aegis",
+   "belts_belt_of_skulls",
+   "gloves_tectonic_grips",
+   "w_throwing_ukkos_revenge"
+  ],
+  "notes": "kind: area"
+ },
+ "Act V Zone 1-3": {
+  "items": [
+   "Ali's Boxing Gloves",
+   "Master's Magnum",
+   "Monsoon",
+   "Serpent's Embrace"
+  ],
+  "tkeys": [
+   "gloves_alis_boxing_gloves",
+   "w_gun_masters_magnum",
+   "w_bow_monsoon",
+   "belts_serpents_embrace"
+  ],
+  "notes": "kind: area"
+ },
+ "Act VII Zone 1-3": {
+  "items": [
+   "Astral Projector",
+   "Executioner's Cocoon",
+   "Fumacinha's Favela Flipflop",
+   "Thunder Guardian's Plate"
+  ],
+  "tkeys": [
+   "w_bow_astral_projector",
+   "armors_executioneers_cocoon",
+   "boots_fumas_favela_flipflop",
+   "armors_thunder_guardians_plate"
+  ],
+  "notes": "kind: area"
+ },
+ "Act VII Zone 1-5": {
+  "items": [
+   "Blood of Abaddon",
+   "Glacier Talons",
+   "Pearlescent Dream",
+   "The Absence of Constraint"
+  ],
+  "tkeys": [
+   "w_spell_blood_of_abaddon",
+   "w_claw_glacier_talon",
+   "boots_pearlescent_dream",
+   "rings_absence_of_constraint"
+  ],
+  "notes": "kind: area"
+ },
+ "Colossal Chest": {
+  "items": [
+   "Abomination's Brain",
+   "Abomination's Eye",
+   "Abomination's Heart",
+   "Necrobutcher's Curse"
+  ],
+  "tkeys": [
+   "charms_abominations_brain",
+   "charms_abominations_eye",
+   "charms_abominations_heart",
+   "w_spell_necrobutchers_curse"
+  ],
+  "notes": "kind: chest; object Colossal_Chest"
+ },
+ "Dungeons": {
+  "items": [
+   "Arrow of Zamjo",
+   "Eden's Harvester",
+   "Fighter Magi's Grips",
+   "SUOMI FINLAND PERKELE"
+  ],
+  "tkeys": [
+   "w_bow_arrow_of_zamjo",
+   "w_chainsaw_edens_harvester",
+   "gloves_fighter_magis_grips",
+   "shields_suomi_finland_perkele"
+  ],
+  "notes": "kind: area"
+ },
+ "Grimbone": {
+  "items": [
+   "Grimbone's Marchers",
+   "Grimbone's Ribcage",
+   "Grimbone's Scythe",
+   "Grimbone's Visage"
+  ],
+  "tkeys": [
+   "boots_grimbones_marchers",
+   "armors_grimbones_ribcage",
+   "w_melee_grimbones_scythe",
+   "helmet_grimbones_visage"
+  ],
+  "notes": "kind: boss; enemy grimbone (translationsEnemy e_grimbone_1, enemyType 207), object Grimbone"
+ },
+ "Uber Damien": {
+  "items": [
+   "Sash of Eternal Hatred",
+   "Soulflaming Marchers",
+   "Stoneplate of Corruption",
+   "Tarethiel's Fall"
+  ],
+  "tkeys": [
+   "belts_sash_of_eternal_hatred",
+   "boots_soulflaming_marchers",
+   "armors_stoneplate_of_corruption",
+   "amulets_tarethiels_fall"
+  ],
+  "notes": "kind: boss; enemy uberDamien (translationsEnemy e_uberDamien_1, enemyType 200), object Uber_Damien"
+ },
+ "Unstable Rift": {
+  "items": [
+   "Aimbot.exe",
+   "Celestial's Authority",
+   "Loaded Dice",
+   "Sight Of The Gods"
+  ],
+  "tkeys": [
+   "charms_aimbot_exe",
+   "shields_celestials_authority",
+   "charms_loaded_dice",
+   "helmet_sight_of_gods"
+  ],
+  "notes": "kind: zone; room unstable_rift"
+ },
+ "Act I Zone 1-5": {
+  "items": [
+   "Belt of Skulls",
+   "Tectonic Grips",
+   "The Eye of Tarethiel"
+  ],
+  "tkeys": [
+   "belts_belt_of_skulls",
+   "gloves_tectonic_grips",
+   "w_spell_the_eye_of_tarethiel"
+  ],
+  "notes": "kind: area"
+ },
+ "Act I Zone 4-5": {
+  "items": [
+   "Dark Knight's Lance",
+   "Glowstick Estoc",
+   "Tombstone"
+  ],
+  "tkeys": [
+   "w_polearm_dark_knights_lance",
+   "w_melee_glowstick_estoc",
+   "shields_tombstone"
+  ],
+  "notes": "kind: area"
+ },
+ "Act II Zone 1-5": {
+  "items": [
+   "Arcanum Asphyxiators",
+   "Graxy's Lucky Lure",
+   "Soulburn Belt"
+  ],
+  "tkeys": [
+   "gloves_arcanum_asphyxiators",
+   "charms_graxys_mom_lure",
+   "belts_soulburn_belt"
+  ],
+  "notes": "kind: area"
+ },
+ "Act II Zone 4-5": {
+  "items": [
+   "Luci's Day",
+   "Shield of the Abyss",
+   "Wraith Forged Cleaver"
+  ],
+  "tkeys": [
+   "w_melee_lucis_day",
+   "shields_shield_of_abyss",
+   "w_melee_wraith_forged_cleaver"
+  ],
+  "notes": "kind: area"
+ },
+ "Act III Zone 1-3": {
+  "items": [
+   "Ancient Aegis",
+   "Plague Bringer's Touch",
+   "Recurving Corrosion"
+  ],
+  "tkeys": [
+   "shields_ancient_aegis",
+   "gloves_plague_bringers_touch",
+   "w_bow_recurving_corrosion"
+  ],
+  "notes": "kind: area"
+ },
+ "Challenge Dungeon (Inferno Only)": {
+  "items": [
+   "Gladiator's Dice",
+   "Signet of Kadosh",
+   "Wizard's Dice"
+  ],
+  "tkeys": [
+   "charms_gladiators_dice",
+   "amulets_signet_of_kadosh",
+   "charms_wizards_dice"
+  ],
+  "notes": "kind: other"
+ },
+ "Endrixia": {
+  "items": [
+   "Dragon Knight's Helmet",
+   "Dragon's Blessing",
+   "Dragon's Heart"
+  ],
+  "tkeys": [
+   "helmet_dragon_knights_helmet",
+   "rings_dragons_blessing",
+   "charms_dragons_heart"
+  ],
+  "notes": "kind: boss; enemy uberEndrixia (translationsEnemy e_uberEndrixia_1, enemyType 202), object Uber_Endrixia"
+ },
+ "Eternal Battlefield": {
+  "items": [
+   "Brimskull Trident",
+   "Plague Shot",
+   "Thorn of Noxus"
+  ],
+  "tkeys": [
+   "w_polearm_brimskull_trident",
+   "charms_plague_shot",
+   "w_polearm_thorn_of_noxus"
+  ],
+  "notes": "kind: zone; room Fields_Boss_rm"
+ },
+ "Gabriel": {
+  "items": [
+   "Gabriel's Broken Resolve",
+   "Gabriel's Dauntless Vision",
+   "Gabriel's Unholy Oath"
+  ],
+  "tkeys": [
+   "w_melee_gabriels_broken_resolve",
+   "helmet_gabriels_dauntless_vision",
+   "shields_gabriels_unholy_oath"
+  ],
+  "notes": "kind: boss; enemy uberGabriel (translationsEnemy e_uberGabriel_1, enemyType 203), object Gabriel"
+ },
+ "Mimic": {
+  "items": [
+   "Overloaded Dice",
+   "Soul Collector",
+   "Voodoo Doll"
+  ],
+  "tkeys": [
+   "charms_overloaded_dice",
+   "charms_soul_collector",
+   "charms_voodoo_doll"
+  ],
+  "notes": "kind: boss; enemy mimic (translationsEnemy e_mimic_3, enemyType 216)"
+ },
+ "Act I Zone 1-3": {
+  "items": [
+   "Bonetti's Rapier",
+   "Giant's Band of Strength"
+  ],
+  "tkeys": [
+   "w_melee_bonettis_rapier",
+   "rings_giants_band_of_strength"
+  ],
+  "notes": "kind: area"
+ },
+ "Act I Zone 3-4": {
+  "items": [
+   "Clafaxier's Legacy",
+   "Tarethiel's Ancient Wisdom"
+  ],
+  "tkeys": [
+   "w_spell_clafaxiers_legacy",
+   "charms_tarethiels_ancient_wisdom"
+  ],
+  "notes": "kind: area"
+ },
+ "Act III Zone 1-5": {
+  "items": [
+   "Desert's Storm",
+   "Philosopher's Stone"
+  ],
+  "tkeys": [
+   "boots_deserts_storm",
+   "amulets_philosophers_stone"
+  ],
+  "notes": "kind: area"
+ },
+ "Act IV Boss Dungeon": {
+  "items": [
+   "The Absence of Constraint",
+   "Winter's Bite"
+  ],
+  "tkeys": [
+   "rings_absence_of_constraint",
+   "w_melee_winters_bite"
+  ],
+  "notes": "kind: area"
+ },
+ "Act IX Boss Dungeons": {
+  "items": [
+   "Tablet of Awakening",
+   "Tundra Hunter's Long Coat"
+  ],
+  "tkeys": [
+   "charms_tablet_of_awakening",
+   "armors_tundra_hunters_long_coat"
+  ],
+  "notes": "kind: area"
+ },
+ "Act IX Zone 5": {
+  "items": [
+   "Lava King's Lost Mask",
+   "Steampowered Flamewalkers"
+  ],
+  "tkeys": [
+   "helmet_lava_kings_lost_mask",
+   "boots_steampowered_flamewalkers"
+  ],
+  "notes": "kind: area"
+ },
+ "Act V Zone 1-5": {
+  "items": [
+   "Grasp of the Phoenix",
+   "Orange Grayon"
+  ],
+  "tkeys": [
+   "gloves_grasp_of_phoenix",
+   "charms_orange_grayon"
+  ],
+  "notes": "kind: area"
+ },
+ "Act V Zone 4-5": {
+  "items": [
+   "Revenant's Lasher",
+   "Shield of the Abyss"
+  ],
+  "tkeys": [
+   "w_melee_revenants_lasher",
+   "shields_shield_of_abyss"
+  ],
+  "notes": "kind: area"
+ },
+ "Amun Ra (Inferno Difficulty)": {
+  "items": [
+   "Amun Ra's Demise",
+   "Finger of Despair"
+  ],
+  "tkeys": [
+   "consumable_amun_ras_demise",
+   "charms_fingerOfDespair"
+  ],
+  "notes": "kind: boss; enemy uberAnubis (translationsEnemy e_uberAnubis_1, enemyType 205), object Uber_Anubis"
+ },
+ "Chaos Pillar": {
+  "items": [
+   "Azazel's Despair",
+   "Soul Collector"
+  ],
+  "tkeys": [
+   "rings_azazels_despair",
+   "charms_soul_collector"
+  ],
+  "notes": "kind: other; object Chaos_Pillar"
+ },
+ "Endrixia (Inferno Only)": {
+  "items": [
+   "Dragon Knight's Vanguard",
+   "Dragon's Eye"
+  ],
+  "tkeys": [
+   "armors_dragon_knights_vanguard",
+   "amulets_dragons_eye"
+  ],
+  "notes": "kind: boss; enemy uberEndrixia (translationsEnemy e_uberEndrixia_1, enemyType 202), object Uber_Endrixia"
+ },
+ "Gabriel (Inferno Difficulty)": {
+  "items": [
+   "Gabriel's Broken Wings",
+   "The Hope Ender"
+  ],
+  "tkeys": [
+   "armors_gabriels_broken_wings",
+   "w_melee_the_hope_ender"
+  ],
+  "notes": "kind: boss; enemy uberGabriel (translationsEnemy e_uberGabriel_1, enemyType 203), object Gabriel"
+ },
+ "Possessed Luna (Inferno Only)": {
+  "items": [
+   "Rimskin Assassins",
+   "Trophy Hunter"
+  ],
+  "tkeys": [
+   "gloves_rimskin_assassin",
+   "belts_ancient_collectors_sash"
+  ],
+  "notes": "kind: boss; enemy uberLuna (translationsEnemy e_uberLuna_1, enemyType 204), object Uber_Luna"
+ },
+ "Ruby Chests": {
+  "items": [
+   "Fulgurite",
+   "Torstein's Anvil"
+  ],
+  "tkeys": [
+   "charms_fulgurite",
+   "charms_torsteins_anvil"
+  ],
+  "notes": "kind: chest"
+ },
+ "Sheeponia (Inferno Only)": {
+  "items": [
+   "Sheep King's Crown",
+   "Sheep King's Hide"
+  ],
+  "tkeys": [
+   "helmet_sheep_kings_crown",
+   "armors_sheep_kings_hide"
+  ],
+  "notes": "kind: zone; room Sheep_rm"
+ },
+ "Act I Overworld": {
+  "items": [
+   "Ukko's Revenge"
+  ],
+  "tkeys": [
+   "w_throwing_ukkos_revenge"
+  ],
+  "notes": "kind: area"
+ },
+ "Act I Zone 1-2": {
+  "items": [
+   "Arachno Phobia"
+  ],
+  "tkeys": [
+   "w_bow_arachno_phobia"
+  ],
+  "notes": "kind: area"
+ },
+ "Act II Boss Dungeon": {
+  "items": [
+   "Wraith Forged Cleaver"
+  ],
+  "tkeys": [
+   "w_melee_wraith_forged_cleaver"
+  ],
+  "notes": "kind: area"
+ },
+ "Act II Zone 1-2": {
+  "items": [
+   "Tarethiel's Ancient Wisdom"
+  ],
+  "tkeys": [
+   "charms_tarethiels_ancient_wisdom"
+  ],
+  "notes": "kind: area"
+ },
+ "Act II Zone 2-3": {
+  "items": [
+   "Sowyer's Javelin of Devastation"
+  ],
+  "tkeys": [
+   "w_throwing_sawyers_javelin_of_devastation"
+  ],
+  "notes": "kind: area"
+ },
+ "Act III Zone 1, 2, 5": {
+  "items": [
+   "Nikita's KJ-33 Helmet"
+  ],
+  "tkeys": [
+   "helmet_nikitas_kj33_helmet"
+  ],
+  "notes": "kind: area"
+ },
+ "Act III Zone 2": {
+  "items": [
+   "Demon's Mirror"
+  ],
+  "tkeys": [
+   "shields_demons_mirror"
+  ],
+  "notes": "kind: area"
+ },
+ "Act III Zone 2-3": {
+  "items": [
+   "Venomsteel Carapace"
+  ],
+  "tkeys": [
+   "armors_venomsteel_carapace"
+  ],
+  "notes": "kind: area"
+ },
+ "Act III Zone 4-5": {
+  "items": [
+   "Giant's Band of Strength"
+  ],
+  "tkeys": [
+   "rings_giants_band_of_strength"
+  ],
+  "notes": "kind: area"
+ },
+ "Act IV Zone 1-2": {
+  "items": [
+   "Luci's Day"
+  ],
+  "tkeys": [
+   "w_melee_lucis_day"
+  ],
+  "notes": "kind: area"
+ },
+ "Act IV Zone 2-3": {
+  "items": [
+   "Serpent's Tooth"
+  ],
+  "tkeys": [
+   "w_throwing_serpents_tooth"
+  ],
+  "notes": "kind: area"
+ },
+ "Act IV Zone 3-5": {
+  "items": [
+   "Diablo"
+  ],
+  "tkeys": [
+   "w_chainsaw_diablo"
+  ],
+  "notes": "kind: area"
+ },
+ "Act IX Boss Dungeon": {
+  "items": [
+   "Ra's Band"
+  ],
+  "tkeys": [
+   "rings_ras_band"
+  ],
+  "notes": "kind: area"
+ },
+ "Act IX Dungeons": {
+  "items": [
+   "Tablet of Awakening"
+  ],
+  "tkeys": [
+   "charms_tablet_of_awakening"
+  ],
+  "notes": "kind: area"
+ },
+ "Act IX Zone 1-3": {
+  "items": [
+   "Ra's Band"
+  ],
+  "tkeys": [
+   "rings_ras_band"
+  ],
+  "notes": "kind: area"
+ },
+ "Act IX Zone 1-6": {
+  "items": [
+   "Tablet of Awakening"
+  ],
+  "tkeys": [
+   "charms_tablet_of_awakening"
+  ],
+  "notes": "kind: area"
+ },
+ "Act IX Zone 2": {
+  "items": [
+   "Dreadnought"
+  ],
+  "tkeys": [
+   "w_gun_dreadnought"
+  ],
+  "notes": "kind: area"
+ },
+ "Act IX Zone 3": {
+  "items": [
+   "Defender's Justice"
+  ],
+  "tkeys": [
+   "shields_defenders_justice"
+  ],
+  "notes": "kind: area"
+ },
+ "Act IX Zone 3-5": {
+  "items": [
+   "Tundra Hunter's Long Coat"
+  ],
+  "tkeys": [
+   "armors_tundra_hunters_long_coat"
+  ],
+  "notes": "kind: area"
+ },
+ "Act IX Zone 4-5": {
+  "items": [
+   "The Colossal Avenger"
+  ],
+  "tkeys": [
+   "helmet_colossal_avenger"
+  ],
+  "notes": "kind: area"
+ },
+ "Act V & VIII Dungeons": {
+  "items": [
+   "Sidewinder"
+  ],
+  "tkeys": [
+   "w_throwing_sidewinder"
+  ],
+  "notes": "kind: area"
+ },
+ "Act V Boss Dungeon": {
+  "items": [
+   "Mana Bender's Will"
+  ],
+  "tkeys": [
+   "rings_mana_benders_will"
+  ],
+  "notes": "kind: area"
+ },
+ "Act V Zone 1-4": {
+  "items": [
+   "Riftmaster's Dirge"
+  ],
+  "tkeys": [
+   "w_melee_riftmasters_dirge"
+  ],
+  "notes": "kind: area"
+ },
+ "Act V Zone 2-3": {
+  "items": [
+   "Dark Knight's Lance"
+  ],
+  "tkeys": [
+   "w_polearm_dark_knights_lance"
+  ],
+  "notes": "kind: area"
+ },
+ "Act VI Zone 1": {
+  "items": [
+   "Doomweed Vial"
+  ],
+  "tkeys": [
+   "w_flask_doomweed_vial"
+  ],
+  "notes": "kind: area"
+ },
+ "Act VI Zone 1-2": {
+  "items": [
+   "Arch Angel's Phase Blade"
+  ],
+  "tkeys": [
+   "w_melee_arch_angels_phase_blade"
+  ],
+  "notes": "kind: area"
+ },
+ "Act VI Zone 1-3": {
+  "items": [
+   "The Light of Dawn"
+  ],
+  "tkeys": [
+   "w_melee_light_of_dawn"
+  ],
+  "notes": "kind: area"
+ },
+ "Act VI Zone 4-5": {
+  "items": [
+   "Wind Walker's Step"
+  ],
+  "tkeys": [
+   "boots_wind_walkers_step"
+  ],
+  "notes": "kind: area"
+ },
+ "Act VII Boss Dungeon": {
+  "items": [
+   "Scourge Loop"
+  ],
+  "tkeys": [
+   "rings_scourge_loop"
+  ],
+  "notes": "kind: area"
+ },
+ "Act VII Zone 4-5": {
+  "items": [
+   "AK-47"
+  ],
+  "tkeys": [
+   "w_gun_ak47"
+  ],
+  "notes": "kind: area"
+ },
+ "Act VIII Zone 1-3": {
+  "items": [
+   "The Light of Dawn"
+  ],
+  "tkeys": [
+   "w_melee_light_of_dawn"
+  ],
+  "notes": "kind: area"
+ },
+ "Act VIII Zone 5": {
+  "items": [
+   "Fenrir's Bloodfang"
+  ],
+  "tkeys": [
+   "w_melee_fenrirs_bloodfang"
+  ],
+  "notes": "kind: area"
+ },
+ "Anubis (Inferno Difficulty)": {
+  "items": [
+   "Arcanis"
+  ],
+  "tkeys": [
+   "rings_arcanis"
+  ],
+  "notes": "kind: boss; enemy anubis (translationsEnemy e_anubis_1, enemyType 300), object Anubis"
+ },
+ "Damien (Inferno Difficulty)": {
+  "items": [
+   "Signet of Corruption"
+  ],
+  "tkeys": [
+   "rings_signet_of_corruption"
+  ],
+  "notes": "kind: boss; enemy damien (translationsEnemy e_damien_1, enemyType 301), object Damien"
+ },
+ "Dev Command": {
+  "items": [
+   "DEVELOPRE BOOT"
+  ],
+  "tkeys": [
+   "boots_developer_boots"
+  ],
+  "notes": "kind: other"
+ },
+ "Gamba Machine": {
+  "items": [
+   "Goburin's Head"
+  ],
+  "tkeys": [
+   "charms_goburins_head"
+  ],
+  "notes": "kind: other"
+ },
+ "Grim Reaper (Inferno Difficulty)": {
+  "items": [
+   "Signet of Harbringer"
+  ],
+  "tkeys": [
+   "rings_signet_of_harbringer"
+  ],
+  "notes": "kind: boss; enemy reaper (translationsEnemy e_reaper_1, enemyType 299), object Reaper"
+ },
+ "Gurag (Inferno Difficulty)": {
+  "items": [
+   "Destroyer’s End"
+  ],
+  "tkeys": [
+   "rings_destroyers_end"
+  ],
+  "notes": "kind: boss; enemy gurag (translationsEnemy e_gurag_1, enemyType 298)"
+ },
+ "Karp King (Inferno Difficulty)": {
+  "items": [
+   "Stormloop"
+  ],
+  "tkeys": [
+   "rings_stormloop"
+  ],
+  "notes": "kind: boss; enemy karp_king (translationsEnemy e_karp_king_1, enemyType 302)"
+ },
+ "King Rakhul (Inferno Only)": {
+  "items": [
+   "Crown of Doom"
+  ],
+  "tkeys": [
+   "helmet_crown_of_doom"
+  ],
+  "notes": "kind: boss; enemy uberKingRakhul (translationsEnemy e_uberKingRakhul_1, enemyType 201), object King_Rakhul"
+ },
+ "Mevius (Inferno Difficulty)": {
+  "items": [
+   "Void Bomba"
+  ],
+  "tkeys": [
+   "rings_void_bomba"
+  ],
+  "notes": "kind: boss; enemy mevius (translationsEnemy e_mevius_1, enemyType 305), object Mevius"
+ },
+ "Rogue Chaos Tower (Inferno Only)": {
+  "items": [
+   "Chaoswalkers"
+  ],
+  "tkeys": [
+   "boots_chaoswalkers"
+  ],
+  "notes": "kind: boss; enemy uberChaosTower (translationsEnemy e_uberChaosTower_1, enemyType 206), object Uber_Chaos_Tower"
+ },
+ "Satan (Inferno Difficulty)": {
+  "items": [
+   "Hellfire Halo"
+  ],
+  "tkeys": [
+   "rings_hellfire_halo"
+  ],
+  "notes": "kind: boss; enemy satan (translationsEnemy e_satan_1, enemyType 304), object Satan"
+ },
+ "Son of Lucifer (Inferno)": {
+  "items": [
+   "Damien's Corrupted Head"
+  ],
+  "tkeys": [
+   "w_spell_damiens_corrupted_head"
+  ],
+  "notes": "kind: other"
+ },
+ "Sung Lee (Inferno Difficulty)": {
+  "items": [
+   "Girdle of Eternal War"
+  ],
+  "tkeys": [
+   "belts_girdle_of_eternal_war"
+  ],
+  "notes": "kind: boss; enemy uberSungLee (translationsEnemy e_uberSungLee_1, enemyType 199), object Sung_Lee"
+ },
+ "The Circle of Hatred": {
+  "items": [
+   "Tayrel's Chestplate"
+  ],
+  "tkeys": [
+   "armors_tayrels_chestplate"
+  ],
+  "notes": "kind: zone; room Circle_of_Hatred_rm"
+ },
+ "Uber Reaper (Inferno Difficulty)": {
+  "items": [
+   "Torch of Shadows"
+  ],
+  "tkeys": [
+   "charms_torch_of_shadows"
+  ],
+  "notes": "kind: boss; enemy shadowreaper (translationsEnemy e_shadowreaper_1, enemyType 198), object Reaper_Uber; same boss as \"Shade of Death\" (object Reaper_Uber, enemyType 198)"
+ }
+}

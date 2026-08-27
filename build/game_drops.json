@@ -1,0 +1,952 @@
+{
+ "Act I Boss Dungeons": {
+  "items": [
+   "Gurag's Pebble",
+   "Belt of Skulls",
+   "Tarethiel's Ancient Wisdom",
+   "Gurag's Heart Charm",
+   "Tectonic Grips",
+   "Stone of Premonition",
+   "Tombstone",
+   "Gurag's Stone Crusher",
+   "Ukko's Revenge"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 9 from the item definitions' own dropPlaces text."
+ },
+ "Act I Dungeons": {
+  "items": [
+   "Belt of Skulls",
+   "Tectonic Grips",
+   "Ancient Aegis",
+   "Ukko's Revenge"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 4 from the item definitions' own dropPlaces text."
+ },
+ "Act I Overworld": {
+  "items": [
+   "Ukko's Revenge"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 1 from the item definitions' own dropPlaces text."
+ },
+ "Act I Zone 1-2": {
+  "items": [
+   "Arachno Phobia"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 1 from the item definitions' own dropPlaces text."
+ },
+ "Act I Zone 1-3": {
+  "items": [
+   "Giant's Band of Strength",
+   "Bonetti's Rapier"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 2 from the item definitions' own dropPlaces text."
+ },
+ "Act I Zone 1-5": {
+  "items": [
+   "Belt of Skulls",
+   "Tectonic Grips",
+   "The Eye of Tarethiel"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 3 from the item definitions' own dropPlaces text."
+ },
+ "Act I Zone 3-4": {
+  "items": [
+   "Tarethiel's Ancient Wisdom",
+   "Clafaxier's Legacy"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 2 from the item definitions' own dropPlaces text."
+ },
+ "Act I Zone 4-5": {
+  "items": [
+   "Tombstone",
+   "Dark Knight's Lance",
+   "Glowstick Estoc"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 3 from the item definitions' own dropPlaces text."
+ },
+ "Act II Boss Dungeon": {
+  "items": [
+   "Wraith Forged Cleaver",
+   "Graxy's Lucky Lure",
+   "Arcanum Asphyxiators",
+   "Plague Bringer's Touch",
+   "Death's Grasp",
+   "Reaper's Hood",
+   "Doomweed Vial",
+   "Death's Scythe"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 1 from the item definitions' own dropPlaces text. zone or other source label, not a single enemy object. 7 from the item definitions' own dropPlaces text. Also written in the game data as: Act II Boss Dungeons."
+ },
+ "Act II Dungeons": {
+  "items": [
+   "Soulburn Belt",
+   "Graxy's Lucky Lure",
+   "Arcanum Asphyxiators",
+   "Plague Bringer's Touch",
+   "Necrocaller's Grips",
+   "Sowyer's Javelin of Devastation"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 6 from the item definitions' own dropPlaces text."
+ },
+ "Act II Zone 1-2": {
+  "items": [
+   "Tarethiel's Ancient Wisdom"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 1 from the item definitions' own dropPlaces text."
+ },
+ "Act II Zone 1-5": {
+  "items": [
+   "Soulburn Belt",
+   "Graxy's Lucky Lure",
+   "Arcanum Asphyxiators"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 3 from the item definitions' own dropPlaces text."
+ },
+ "Act II Zone 2-3": {
+  "items": [
+   "Sowyer's Javelin of Devastation"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 1 from the item definitions' own dropPlaces text."
+ },
+ "Act II Zone 4-5": {
+  "items": [
+   "Shield of the Abyss",
+   "Wraith Forged Cleaver",
+   "Luci's Day"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 3 from the item definitions' own dropPlaces text."
+ },
+ "Act III Boss Dungeons": {
+  "items": [
+   "Philosopher's Stone",
+   "Anubis Oculus",
+   "Storm In A Vial",
+   "Anubis Torso",
+   "Manahungerers",
+   "Anubis' Mighty Hands",
+   "Nikita's KJ-33 Helmet",
+   "Demon's Mirror",
+   "Astral Projector"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 9 from the item definitions' own dropPlaces text."
+ },
+ "Act III Dungeons": {
+  "items": [
+   "Philosopher's Stone",
+   "Desert's Storm",
+   "Storm In A Vial",
+   "Manahungerers",
+   "Astral Projector"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 5 from the item definitions' own dropPlaces text."
+ },
+ "Act III Zone 1, 2, 5": {
+  "items": [
+   "Nikita's KJ-33 Helmet"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 1 from the item definitions' own dropPlaces text."
+ },
+ "Act III Zone 1-3": {
+  "items": [
+   "Plague Bringer's Touch",
+   "Ancient Aegis",
+   "Recurving Corrosion"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 3 from the item definitions' own dropPlaces text."
+ },
+ "Act III Zone 1-5": {
+  "items": [
+   "Philosopher's Stone",
+   "Desert's Storm"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 2 from the item definitions' own dropPlaces text."
+ },
+ "Act III Zone 2": {
+  "items": [
+   "Demon's Mirror"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 1 from the item definitions' own dropPlaces text."
+ },
+ "Act III Zone 2-3": {
+  "items": [
+   "Venomsteel Carapace"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 1 from the item definitions' own dropPlaces text."
+ },
+ "Act III Zone 4-5": {
+  "items": [
+   "Giant's Band of Strength"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 1 from the item definitions' own dropPlaces text."
+ },
+ "Act IV Boss Dungeon": {
+  "items": [
+   "The Absence of Constraint",
+   "Winter's Bite",
+   "Damien's Soulstone",
+   "Damien's Cage",
+   "Elixir of Unworldly Cognition",
+   "Frostbitten Necrosis",
+   "Damien's Head",
+   "Diablo",
+   "Spell Eater"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 2 from the item definitions' own dropPlaces text. zone or other source label, not a single enemy object. 7 from the item definitions' own dropPlaces text. Also written in the game data as: Act IV Boss Dungeons."
+ },
+ "Act IV Dungeons": {
+  "items": [
+   "Set's Lightning Sash",
+   "Sharpshooter's Cloak",
+   "Elixir of Unworldly Cognition",
+   "Frostbitten Necrosis",
+   "The Absence of Constraint",
+   "Winter's Bite",
+   "Hypothermia",
+   "Serpent's Tooth"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 8 from the item definitions' own dropPlaces text."
+ },
+ "Act IV Zone 1-2": {
+  "items": [
+   "Luci's Day"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 1 from the item definitions' own dropPlaces text."
+ },
+ "Act IV Zone 1-3": {
+  "items": [
+   "Rugal's Sash of Undertaking",
+   "Sharpshooter's Cloak",
+   "Stone of Premonition",
+   "Mana Bender's Will",
+   "Scourge Loop"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 5 from the item definitions' own dropPlaces text."
+ },
+ "Act IV Zone 1-5": {
+  "items": [
+   "Set's Lightning Sash",
+   "Elixir of Unworldly Cognition",
+   "Frostbitten Necrosis",
+   "Deathquill",
+   "Hypothermia"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 5 from the item definitions' own dropPlaces text."
+ },
+ "Act IV Zone 2-3": {
+  "items": [
+   "Serpent's Tooth"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 1 from the item definitions' own dropPlaces text."
+ },
+ "Act IV Zone 3-5": {
+  "items": [
+   "Diablo"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 1 from the item definitions' own dropPlaces text."
+ },
+ "Act IX Boss Dungeon": {
+  "items": [
+   "Ra's Band",
+   "Tablet of Awakening",
+   "Tundra Hunter's Long Coat"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 1 from the item definitions' own dropPlaces text. zone or other source label, not a single enemy object. 2 from the item definitions' own dropPlaces text. Also written in the game data as: Act IX Boss Dungeons."
+ },
+ "Act IX Dungeons": {
+  "items": [
+   "Tablet of Awakening"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 1 from the item definitions' own dropPlaces text."
+ },
+ "Act IX Zone 1-3": {
+  "items": [
+   "Ra's Band"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 1 from the item definitions' own dropPlaces text."
+ },
+ "Act IX Zone 1-6": {
+  "items": [
+   "Tablet of Awakening"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 1 from the item definitions' own dropPlaces text."
+ },
+ "Act IX Zone 2": {
+  "items": [
+   "Dreadnought"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 1 from the item definitions' own dropPlaces text."
+ },
+ "Act IX Zone 3": {
+  "items": [
+   "Defender's Justice"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 1 from the item definitions' own dropPlaces text."
+ },
+ "Act IX Zone 3-5": {
+  "items": [
+   "Tundra Hunter's Long Coat"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 1 from the item definitions' own dropPlaces text."
+ },
+ "Act IX Zone 4-5": {
+  "items": [
+   "The Colossal Avenger"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 1 from the item definitions' own dropPlaces text."
+ },
+ "Act IX Zone 5": {
+  "items": [
+   "Steampowered Flamewalkers",
+   "Lava King's Lost Mask"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 2 from the item definitions' own dropPlaces text."
+ },
+ "Act V & VIII Dungeons": {
+  "items": [
+   "Sidewinder"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 1 from the item definitions' own dropPlaces text."
+ },
+ "Act V Boss Dungeon": {
+  "items": [
+   "Mana Bender's Will",
+   "Orange Grayon",
+   "Genji's Battle Armor",
+   "Grasp of the Phoenix",
+   "Genji's Battle Helmet",
+   "Shield of the Abyss",
+   "Monsoon",
+   "Nobunaga's Battle Slicer",
+   "Genji's Sword of Fate",
+   "Scarred Battle Darts"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 1 from the item definitions' own dropPlaces text. zone or other source label, not a single enemy object. 9 from the item definitions' own dropPlaces text. Also written in the game data as: Act V Boss Dungeons."
+ },
+ "Act V Dungeons": {
+  "items": [
+   "Orange Grayon",
+   "Grasp of the Phoenix",
+   "Monsoon",
+   "Master's Magnum",
+   "Revenant's Lasher",
+   "Scarred Battle Darts"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 6 from the item definitions' own dropPlaces text."
+ },
+ "Act V Zone 1-3": {
+  "items": [
+   "Serpent's Embrace",
+   "Ali's Boxing Gloves",
+   "Monsoon",
+   "Master's Magnum"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 4 from the item definitions' own dropPlaces text."
+ },
+ "Act V Zone 1-4": {
+  "items": [
+   "Riftmaster's Dirge"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 1 from the item definitions' own dropPlaces text."
+ },
+ "Act V Zone 1-5": {
+  "items": [
+   "Orange Grayon",
+   "Grasp of the Phoenix"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 2 from the item definitions' own dropPlaces text."
+ },
+ "Act V Zone 2-3": {
+  "items": [
+   "Dark Knight's Lance"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 1 from the item definitions' own dropPlaces text."
+ },
+ "Act V Zone 4-5": {
+  "items": [
+   "Shield of the Abyss",
+   "Revenant's Lasher"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 2 from the item definitions' own dropPlaces text."
+ },
+ "Act VI Boss Dungeons": {
+  "items": [
+   "Satan's Precious",
+   "Satan's Molten Steps",
+   "Satan's Chalice",
+   "Satan's Cuirass",
+   "Harlequinn's Veil",
+   "Recurving Corrosion",
+   "Candy Shredder",
+   "Dracula's Demise"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 8 from the item definitions' own dropPlaces text."
+ },
+ "Act VI Dungeons": {
+  "items": [
+   "Freya's Frozen Buckle",
+   "Wind Walker's Step",
+   "Death Knight's Gauntlets",
+   "Harlequinn's Veil",
+   "Recurving Corrosion"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 5 from the item definitions' own dropPlaces text."
+ },
+ "Act VI Zone 1": {
+  "items": [
+   "Doomweed Vial"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 1 from the item definitions' own dropPlaces text."
+ },
+ "Act VI Zone 1-2": {
+  "items": [
+   "Arch Angel's Phase Blade"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 1 from the item definitions' own dropPlaces text."
+ },
+ "Act VI Zone 1-3": {
+  "items": [
+   "The Light of Dawn"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 1 from the item definitions' own dropPlaces text."
+ },
+ "Act VI Zone 1-5": {
+  "items": [
+   "Freya's Frozen Buckle",
+   "Death Knight's Gauntlets",
+   "Harlequinn's Veil",
+   "Candy Shredder",
+   "Dracula's Demise"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 5 from the item definitions' own dropPlaces text."
+ },
+ "Act VI Zone 4-5": {
+  "items": [
+   "Wind Walker's Step"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 1 from the item definitions' own dropPlaces text."
+ },
+ "Act VII Boss Dungeon": {
+  "items": [
+   "Scourge Loop",
+   "Pearlescent Dream",
+   "Mevius' Mighty Marchers",
+   "Mevius' Mighty Plate",
+   "Spellweavers",
+   "Mevius' Mighty Gauntlets",
+   "Mevius' Mighty Helmet",
+   "Blood of Abaddon",
+   "AK-47"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 1 from the item definitions' own dropPlaces text. zone or other source label, not a single enemy object. 8 from the item definitions' own dropPlaces text. Also written in the game data as: Act VII Boss Dungeons."
+ },
+ "Act VII Dungeons": {
+  "items": [
+   "Pearlescent Dream",
+   "Fumacinha's Favela Flipflop",
+   "Executioner's Cocoon",
+   "Spellweavers",
+   "Blood of Abaddon",
+   "Glacier Talons"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 6 from the item definitions' own dropPlaces text."
+ },
+ "Act VII Zone 1-3": {
+  "items": [
+   "Fumacinha's Favela Flipflop",
+   "Thunder Guardian's Plate",
+   "Executioner's Cocoon",
+   "Astral Projector"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 4 from the item definitions' own dropPlaces text."
+ },
+ "Act VII Zone 1-5": {
+  "items": [
+   "Pearlescent Dream",
+   "The Absence of Constraint",
+   "Blood of Abaddon",
+   "Glacier Talons"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 4 from the item definitions' own dropPlaces text."
+ },
+ "Act VII Zone 4-5": {
+  "items": [
+   "AK-47"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 1 from the item definitions' own dropPlaces text."
+ },
+ "Act VIII Boss Dungeons": {
+  "items": [
+   "Muspelheim Guardian's Scorched Plate",
+   "Odin's Battlearmor",
+   "Fighter Magi's Grips",
+   "Necrocaller's Grips",
+   "Odin's Eternal Visage",
+   "The Downfall of Felps",
+   "Book of Cold Death",
+   "Fenrir's Bloodfang",
+   "Thorn of Helheim",
+   "Oculus of Ages"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 10 from the item definitions' own dropPlaces text."
+ },
+ "Act VIII Dungeons": {
+  "items": [
+   "Serpent's Embrace",
+   "Muspelheim Guardian's Scorched Plate",
+   "The Downfall of Felps",
+   "Book of Cold Death",
+   "Oculus of Ages"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 5 from the item definitions' own dropPlaces text."
+ },
+ "Act VIII Zone 1-3": {
+  "items": [
+   "The Light of Dawn"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 1 from the item definitions' own dropPlaces text."
+ },
+ "Act VIII Zone 1-5": {
+  "items": [
+   "Pendant of Eternity",
+   "Storm In A Vial",
+   "Arcanist's Wrath",
+   "The Downfall of Felps",
+   "Book of Cold Death",
+   "Oculus of Ages"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 6 from the item definitions' own dropPlaces text."
+ },
+ "Act VIII Zone 5": {
+  "items": [
+   "Fenrir's Bloodfang"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 1 from the item definitions' own dropPlaces text."
+ },
+ "Amun Ra": {
+  "items": [
+   "Blood Moon Crescent",
+   "Amun Ra's Demise",
+   "Finger of Despair",
+   "Thoth's Agony",
+   "Sobek's Fall",
+   "Eternal Death",
+   "Eternity",
+   "Crow's Whisper"
+  ],
+  "notes": "enemy, translation id `uberAnubis`, object Uber_Anubis_obj. 2 exclusive drop(s) from the game's exclusiveDrops list: Amun Ra's Demise, Finger of Despair. 6 from the item definitions' own dropPlaces text. dropTable runs DropExclusive. item ids 34:1:3; 21:0:18; 71:0:10. [Inferno Difficulty] 2 from the item definitions' own dropPlaces text. Also written in the game data as: Amun Ra (Inferno Difficulty)."
+ },
+ "Anubis": {
+  "items": [
+   "Arcanis"
+  ],
+  "notes": "enemy, translation id `anubis`, object Anubis_obj. 1 exclusive drop(s) from the game's exclusiveDrops list: Arcanis. dropTable runs DropExclusive. item ids 41:0:7. [Inferno Difficulty] 1 from the item definitions' own dropPlaces text. Also written in the game data as: Anubis (Inferno Difficulty)."
+ },
+ "Architect of Ruin": {
+  "items": [
+   "Chronobreakers",
+   "Fractal of Existence",
+   "Rift Vectors",
+   "Face of Existence",
+   "The Event Horizon",
+   "Cane of Creation"
+  ],
+  "notes": "enemy, translation id `uberArchitect`, object Architect_obj. 6 from the item definitions' own dropPlaces text. dropTable runs DropExclusive. item ids 63:0:4."
+ },
+ "Blood Maiden": {
+  "items": [
+   "Parasitic Heart",
+   "Blood Maggot Pendant",
+   "Jar of Parasites",
+   "Infected Grasp",
+   "Parasite Queen´s Tiara",
+   "Parasite Loop",
+   "Overgrowth",
+   "Conjured Tentacle"
+  ],
+  "notes": "enemy, translation id `uberBloodMaiden`, object Blood_Maiden_obj. 8 from the item definitions' own dropPlaces text. dropTable runs DropExclusive. item ids 101:0:10."
+ },
+ "Boss Dungeons": {
+  "items": [
+   "Quickening Zephyr",
+   "Pagan God's Blasphemy",
+   "Eden's Harvester",
+   "Shishkebab",
+   "Sähköpuimuri"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 5 from the item definitions' own dropPlaces text."
+ },
+ "Captain Grimtide": {
+  "items": [
+   "Captain´s Anchor",
+   "Grimtide´s Necklace",
+   "Ghostplunderer´s Marchers",
+   "Ghastly Skull",
+   "Captain´s Attire",
+   "Skeleton Crew´s Band",
+   "Ethereal Musket",
+   "Grimtide´s Scimitar"
+  ],
+  "notes": "enemy, translation id `uberCaptainGrimtide`, object Captain_Grimtide_obj. 8 from the item definitions' own dropPlaces text. dropTable runs DropExclusive. item ids 99:0:10."
+ },
+ "Challenge Dungeon (Inferno Only)": {
+  "items": [
+   "Signet of Kadosh",
+   "Wizard's Dice",
+   "Gladiator's Dice"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 3 from the item definitions' own dropPlaces text."
+ },
+ "Chaos Pillar": {
+  "items": [
+   "Soul Collector",
+   "Azazel's Despair"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 2 from the item definitions' own dropPlaces text."
+ },
+ "Chaos Tower": {
+  "items": [
+   "Gryphon's Claw",
+   "Light Bringer's Mark",
+   "Gem King's Garb",
+   "Isarius Ironthorn Breastplate",
+   "Noxious Hunter's Reward",
+   "Gem King's Cleaver"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 6 from the item definitions' own dropPlaces text."
+ },
+ "Chest Drop": {
+  "items": [
+   "Dagger"
+  ],
+  "notes": "chest/container object Chest_Drop_obj. 1 exclusive drop(s) from the game's exclusiveDrops list: Dagger. item ids 0:2:3."
+ },
+ "Colossal Chest": {
+  "items": [
+   "Abomination's Heart",
+   "Abomination's Eye",
+   "Abomination's Brain",
+   "Necrobutcher's Curse"
+  ],
+  "notes": "chest/container object Colossal_Chest_obj. 4 from the item definitions' own dropPlaces text. item ids 58:0:10."
+ },
+ "Colossal Mimic": {
+  "items": [
+   "Soul Collector"
+  ],
+  "notes": "chest/container object Mimic_Colossus_obj. 1 exclusive drop(s) from the game's exclusiveDrops list: Soul Collector. item ids 91:0:10."
+ },
+ "Common Chest": {
+  "items": [
+   "Compass of Wealth",
+   "Belt of Infinite Wealth",
+   "Mystique Allure ",
+   "Midas' Hands",
+   "The Bucket",
+   "Leprechauns Greed",
+   "Death's Mirror"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 7 from the item definitions' own dropPlaces text."
+ },
+ "Crystal Chest": {
+  "items": [
+   "Compass of Wealth",
+   "Belt of Infinite Wealth",
+   "Mystique Allure ",
+   "Midas' Hands",
+   "The Bucket",
+   "Leprechauns Greed",
+   "Death's Mirror"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 7 from the item definitions' own dropPlaces text."
+ },
+ "Damien": {
+  "items": [
+   "Signet of Corruption"
+  ],
+  "notes": "enemy, translation id `damien`, object Damien_obj. 1 exclusive drop(s) from the game's exclusiveDrops list: Signet of Corruption. dropTable runs DropExclusive. item ids 40:0:7. [Inferno Difficulty] 1 from the item definitions' own dropPlaces text. Also written in the game data as: Damien (Inferno Difficulty)."
+ },
+ "Dev Command": {
+  "items": [
+   "DEVELOPRE BOOT"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 1 from the item definitions' own dropPlaces text."
+ },
+ "Dungeon Chest": {
+  "items": [
+   "Signet of Kadosh"
+  ],
+  "notes": "chest/container object Dungeon_Chest_obj. 1 exclusive drop(s) from the game's exclusiveDrops list: Signet of Kadosh. dropTable runs DropDestinyShard, DropProphetsWisdom, DropGypsysProphecy. item ids 70:0:5."
+ },
+ "Dungeons": {
+  "items": [
+   "Fighter Magi's Grips",
+   "SUOMI FINLAND PERKELE",
+   "Arrow of Zamjo",
+   "Eden's Harvester"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 4 from the item definitions' own dropPlaces text."
+ },
+ "Endrixia": {
+  "items": [
+   "Dragon's Heart",
+   "Dragon's Blessing",
+   "Dragon Knight's Helmet",
+   "Dragon's Eye",
+   "Dragon Knight's Vanguard"
+  ],
+  "notes": "enemy, translation id `uberEndrixia`, object Uber_Endrixia_obj. 3 from the item definitions' own dropPlaces text. dropTable runs DropExclusive. item ids 81:0:10; 49:0:7. [Inferno Only] 2 from the item definitions' own dropPlaces text. Also written in the game data as: Endrixia (Inferno Only)."
+ },
+ "Eternal Battlefield": {
+  "items": [
+   "Plague Shot",
+   "Thorn of Noxus",
+   "Brimskull Trident"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 3 from the item definitions' own dropPlaces text."
+ },
+ "Fallen Damien": {
+  "items": [
+   "Damien's Corrupted Head",
+   "Soulflaming Marchers",
+   "Tarethiel's Fall",
+   "Sash of Eternal Hatred",
+   "Stoneplate of Corruption"
+  ],
+  "notes": "enemy, translation id `uberDamien`, object Uber_Damien_obj. 2 exclusive drop(s) from the game's exclusiveDrops list: Damien's Corrupted Head, Soulflaming Marchers. dropTable runs DropExclusive. item ids 8:11:3; 60:0:2. [Inferno] 1 from the item definitions' own dropPlaces text. 4 from the item definitions' own dropPlaces text. Also written in the game data as: Son of Lucifer (Inferno), Uber Damien."
+ },
+ "Forge Master": {
+  "items": [],
+  "notes": "enemy, translation id `forgemaster`, object Forge_Master_obj. dropTable runs DropBossParts, DropBossPartsNext."
+ },
+ "Fragrat": {
+  "items": [],
+  "notes": "enemy, translation id `fragrat`, object Fragrat_obj, Ratacha_obj. dropTable runs DropRunes."
+ },
+ "Gabriel the Fallen Angel": {
+  "items": [
+   "Gabriel's Dauntless Vision",
+   "Gabriel's Unholy Oath",
+   "Gabriel's Broken Resolve",
+   "Gabriel's Broken Wings",
+   "The Hope Ender"
+  ],
+  "notes": "3 from the item definitions' own dropPlaces text. [Inferno Difficulty] 2 from the item definitions' own dropPlaces text. enemy, translation id `uberGabriel`, object Gabriel_obj. 3 exclusive drop(s) from the game's exclusiveDrops list: Gabriel's Broken Resolve, The Hope Ender, Gabriel's Broken Wings. dropTable runs DropExclusive. item ids 31:1:3; 32:1:3; 83:0:1. Also written in the game data as: Gabriel, Gabriel (Inferno Difficulty)."
+ },
+ "Gamba Machine": {
+  "items": [
+   "Goburin's Head"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 1 from the item definitions' own dropPlaces text."
+ },
+ "Goblin Orb": {
+  "items": [],
+  "notes": "enemy, translation id `goblinOrb`, object Goblin_Orb_obj. dropTable runs DropRubyKey, DropOrbs, DropCharms, DropGems, DropKeys."
+ },
+ "Goblin Ore": {
+  "items": [],
+  "notes": "enemy, translation id `goblinOre`, object Goblin_Ore_obj. dropTable runs DropRubyKey, DropOreMaterials, DropCharms, DropGems, DropKeys."
+ },
+ "Golden Chest": {
+  "items": [
+   "Compass of Wealth",
+   "Belt of Infinite Wealth",
+   "Mystique Allure ",
+   "Midas' Hands",
+   "The Bucket",
+   "Leprechauns Greed",
+   "Death's Mirror"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 7 from the item definitions' own dropPlaces text."
+ },
+ "Grave Skeleton": {
+  "items": [],
+  "notes": "enemy, translation id `graveSkeleton`, object Grave_Skeleton_obj. dropTable runs DropOnlyWhites."
+ },
+ "Grim Reaper": {
+  "items": [
+   "Signet of Harbringer"
+  ],
+  "notes": "enemy, translation id `reaper`, object Reaper_obj. 1 exclusive drop(s) from the game's exclusiveDrops list: Signet of Harbringer. dropTable runs DropExclusive. item ids 38:0:7. [Inferno Difficulty] 1 from the item definitions' own dropPlaces text. Also written in the game data as: Grim Reaper (Inferno Difficulty)."
+ },
+ "Grimbone": {
+  "items": [
+   "Grimbone's Visage",
+   "Grimbone's Marchers",
+   "Grimbone's Ribcage",
+   "Grimbone's Scythe"
+  ],
+  "notes": "enemy, translation id `grimbone`, object Grimbone_obj. 4 from the item definitions' own dropPlaces text. dropTable runs DropExclusive. item ids 64:0:0."
+ },
+ "Gurag the Fallen King": {
+  "items": [
+   "Destroyer’s End"
+  ],
+  "notes": "[Inferno Difficulty] 1 from the item definitions' own dropPlaces text. enemy, translation id `gurag`, object Gurag_obj. 1 exclusive drop(s) from the game's exclusiveDrops list: Destroyer’s End. dropTable runs DropExclusive. item ids 37:0:7. Also written in the game data as: Gurag (Inferno Difficulty)."
+ },
+ "King Rakhul": {
+  "items": [
+   "Crown of Doom",
+   "Amulet of Colosseum",
+   "Gladiator King's Belt",
+   "Eye of Rakhul",
+   "Rakhul's Stone Hands",
+   "Rakhul's Ritual Band",
+   "Rakhul's Legion Crusher"
+  ],
+  "notes": "enemy, translation id `uberKingRakhul`, object King_Rakhul_obj. 1 exclusive drop(s) from the game's exclusiveDrops list: Crown of Doom. 6 from the item definitions' own dropPlaces text. dropTable runs DropExclusive. item ids 84:0:0; 61:0:5. [Inferno Only] 1 from the item definitions' own dropPlaces text. Also written in the game data as: King Rakhul (Inferno Only)."
+ },
+ "Mevius": {
+  "items": [
+   "Void Bomba"
+  ],
+  "notes": "enemy, translation id `mevius`, object Mevius_obj. 1 exclusive drop(s) from the game's exclusiveDrops list: Void Bomba. dropTable runs DropExclusive. item ids 56:0:7. [Inferno Difficulty] 1 from the item definitions' own dropPlaces text. Also written in the game data as: Mevius (Inferno Difficulty)."
+ },
+ "Mimic": {
+  "items": [
+   "Soul Collector",
+   "Voodoo Doll",
+   "Overloaded Dice"
+  ],
+  "notes": "chest/container object Mimic_obj. 3 from the item definitions' own dropPlaces text. item ids 91:0:10."
+ },
+ "Phantom Leviathan": {
+  "items": [
+   "Ghost Armada",
+   "Phantom´s Step",
+   "Leviathan´s Ribcage",
+   "Leviathan´s Blood",
+   "Leviathan´s Crown",
+   "Phantom Strike",
+   "Leviathan´s Spine",
+   "Phantom Scimitar"
+  ],
+  "notes": "enemy, translation id `uberPhantomLeviathan`, object Phantom_Leviathan_obj. 8 from the item definitions' own dropPlaces text. dropTable runs DropExclusive. item ids 102:0:10."
+ },
+ "Possessed Luna": {
+  "items": [
+   "Headsman's Bloodthirster",
+   "Trophy Hunter",
+   "Rimskin Assassins",
+   "Eagle's Claw",
+   "Komodo's Bloodstrap",
+   "Stranded Boot",
+   "Chaos Gemstone",
+   "High Roller's Deathcrown",
+   "Gaze of the Oblivion",
+   "Emblem of the Daemon",
+   "Pit Ravager's Cetratus",
+   "Arrow of Niflheim",
+   "Crackling Thunder",
+   "Manafunneler's Conjurer"
+  ],
+  "notes": "enemy, translation id `uberLuna`, object Uber_Luna_obj. 2 exclusive drop(s) from the game's exclusiveDrops list: Trophy Hunter, Rimskin Assassins. 12 from the item definitions' own dropPlaces text. dropTable runs DropExclusive. item ids 11:4:3; 50:0:8; 58:0:4. [Inferno Only] 2 from the item definitions' own dropPlaces text. Also written in the game data as: Possessed Luna (Inferno Only)."
+ },
+ "Rogue Chaos Tower": {
+  "items": [
+   "Chaoswalkers",
+   "Thunder Roamers",
+   "Venom Roamers",
+   "Chilling Roamers",
+   "Scorching Roamers",
+   "Astral Roamers",
+   "Brutal Roamers",
+   "Adamant Roamers"
+  ],
+  "notes": "enemy, translation id `uberChaosTower`, object Uber_Chaos_Tower_obj. 1 exclusive drop(s) from the game's exclusiveDrops list: Chaoswalkers. 7 from the item definitions' own dropPlaces text. dropTable runs DropExclusive, DropRunes. item ids 69:0:2; 70:0:2. [Inferno Only] 1 from the item definitions' own dropPlaces text. Also written in the game data as: Rogue Chaos Tower (Inferno Only)."
+ },
+ "Ruby Chest": {
+  "items": [
+   "Fulgurite",
+   "Torstein's Anvil"
+  ],
+  "notes": "chest/container object Ruby_Chest_obj. 1 exclusive drop(s) from the game's exclusiveDrops list: Fulgurite. dropTable runs DropBossRunes. item ids 30:0:10. 2 from the item definitions' own dropPlaces text. Also written in the game data as: Ruby Chests."
+ },
+ "Rune Goblin": {
+  "items": [],
+  "notes": "enemy, translation id `goblinRune`, object Goblin_Rune_obj. dropTable runs DropRubyKey, DropCharms, DropGems, DropKeys."
+ },
+ "Satan": {
+  "items": [
+   "Hellfire Halo"
+  ],
+  "notes": "enemy, translation id `satan`, object Satan_obj. 1 exclusive drop(s) from the game's exclusiveDrops list: Hellfire Halo. dropTable runs DropExclusive. item ids 39:0:7. [Inferno Difficulty] 1 from the item definitions' own dropPlaces text. Also written in the game data as: Satan (Inferno Difficulty)."
+ },
+ "Shade of Death": {
+  "items": [
+   "Torch of Shadows",
+   "Beacon of Shadows",
+   "Shadow Beacon",
+   "Wraith's Cloak",
+   "Signet of Shadows",
+   "Shadow Lantern",
+   "Shadowfury",
+   "Shadow Carver"
+  ],
+  "notes": "enemy, translation id `shadowreaper`, object Reaper_Uber_obj. 1 exclusive drop(s) from the game's exclusiveDrops list: Torch of Shadows. 7 from the item definitions' own dropPlaces text. dropTable runs DropExclusive. item ids 23:0:10; 4:10:3. [Inferno Difficulty] 1 from the item definitions' own dropPlaces text. Also written in the game data as: Uber Reaper (Inferno Difficulty)."
+ },
+ "Shadow Goblin": {
+  "items": [],
+  "notes": "enemy, translation id `goblinShadow`, object Goblin_Shadow_obj. dropTable runs DropRubyKey, DropDimensionalShard, DropCharms, DropGems, DropKeys."
+ },
+ "Sheeponia": {
+  "items": [
+   "Steve's Necklace",
+   "Sheep King's Wool",
+   "Hello its me, Steve!",
+   "Steve's Punchbow",
+   "Steve's Bang",
+   "Steve's Mighty Sword",
+   "Steve's Wand of Fortune",
+   "Sheep King's Hide",
+   "Sheep King's Crown"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 7 from the item definitions' own dropPlaces text. [Inferno Only] zone or other source label, not a single enemy object. 2 from the item definitions' own dropPlaces text. Also written in the game data as: Sheeponia (Inferno Only)."
+ },
+ "Stickman Steve": {
+  "items": [],
+  "notes": "enemy, translation id `evilSteve`, object Evil_Steve_obj. dropTable runs DropTarotCardsD."
+ },
+ "Sung Lee": {
+  "items": [
+   "Girdle of Eternal War",
+   "Brawler's Fighting Mitts",
+   "Sung Lee's Flask of Carnage",
+   "Shadow Occultist's Wraps",
+   "Sung Lee's Unleashed Rage",
+   "Sung Lee's Destroyer Flail"
+  ],
+  "notes": "enemy, translation id `uberSungLee`, object Sung_Lee_obj. 1 exclusive drop(s) from the game's exclusiveDrops list: Girdle of Eternal War. 5 from the item definitions' own dropPlaces text. dropTable runs DropExclusive. item ids 52:0:8; 25:0:4. [Inferno Difficulty] 1 from the item definitions' own dropPlaces text. Also written in the game data as: Sung Lee (Inferno Difficulty)."
+ },
+ "The Circle of Hatred": {
+  "items": [
+   "Tayrel's Chestplate"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 1 from the item definitions' own dropPlaces text."
+ },
+ "The Karp King": {
+  "items": [
+   "Stormloop"
+  ],
+  "notes": "[Inferno Difficulty] 1 from the item definitions' own dropPlaces text. enemy, translation id `karp_king`, object Karp_King_obj. 1 exclusive drop(s) from the game's exclusiveDrops list: Stormloop. dropTable runs DropExclusive. item ids 44:0:7. Also written in the game data as: Karp King (Inferno Difficulty)."
+ },
+ "The Sheep King": {
+  "items": [
+   "Sheep King's Hide",
+   "Sheep King's Wool"
+  ],
+  "notes": "enemy, translation id `sheep_king`, object Sheep_King_obj. 2 exclusive drop(s) from the game's exclusiveDrops list: Sheep King's Hide, Sheep King's Wool. dropTable runs DropExclusive, DropRunes. item ids 64:0:1; 39:0:10."
+ },
+ "Treasure Goblin": {
+  "items": [],
+  "notes": "enemy, translation id `treasure_goblin`, object Goblin_Treasure_obj. dropTable runs DropRubyKey, DropCharms, DropGems, DropKeys."
+ },
+ "Unstable Rift": {
+  "items": [
+   "Loaded Dice",
+   "Aimbot.exe",
+   "Sight Of The Gods",
+   "Celestial's Authority"
+  ],
+  "notes": "zone or other source label, not a single enemy object. 4 from the item definitions' own dropPlaces text."
+ }
+}

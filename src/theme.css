@@ -1,0 +1,54 @@
+/* The map is pixel art at 2902x800. Everything here exists to keep it crisp and
+   to stay out of its way.
+ *
+ * The game's own UI font was tried here and taken out again: CookieRunBold is
+ * drawn for a 1920-wide game at its own scale, and at the sizes a page uses it
+ * came out half again too big and blew every panel apart. The rarity colours
+ * are the game's, by way of the tracker's theme, and those stay.
+ */
+
+:root {
+  --ink: #ece3d6;
+  --dim: #9b8f9e;
+  --panel: rgba(24, 17, 27, 0.94);
+  --edge: #4a3550;
+  --hot: #d8b4ff;
+
+  --rar-satanic: #ff6a6a;
+  --rar-heroic: #00ffae;
+  --rar-set: #40d040;
+  --rar-angelic: #f6f794;
+  --rar-unholy: #e04a7a;
+  --rar-runeword: #d2a24c;
+  --rar-common: #b9b0a6;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #100a13;
+  color: var(--ink);
+  font: 14px/1.5 "Segoe UI", system-ui, sans-serif;
+}
+
+#app { height: 100%; }
+
+/* The bar the browser draws is a strip of system grey beside pixel art, and it
+   is the first thing the eye goes to. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--edge) transparent;
+}
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: rgb(0 0 0 / 0.28); }
+::-webkit-scrollbar-thumb {
+  background: var(--edge);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--hot); background-clip: padding-box; }
+::-webkit-scrollbar-corner { background: transparent; }
+::-webkit-scrollbar-button { display: none; }
