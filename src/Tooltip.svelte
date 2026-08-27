@@ -104,7 +104,7 @@
   {/if}
 
   {#if rows.length === 0}
-    <p class="empty">{boss ? 'Nothing else falls here.' : 'Nothing is tied to this.'}</p>
+    <p class="empty">{boss ? 'Nothing else drops here.' : 'Nothing is tied to this.'}</p>
   {:else}
     <ul>
       {#each shown as row (row.name)}
