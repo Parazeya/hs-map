@@ -79,7 +79,7 @@
                 style="
                   width: {face[2]}px; height: {face[3]}px;
                   transform: scale({scale});
-                  background-image: url({asset('img/bosses.png')});
+                  background-image: url({asset('img/bosses.webp')});
                   background-position: {-face[0]}px {-face[1]}px;
                   background-size: {data.bossSheet.w}px {data.bossSheet.h}px;
                 "

@@ -58,7 +58,7 @@
             class="art"
             style="
               width: {box[2]}px; height: {box[3]}px;
-              background-image: url({asset('img/bosses.png')});
+              background-image: url({asset('img/bosses.webp')});
               background-position: {-box[0]}px {-box[1]}px;
               background-size: {data.bossSheet.w}px {data.bossSheet.h}px;
               transform: translate(-50%, -50%) scale({k});

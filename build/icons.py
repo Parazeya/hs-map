@@ -351,6 +351,7 @@ def build(dw, items, wanted, out_png):
     for name, im in order:
         px, py, _, _ = place[name]
         sheet.paste(im, (px, py))
-    sheet.save(out_png)
+    # lossless WebP: see build.py's `picture` for why
+    sheet.save(out_png.with_suffix(".webp"), lossless=True, quality=100, method=6)
 
     return place, sorted(missing), sheet.size, sorted(guessed), chosen

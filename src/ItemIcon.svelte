@@ -3,7 +3,7 @@
 
   // `from` names the sheet: the map packs the 931 things that drop somewhere,
   // the codex packs every item the game defines, and they are separate files.
-  let { item, sheet, box = 26, from = 'img/items.png' } = $props();
+  let { item, sheet, box = 26, from = 'img/items.webp' } = $props();
 
   // The icons are packed into one sheet: one request for nine hundred of them.
   // Each is drawn at its own size and scaled down only if it does not fit, so
