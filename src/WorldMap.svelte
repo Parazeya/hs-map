@@ -199,6 +199,18 @@
       ></span>
     {/each}
 
+    <!-- The names, the way the game's own map screen carries them: above the
+         marker, in the language the page is set to. They ride inside the world,
+         so they pan and zoom with it — the scale never falls below fitting the
+         map to the window's height, so they never shrink out of reading. -->
+    {#each data.nodes as node (node.room)}
+      <span
+        class="tag"
+        class:faded={searching && !matches?.has(node.room)}
+        style="left: {node.x}px; top: {node.y}px"
+      >{nameOf(node, lang)}</span>
+    {/each}
+
     {#each data.nodes as node (node.room)}
       {@const on = active?.room === node.room}
       {@const lit = on || hovered?.room === node.room}
@@ -354,6 +366,26 @@
   /* while a search is running, everything that does not match steps back */
   /* enough to recede, not so much that the map reads as switched off */
   .node.faded { opacity: .45; transition: opacity .15s; }
+
+  /* An outline rather than a shadow: the map is busy and a name over it needs
+     to be readable on light sand and on dark rock alike. Four offsets, not a
+     filter — a filter on this layer is what made the whole map flinch once. */
+  .tag {
+    position: absolute;
+    transform: translate(-50%, -100%);
+    margin-top: -21px;
+    white-space: nowrap;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .2px;
+    color: #f4ece1;
+    text-shadow:
+      1px 0 0 #17101d, -1px 0 0 #17101d, 0 1px 0 #17101d, 0 -1px 0 #17101d,
+      1px 1px 0 #17101d, -1px 1px 0 #17101d, 1px -1px 0 #17101d, -1px -1px 0 #17101d;
+    pointer-events: none;
+    user-select: none;
+  }
+  .tag.faded { opacity: .3; transition: opacity .15s; }
 
   @media (prefers-reduced-motion: reduce) {
     .fx { animation: none; }
