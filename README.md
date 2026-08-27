@@ -1,6 +1,7 @@
 # Hero Siege — where things drop
 
-The game's own world map, in a browser, with every zone's drops on hover.
+An interactive map of Hero Siege, drawn with the game's own art, with every
+zone's drops on hover — and a codex of every item beside it.
 
 The art and the numbers all come out of the game. Nothing is traced, redrawn or
 typed in by hand.

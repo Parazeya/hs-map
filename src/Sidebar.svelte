@@ -105,7 +105,7 @@
       {#if active.drops.length === 0}
         <p class="note">
           {boss
-            ? 'Nothing else falls here.'
+            ? 'Nothing else drops here.'
             : active.kind === 'town' ? 'Nothing drops in a town.' : 'The tables tie nothing to this zone.'}
         </p>
       {:else}

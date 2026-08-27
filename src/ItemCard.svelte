@@ -36,7 +36,7 @@
   </dl>
 
   {#if it.places?.length}
-    <h4>falls from</h4>
+    <h4>drops from</h4>
     <ul>{#each it.places as p (p)}<li>{p}</li>{/each}</ul>
   {/if}
 

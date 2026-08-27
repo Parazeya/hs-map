@@ -56,7 +56,7 @@
       {#if item.size}<dt>Space</dt><dd>{item.size[0]}×{item.size[1]}</dd>{/if}
       {#if item.rate}<dt>Drop rate</dt><dd>{odds(item.rate)}</dd>{/if}
       {#if item.chase && item.chase !== item.rate}
-        <dt title="the odds while standing in a zone it falls in">In its zone</dt>
+        <dt title="the odds while standing in a zone it drops in">In its zone</dt>
         <dd>{odds(item.chase)}</dd>
       {/if}
     </dl>
