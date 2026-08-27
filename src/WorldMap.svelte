@@ -206,6 +206,7 @@
     {#each data.nodes as node (node.room)}
       <span
         class="tag"
+        class:high={node.boss}
         class:faded={searching && !matches?.has(node.room)}
         style="left: {node.x}px; top: {node.y}px"
       >{nameOf(node, lang)}</span>
@@ -373,18 +374,25 @@
   .tag {
     position: absolute;
     transform: translate(-50%, -100%);
-    margin-top: -21px;
+    margin-top: -14px;
     white-space: nowrap;
     font-size: 11px;
-    font-weight: 600;
+    font-weight: 500;
     letter-spacing: .2px;
-    color: #f4ece1;
+    /* Warm grey rather than white, and the outline eased off its full black:
+       at full strength each name read as a sticker laid over the map instead of
+       something written on it. */
+    color: #cfc0b2;
     text-shadow:
-      1px 0 0 #17101d, -1px 0 0 #17101d, 0 1px 0 #17101d, 0 -1px 0 #17101d,
-      1px 1px 0 #17101d, -1px 1px 0 #17101d, 1px -1px 0 #17101d, -1px -1px 0 #17101d;
+      1px 0 0 #1a121fcc, -1px 0 0 #1a121fcc, 0 1px 0 #1a121fcc, 0 -1px 0 #1a121fcc,
+      1px 1px 0 #1a121fcc, -1px 1px 0 #1a121fcc,
+      1px -1px 0 #1a121fcc, -1px -1px 0 #1a121fcc;
     pointer-events: none;
     user-select: none;
   }
+  /* Clear of the skull, on the seven markers that carry one: the name sat where
+     the skull is and read "King<skull>omb". */
+  .tag.high { margin-top: -30px; }
   .tag.faded { opacity: .3; transition: opacity .15s; }
 
   @media (prefers-reduced-motion: reduce) {
