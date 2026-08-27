@@ -1,6 +1,6 @@
 <script>
   import { called, nameOf, odds, titleCase } from './lib/map.js';
-  import { talk } from './lib/say.js';
+  import { places, talk } from './lib/say.js';
   import ItemIcon from './ItemIcon.svelte';
 
   let { data, name, lang, top } = $props();
@@ -8,6 +8,11 @@
   const it = $derived(data.items[name] ?? {});
   const cls = $derived('r-' + String(it.rarity ?? 'common').toLowerCase());
   const t = $derived(talk(lang, data.words));
+
+  const place = $derived(
+    places(lang, data.words,
+           (n) => data.places?.[n]?.[lang] || data.bosses[n]?.names?.[lang]),
+  );
 
   /** Which markers carry it — the map is the point, after all. */
   const wheres = $derived.by(() => {
@@ -26,24 +31,24 @@
       <h3 class={cls}>{called(it, name, lang)}</h3>
       <p class="kind">
         <span class="tier">{data.tiers[(it.tier ?? 1) - 1] ?? '?'}</span>
-        <span class={cls}>{it.rarity}</span>
-        {#if it.inferno}<span class="inferno">Inferno only</span>{/if}
+        <span class={cls}>{t(it.rarity)}</span>
+        {#if it.inferno}<span class="inferno">{t('Inferno only')}</span>{/if}
       </p>
     </div>
   </header>
 
   <dl>
-    {#if it.rate}<dt>anywhere</dt><dd>{odds(it.rate)}</dd>{/if}
-    {#if it.chase}<dt>in its own zone</dt><dd>{odds(it.chase)}</dd>{/if}
+    {#if it.rate}<dt>{t('anywhere')}</dt><dd>{odds(it.rate)}</dd>{/if}
+    {#if it.chase}<dt>{t('in its own zone')}</dt><dd>{odds(it.chase)}</dd>{/if}
   </dl>
 
   {#if it.places?.length}
     <h4>{t('drops from')}</h4>
-    <ul>{#each it.places as p (p)}<li>{p}</li>{/each}</ul>
+    <ul>{#each it.places as p (p)}<li>{place(p)}</li>{/each}</ul>
   {/if}
 
   {#if wheres.length}
-    <h4>on the map</h4>
+    <h4>{t('on the map')}</h4>
     <ul class="zones">{#each wheres as n (n.room)}<li>{nameOf(n, lang)}</li>{/each}</ul>
   {/if}
 </div>

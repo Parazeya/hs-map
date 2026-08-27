@@ -286,6 +286,16 @@ def codex(dw, raw_items, langs, tables):
         raw_items, GAME / "translationsItem.csv", langs, place, icons.tidy, tables)
 
     say = vocabulary.Words(GAME)
+    # What the game calls each stat, joined on meaning — see words.Words.stats
+    told = say.stats([v["sid"] for v in vocab])
+    for v in vocab:
+        if told.get(v["sid"]):
+            v["names"] = told[v["sid"]]
+    seen = sum(v["n"] for v in vocab)
+    named = sum(v["n"] for v in vocab if v.get("names"))
+    print(f"stats    {len(told)} of {len(vocab)} named by the game, which is "
+          f"{named} of {seen} stat lines a reader meets ({100 * named // seen}%)")
+
     out = {"langs": langs, "sheet": {"w": sheet[0], "h": sheet[1]},
            "words": say.vocab(), "types": types_said(say, items),
            "stats": vocab, "sets": kits, "items": items}
@@ -439,8 +449,20 @@ def main():
             row["names"] = told
     for n in nodes:
         n["drops"] = n["drops"]          # untouched; names ride on the items
+    # The place strings the cards list are not all shelf entries — the tables
+    # write "Uber Reaper (Inferno Difficulty)" where the shelf says "Shade of
+    # Death (Uber Reaper)" — so each distinct one is looked up on its own.
+    spoken = {}
+    for it in items.values():
+        for where in it.get("places") or []:
+            if where and where not in spoken:
+                told = say.of(where)
+                if told:
+                    spoken[where] = told
+
     print(f"words    {sum(1 for i in items.values() if i.get('names'))} of {len(items)} items and "
           f"{sum(1 for b in who.values() if b.get('names'))} of {len(who)} sources named in 11 languages")
+    print(f"         {len(spoken)} of the place strings on the cards are named too")
     if say.missed:
         rest = sorted(say.missed)
         print(f"         {len(rest)} the game has no name for, e.g. {', '.join(rest[:4])}")
@@ -459,6 +481,7 @@ def main():
         "tiers": t["TIER_LETTERS"],
         "sheet": {"w": sheet[0], "h": sheet[1]},
         "words": say.vocab(),
+        "places": spoken,
         "nodes": nodes,
         "links": links,
         "linkTile": list(tile),

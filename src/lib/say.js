@@ -9,10 +9,12 @@
  * Keyed by the English, so a component reads as English and a language the
  * dictionary has nothing for falls back to it rather than showing a key.
  *
- * The stat lines are deliberately absent. `all_resist_percent` and its three
- * hundred neighbours appear in no file the game ships — the English for them is
- * this project's own reading of the identifier — and translating that eleven
- * ways would be inventing on top of inventing, with nothing to check against.
+ * The stat lines are absent for a different reason: the game does name them,
+ * under keys of its own that no identifier in the snapshot matches, so they are
+ * joined on meaning at build time and arrive in the data — see words.Words.stats.
+ * 212 of the 322 are the game's own words, which is nine in ten of the lines
+ * anyone actually meets. The rest keep this project's reading of the identifier
+ * rather than a guess at eleven translations of it.
  */
 
 const SAY = {
@@ -133,12 +135,82 @@ const SAY = {
     fr: 'ne les lâche qu’en Inferno', sp: 'solo los suelta en Inferno',
     pl: 'oddaje je tylko na Inferno',
   },
+  'Inferno Difficulty': {
+    fi: 'Inferno-vaikeus', pt: 'dificuldade Inferno', ru: 'сложность Inferno',
+    zh: '炼狱难度', ja: 'インフェルノ難易度', ko: '인페르노 난이도',
+    de: 'Inferno-Schwierigkeit', fr: 'difficulté Inferno',
+    sp: 'dificultad Inferno', pl: 'poziom Inferno',
+  },
+  'Inferno Only': {
+    fi: 'vain Inferno', pt: 'só Inferno', ru: 'только Inferno', zh: '仅炼狱',
+    ja: 'インフェルノのみ', ko: '인페르노 전용', de: 'nur Inferno',
+    fr: 'Inferno seulement', sp: 'solo Inferno', pl: 'tylko Inferno',
+  },
+  'Inferno': {
+    fi: 'Inferno', pt: 'Inferno', ru: 'Inferno', zh: '炼狱', ja: 'インフェルノ',
+    ko: '인페르노', de: 'Inferno', fr: 'Inferno', sp: 'Inferno', pl: 'Inferno',
+  },
+
   'only on Inferno': {
     fi: 'vain Infernolla', pt: 'só no Inferno', ru: 'только на Inferno',
     zh: '仅炼狱', ja: 'インフェルノのみ', ko: '인페르노 전용',
     de: 'nur auf Inferno', fr: 'seulement en Inferno', sp: 'solo en Inferno',
     pl: 'tylko na Inferno',
   },
+  'anywhere': {
+    fi: 'kaikkialla', pt: 'em qualquer lugar', ru: 'где угодно', zh: '任意地点',
+    ja: 'どこでも', ko: '어디서나', de: 'überall', fr: 'partout',
+    sp: 'en cualquier lugar', pl: 'wszędzie',
+  },
+  'in its own zone': {
+    fi: 'omalla alueellaan', pt: 'na sua própria zona', ru: 'в своей зоне',
+    zh: '在其区域内', ja: '該当ゾーン内', ko: '해당 지역에서',
+    de: 'in seiner Zone', fr: 'dans sa zone', sp: 'en su zona',
+    pl: 'w swojej strefie',
+  },
+  'Inferno only': {
+    fi: 'vain Infernolla', pt: 'só no Inferno', ru: 'только Inferno',
+    zh: '仅炼狱', ja: 'インフェルノのみ', ko: '인페르노 전용',
+    de: 'nur Inferno', fr: 'Inferno seulement', sp: 'solo Inferno',
+    pl: 'tylko Inferno',
+  },
+  'on the map': {
+    fi: 'kartalla', pt: 'no mapa', ru: 'на карте', zh: '地图上',
+    ja: 'マップ上', ko: '지도에서', de: 'auf der Karte', fr: 'sur la carte',
+    sp: 'en el mapa', pl: 'na mapie',
+  },
+  'Zone': {
+    fi: 'Alue', pt: 'Zona', ru: 'зона', zh: '区域', ja: 'ゾーン', ko: '지역',
+    de: 'Zone', fr: 'zone', sp: 'zona', pl: 'strefa',
+  },
+  'Overworld': {
+    fi: 'ylämaailma', pt: 'mundo exterior', ru: 'внешний мир', zh: '主世界',
+    ja: 'オーバーワールド', ko: '오버월드', de: 'Oberwelt', fr: 'monde',
+    sp: 'mundo exterior', pl: 'świat zewnętrzny',
+  },
+  'Dungeon': {
+    fi: 'luola', pt: 'masmorra', ru: 'подземелье', zh: '地城', ja: 'ダンジョン',
+    ko: '던전', de: 'Verlies', fr: 'donjon', sp: 'mazmorra', pl: 'loch',
+  },
+  'Dungeons': {
+    fi: 'luolat', pt: 'masmorras', ru: 'подземелья', zh: '地城', ja: 'ダンジョン',
+    ko: '던전', de: 'Verliese', fr: 'donjons', sp: 'mazmorras', pl: 'lochy',
+  },
+  'Boss Dungeon': {
+    fi: 'pomoluola', pt: 'masmorra do chefe', ru: 'логово босса',
+    zh: '首领地城', ja: 'ボスダンジョン', ko: '보스 던전', de: 'Bossverlies',
+    fr: 'donjon du boss', sp: 'mazmorra del jefe', pl: 'loch bossa',
+  },
+  'Boss Dungeons': {
+    fi: 'pomoluolat', pt: 'masmorras dos chefes', ru: 'логова боссов',
+    zh: '首领地城', ja: 'ボスダンジョン', ko: '보스 던전', de: 'Bossverliese',
+    fr: 'donjons des boss', sp: 'mazmorras de jefes', pl: 'lochy bossów',
+  },
+  'Act': {
+    fi: 'Näytös', pt: 'Ato', ru: 'акт', zh: '章', ja: '章', ko: '막',
+    de: 'Akt', fr: 'Acte', sp: 'Acto', pl: 'Akt',
+  },
+
   'drops from': {
     fi: 'pudottaa', pt: 'largado por', ru: 'выпадает с', zh: '掉落自',
     ja: 'ドロップ元', ko: '드랍처', de: 'fällt von', fr: 'lâché par',
@@ -363,6 +435,51 @@ const SAY = {
  * does not cover falls to the dictionary above, and anything neither has stays
  * in English, which is a plain answer rather than a missing one.
  */
+/**
+ * A drop place in the reader's language.
+ *
+ * Most are names — a boss, a zone, a chest — and the data carries what the game
+ * calls them. Sixty of the hundred and twenty are not names at all but phrases
+ * the drop tables compose: "Act I Zone 1-2", "Act V & VIII Dungeons". Those are
+ * taken apart and put back together from words that are translated, which is
+ * the only honest way to read them in another language.
+ *
+ * The difficulty in brackets stays as it is: "(Inferno Difficulty)" is the
+ * tables' own note, not something the game gives a name to.
+ */
+export function places(lang, words, named) {
+  const t = talk(lang, words);
+  return (place) => {
+    if (!place) return place;
+    const hard = /\s*(\((?:Inferno[^)]*)\))\s*$/i.exec(place);
+    const bare = hard ? place.slice(0, hard.index).trim() : place;
+
+    // the whole string first, because the build names some of them bracket and
+    // all — "Uber Reaper (Inferno Difficulty)" is a key it knows — and only
+    // then the fight on its own
+    // the bracket is the tables' own note about difficulty, not a name the game
+    // gives, so it is translated here rather than looked up
+    const note = hard
+      ? ` (${t(hard[1].slice(1, -1).replace(/\b\w/g, (c) => c.toUpperCase()))})`
+      : '';
+
+    const whole = named?.(place);
+    if (whole) return whole.includes('(') ? whole : whole + note;
+    const said = named?.(bare);
+    if (said) return said + note;
+
+    // "Act <roman> <what><rest>", the shape the tables build
+    const m = /^Act ([IVX]+(?:\s*&\s*[IVX]+)*)\s+(Boss Dungeons?|Dungeons?|Overworld|Zone)\b(.*)$/i
+      .exec(bare);
+    if (m) {
+      const what = m[2].replace(/\b\w/g, (c) => c.toUpperCase());
+      const out = `${t('Act')} ${m[1]} ${t(what)}${m[3]}`.replace(/\s+/g, ' ').trim();
+      return out + (hard ? ` ${hard[1]}` : '');
+    }
+    return place;
+  };
+}
+
 export function talk(lang, words) {
   return (text) => {
     if (!text || lang === 'en') return text;
