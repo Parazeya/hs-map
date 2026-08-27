@@ -1,0 +1,447 @@
+"""Build the map site's data and art out of the game.
+
+Everything the page needs comes from two places and nothing is hand-typed:
+
+  the game        the map background, the node sprites, and the zone names in
+                  eleven languages (translationsZone.csv)
+  the tracker     which items drop where, at what rate, and how the game grades
+                  them — e:\\Workspace\\HeroSiege\\src\\items.js, itself built
+                  from the game by that project's own extractor
+
+The node positions come from tools/map/map_nodes.csv in the tracker, recovered
+from the compiled code; see that file's header.
+
+    python build/build.py
+"""
+
+import csv
+import json
+import re
+import sys
+from pathlib import Path
+
+import against_game
+import bosses
+import encyclopedia
+import icons
+import merge_game
+import portraits
+
+HERE = Path(__file__).resolve().parent.parent
+TRACKER = Path(r"e:\Workspace\HeroSiege")
+GAME = Path(r"F:\Games\Steam\steamapps\common\HeroSiege\bin")
+
+sys.path.insert(0, str(TRACKER / "tools"))
+from datawin import DataWin           # noqa: E402
+import yytex                          # noqa: E402
+from PIL import Image                 # noqa: E402
+
+IMG = HERE / "public" / "img"
+DATA = HERE / "public" / "data"
+IMG.mkdir(parents=True, exist_ok=True)
+DATA.mkdir(parents=True, exist_ok=True)
+
+
+# ── the art ──────────────────────────────────────────────────────────────────
+def art():
+    dw = DataWin()
+    # The map screen has its own texture page, and naming the file outright is
+    # the shortest way to it. Everything else — the boss portraits — goes the
+    # long way round, through TGIN and whichever page the sprite landed on.
+    page = yytex.decode_file(GAME / "gui_mapscreen_tex_0.yytex")
+
+    def cut(name, idx=0):
+        t = dw.tpag[dw.sprites[name]["frames"][idx]]
+        x, y, w, h = t["src"]
+        im = Image.new("RGBA", t["bound"])
+        im.paste(page.crop((x, y, x + w, y + h)), t["render"])
+        return im
+
+    bg = cut("Map_Screen_spr")
+    bg.save(IMG / "map.png")
+
+    def unlit(im):
+        """Give an additive sprite the alpha a browser needs.
+
+        The glow and the flourish are drawn by the game with additive blending,
+        so their art is opaque and their "nothing" is black — put on a page as
+        they are, each one is a black square with a coloured blob in it, and a
+        search that lights thirty markers paints thirty black squares over the
+        map. Reading the alpha out of the brightness gets the same picture
+        without asking the browser for a blend mode, which would put every
+        marker back on its own compositing layer — the thing that made the map
+        flicker in the first place.
+        """
+        px = im.convert("RGBA").load()
+        out = Image.new("RGBA", im.size)
+        o = out.load()
+        for y in range(im.height):
+            for x in range(im.width):
+                r, g, b, a = px[x, y]
+                o[x, y] = (r, g, b, min(a, max(r, g, b)))
+        return out
+
+    # frame 1 is the opened state, 0 the unopened, 2 the padlock, 4 the ring the
+    # game draws under the cursor
+    for out, (spr, frame) in {
+        "node": ("Mapscreen_Zone_spr", 1),
+        "node-dim": ("Mapscreen_Zone_spr", 0),
+        "node-ring": ("Mapscreen_Zone_spr", 4),
+        "town": ("Mapscreen_Zone_Town_spr", 1),
+        "dungeon": ("Mapscreen_Zone_Boss_Dungeon_spr", 1),
+        "satanic": ("Mapscreen_Zone_Satanic_spr", 1),
+        "glow": ("Mapscreen_Zone_Light_Glow_spr", 0),
+        "chosen": ("Mapscreen_Chosen_Big_spr", 0),
+        "skull": ("Mapscreen_Skull_spr", 0),
+    }.items():
+        im = cut(spr, frame)
+        if out in ADDITIVE:
+            im = unlit(im)
+        im.save(IMG / f"{out}.png")
+
+    tile = trail(cut)
+    strips(dw, cut, unlit)
+    return dw, bg.width, bg.height, tile
+
+
+def trail(cut):
+    """The dash the paths between zones are laid with, and its lit twin.
+
+    `Mapscreen_Line_spr` is a solid 16 by 8 block, not a dash — the gap is in the
+    code that places it. `Map_Zone_Line_obj`'s create event carries one number,
+    32, which is what the spacing has to be for a 16-wide block: half tile, half
+    nothing. So the tile is built at that width here and the page repeats it,
+    which is the same picture without asking the browser to place 900 sprites.
+
+    Nothing in the game draws these any more. The object that would is compiled
+    in and never created: its index appears nowhere in the executable, as a
+    constant or a name, and the sprite is referenced only from its own two event
+    handlers. See the README — the paths on this page are the game's art laid
+    along a route the game itself no longer draws.
+    """
+    size = None
+    for frame, out in ((0, "link"),):
+        mark = cut("Mapscreen_Line_spr", frame)
+        # Laid end to end, not spaced. The 32 in the line object's create event
+        # is not a gap: every column of this sprite is identical and the picture
+        # is in its rows — three of gradient over four of its own shadow, which
+        # is a trail seen from above, and a trail with holes in it is a dotted
+        # line, which is not what the art is.
+        #
+        # The cold frame, which is the one the game draws. There are two, the
+        # same trail in two hues, and the warm one was tried here first on a bad
+        # reading: (88, 48, 102) is only the sprite's third row, its highlight,
+        # and comparing that alone against ground of (95, 55, 90) said the cold
+        # trail would be invisible. The rows around it are (30, 17, 35) and
+        # (10, 6, 12). What the eye gets is a dark line with a lit edge along
+        # its top, which is exactly how it looks in the game.
+        tile = Image.new("RGBA", mark.size)
+        tile.alpha_composite(mark)
+        tile.save(IMG / f"{out}.png")
+        size = tile.size
+    return size
+
+
+#: sprites the game draws with additive blending, so their black is nothing
+ADDITIVE = {"glow", "chosen"}
+
+
+def strips(dw, cut, unlit):
+    """The animated pieces, laid out as one row so CSS can step through them.
+
+    The game plays these; a still map next to it looks switched off. Each
+    sprite's own playback speed is written into the name, so the page does not
+    have to be told what to guess: `<name>.<frames>x<fps>.png`.
+    """
+    for spr, out in (("Mapscreen_Zone_Effect_spr", "fx-zone"),
+                     ("Mapscreen_Zone_Satanic_Glow_spr", "fx-satanic")):
+        frames = dw.sprites[spr]["frames"]
+        fps = int(dw.sprites[spr]["speed"]) or 6
+        first = cut(spr, 0)
+        sheet = Image.new("RGBA", (first.width * len(frames), first.height))
+        for i in range(len(frames)):
+            sheet.paste(unlit(cut(spr, i)), (first.width * i, 0))
+        sheet.save(IMG / f"{out}.{len(frames)}x{fps}.png")
+
+
+# ── the names, in every language the game ships ──────────────────────────────
+def zone_names():
+    rows = {}
+    with open(GAME / "translationsZone.csv", encoding="utf-8") as fh:
+        head = fh.readline().rstrip("\n").split("|")
+        langs = head[1:]
+        for line in fh:
+            p = line.rstrip("\n").split("|")
+            if len(p) < 2:
+                continue
+            rows[p[0]] = {lang: val for lang, val in zip(langs, p[1:]) if val}
+    return langs, rows
+
+
+# ── what the tracker knows about items ───────────────────────────────────────
+def tracker_tables():
+    text = (TRACKER / "src" / "items.js").read_text(encoding="utf-8")
+
+    def grab(name):
+        head = f"export const {name} = "
+        s = text.index(head) + len(head)
+        while text[s].isspace():
+            s += 1
+        close = "}" if text[s] == "{" else "]"
+        j = text.index(close + ";", s)
+        body = text[s:j + 1]
+        try:
+            return json.loads(body)
+        except json.JSONDecodeError:
+            # the small hand-written tables are ordinary JS, single quotes and
+            # all; the big generated ones are already JSON
+            return json.loads(re.sub(r"'([^']*)'", r'"\1"', body))
+
+    return {n: grab(n) for n in
+            ("DROP_ZONES", "DROP_PLACES", "DROP_RATE", "DROP_CHASE",
+             "RARITY_BY_NAME", "TIER_BY_NAME", "TIER_LETTERS")}
+
+
+def route(nodes):
+    """The paths between markers, as pairs of rooms.
+
+    The game does not draw these. `Map_Zone_Line_obj` exists, has a create event,
+    a step and a draw, and is the only thing in the game that touches the line
+    sprite — and nothing anywhere creates it. So there is no route to recover,
+    only one to choose, and this is the one the map itself argues for: an act in
+    the order it is played, its town first, its five zones by number, its boss
+    dungeon last.
+
+    That the order is also the shape is what makes it more than a guess. Laid out
+    this way the longest step inside acts I to VIII is 152 px on a map 2902 wide,
+    and the middle one is 89 — the chain hugs the terrain it is drawn on, which a
+    wrong order would not.
+
+    Acts are left unjoined to each other. Those gaps run 111 to 732 px with
+    nothing under them, and act VIII has no town on the map at all to join to.
+    """
+    def act_of(n):
+        m = re.match(r"Town_(\d\d)", n["room"])
+        return n["act"] or (int(m.group(1)) if m else None)
+
+    def step(n):
+        if n["kind"] == "town":
+            return -1
+        if "Boss" in n["room"]:
+            return 99
+        return int(n["room"][7:9])
+
+    acts = {}
+    for n in nodes:
+        a = act_of(n)
+        if a:
+            acts.setdefault(a, []).append(n)
+
+    out = []
+    for a in sorted(acts):
+        chain = sorted(acts[a], key=step)
+        out += [[x["room"], y["room"]] for x, y in zip(chain, chain[1:])]
+    return out
+
+
+def codex(dw, raw_items, langs, tables):
+    """The encyclopedia's own data and its own sheet of icons.
+
+    A sheet apart from the map's, on purpose. The map draws 931 things and this
+    draws every one the game defines; sharing would make the map page carry two
+    thousand icons to show a tooltip. The bytes are duplicated and the map stays
+    quick, which is the better trade for two pages that are read separately.
+    """
+    every = {icons.tidy((it.get("metadata") or {}).get("name"))
+             for it in raw_items if (it.get("metadata") or {}).get("name")}
+    every.discard("")
+    place, missing, sheet, guessed, chosen = icons.build(
+        dw, raw_items, every, IMG / "codex.png")
+
+    items, vocab, kits = encyclopedia.build(
+        raw_items, GAME / "translationsItem.csv", langs, place, icons.tidy, tables)
+
+    out = {"langs": langs, "sheet": {"w": sheet[0], "h": sheet[1]},
+           "stats": vocab, "sets": kits, "items": items}
+    path = DATA / "codex.json"
+    path.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")),
+                    encoding="utf-8")
+    with_stats = sum(1 for r in items.values() if r.get("stats") or r.get("more"))
+    with_lore = sum(1 for r in items.values() if r.get("lore"))
+    print(f"codex    {len(items)} items, {with_stats} with stats, {with_lore} with lore, "
+          f"{len(vocab)} distinct stats, {len(kits)} sets")
+    print(f"         icons {len(place)} cut into a {sheet[0]}x{sheet[1]} sheet, "
+          f"{len(missing)} without one")
+    print(f"written  {path}  ({path.stat().st_size // 1024} KB)")
+
+
+# ── a room name to the code the drop tables use ──────────────────────────────
+def zone_code(room):
+    """`Act_01_04` is zone `1-4`; a boss dungeon of act 1 is `1-BD`.
+
+    The drop tables say which act and which zone, not which room, so the two
+    have to be joined on that. Towns and the cabin drop nothing and get None.
+    """
+    m = re.fullmatch(r"Act_(\d\d)_(\d\d)", room)
+    if m:
+        return f"{int(m.group(1))}-{int(m.group(2))}"
+    m = re.match(r"Act_(\d\d)_Boss(?:_Dungeon)?", room)
+    if m:
+        return f"{int(m.group(1))}-BD"
+    return None
+
+
+def main():
+    dw, w, h, tile = art()
+    langs, names = zone_names()
+    t = tracker_tables()
+
+    # item -> the zone codes it falls in
+    per_code = {}
+    for item, codes in t["DROP_ZONES"].items():
+        for c in codes:
+            per_code.setdefault(c, []).append(item)
+
+    nodes = []
+    for r in csv.DictReader(open(TRACKER / "tools" / "map" / "map_nodes.csv", encoding="utf-8")):
+        room = r["room"]
+        # The cabin is where the game teaches you to play. It is a marker on the
+        # map and nothing falls in it, so it is only a thing to click on and be
+        # told nothing.
+        if "Cabin" in room:
+            continue
+        code = zone_code(room)
+        kind = ("town" if room.startswith("Town")
+                else "dungeon" if "Boss" in room
+                else "zone")
+        drops = sorted(per_code.get(code, []), key=lambda n: (
+            -(t["TIER_BY_NAME"].get(n) or 0), t["DROP_RATE"].get(n, 1 << 40)))
+        nodes.append({
+            "room": room,
+            "x": int(float(r["x"])),
+            "y": int(float(r["y"])),
+            "kind": kind,
+            "code": code,
+            "act": int(room[4:6]) if room.startswith("Act_") else None,
+            "name": names.get(room, {}),
+            "drops": drops,
+        })
+
+    links = route(nodes)
+
+    # Every item the tables say anything about, not only the ones a marker
+    # carries: the panel is for looking things up, and "drops from a Crystal
+    # Chest, nowhere on the map" is an answer worth being able to give.
+    known = set(t["DROP_RATE"]) | set(t["DROP_PLACES"]) | set(t["DROP_ZONES"])
+    items = {}
+    for name in sorted(known):
+        rarity = t["RARITY_BY_NAME"].get(name)
+        # an item off a scale the tables do not read claims nothing
+        if not rarity:
+            continue
+        items[name] = {
+            "rarity": rarity,
+            "tier": t["TIER_BY_NAME"].get(name),
+            "rate": t["DROP_RATE"].get(name),
+            "chase": t["DROP_CHASE"].get(name),
+            "places": t["DROP_PLACES"].get(name, []),
+            "zones": t["DROP_ZONES"].get(name, []),
+        }
+
+    # the icons, cut from the game and packed into one sheet
+    raw_items = json.load(open(TRACKER / "tools" / "data" / "helper" / "items.json", encoding="utf-8"))
+    place, missing, sheet, guessed, from_sprite = icons.build(
+        dw, raw_items, set(items), IMG / "items.png")
+    for name, box in place.items():
+        items[name]["icon"] = box
+    # written out for the same reason the bosses' choices are: a name-matched
+    # icon is an argument, and an argument should be readable
+    (HERE / "build" / "icons-chosen.json").write_text(
+        json.dumps(dict(sorted(from_sprite.items())), ensure_ascii=False, indent=1),
+        encoding="utf-8")
+
+    # what the game itself says, folded in before anything is grouped
+    merge_game.fold(items, HERE / "build" / "game_drops.json")
+
+    # Before the bosses are gathered: a boss's own list says whether each thing
+    # it drops is Inferno-only, and for a name the game gave us by mechanism
+    # rather than by place that answer is the item's.
+    inferno = bosses.mark_inferno(items)
+    split_minded = bosses.disagrees_about_inferno(items)
+
+    who = bosses.collect(items)
+    listed = bosses.game_list(GAME / "translationsEnemy.csv")
+    for name, row in who.items():
+        row["kind"] = bosses.classify(name, listed, row["kind"])
+
+    # An act boss stands at the end of its act, in a dungeon the map already
+    # draws a marker for. It goes on that marker rather than on a shelf: the
+    # shelf is for the fights the map has nowhere to put. See bosses.ACT_OF for
+    # how each one's act was established.
+    by_act = {}
+    for n in nodes:
+        if n["kind"] == "dungeon":
+            assert n["act"] not in by_act, f'two dungeons in act {n["act"]}'
+            by_act[n["act"]] = n
+    for name, row in who.items():
+        if row["kind"] == "act":
+            by_act[bosses.ACT_OF[name.lower()]]["boss"] = name
+
+    # There is no portrait set in the game, so these are asked of the objects,
+    # picked by name where that fails, and written out as a labelled sheet as
+    # well — to be looked at, not trusted. Everything gets one: the act bosses
+    # need a face on the map for the same reason the others need one on a shelf.
+    faces, faceless, face_sheet, chosen = portraits.build(
+        dw, list(who), IMG / "bosses.png", contact_png=HERE / "build" / "bosses-contact.png")
+    for boss, box in faces.items():
+        who[boss]["icon"] = box
+    # written out so the choice can be argued with rather than taken on trust
+    (HERE / "build" / "chosen.json").write_text(
+        json.dumps(chosen, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    # the private notes the build passed between its own steps do not go out
+    for it in items.values():
+        it.pop("_machinery", None)
+
+    codex(dw, raw_items, langs, t)
+
+    out = {
+        "map": {"w": w, "h": h},
+        "bosses": who,
+        "bossSheet": {"w": face_sheet[0], "h": face_sheet[1]},
+        "langs": langs,
+        "tiers": t["TIER_LETTERS"],
+        "sheet": {"w": sheet[0], "h": sheet[1]},
+        "nodes": nodes,
+        "links": links,
+        "linkTile": list(tile),
+        "items": items,
+    }
+    (DATA / "map.json").write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+
+    placed = sum(1 for n in nodes if n["drops"])
+    print(f"map      {w}x{h}")
+    print(f"nodes    {len(nodes)}  ({placed} of them drop something)")
+    print(f"items    {len(items)} with a rarity, {sum(1 for i in items.values() if i['zones'])} of them tied to a zone")
+    print(f"names    {len(langs)} languages: {', '.join(langs)}")
+    kinds = {k: sum(1 for b in who.values() if b["kind"] == k)
+             for k in ("uber", "act", "source", "other")}
+    print(f"         {kinds['uber']} summoned, {kinds['act']} act bosses (already on the map), "
+          f"{kinds['source']} chests and the like, {kinds['other']} other")
+    print(f"bosses   {len(who)} that drop something; "
+          f"{sum(1 for b in who.values() if b['inferno_only'])} only on Inferno")
+    print(f"faces    {len(faces)} bosses drawn, {len(faceless)} without: {chr(44).join(faceless) or chr(45)}")
+    against_game.report(HERE / "build" / "game_drops.json", who, items)
+    print(f"inferno  {inferno} items fall nowhere but on Inferno")
+    for name, places in split_minded:
+        print(f"         {name} is stated both ways: {places}")
+    print(f"icons    {len(place)} cut into a {sheet[0]}x{sheet[1]} sheet, {len(missing)} without one")
+    if guessed:
+        print(f"         {len(guessed)} matched by nearest name, e.g. {guessed[0]}")
+    if missing:
+        print(f"         no sprite for: {', '.join(missing[:6])}{' …' if len(missing) > 6 else ''}")
+    print(f"written  {DATA / 'map.json'}  ({(DATA / 'map.json').stat().st_size // 1024} KB)")
+
+
+if __name__ == "__main__":
+    main()
