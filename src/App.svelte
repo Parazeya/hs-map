@@ -120,7 +120,7 @@
     {/each}
   </select>
   <button type="button" onclick={() => { active = null; map.fit(); }}>Fit</button>
-  <a href={asset('codex.html')} title="every item in the game">Items ▶</a>
+  <a class="go" href={asset('codex.html')} title="every item in the game">Items ▶</a>
 {/snippet}
 
 {#if failed}
@@ -182,7 +182,11 @@
     overflow: hidden;
   }
 
-  select, button, .controls a {
+  /* The link is given a class of its own rather than being reached through its
+     parent: `.controls` belongs to BossBar, which renders this snippet, and a
+     selector written here cannot see a class scoped to there — so `.controls a`
+     matched nothing and the link sat among the buttons underlined and blue. */
+  select, button, .go {
     color: var(--ink);
     background: rgba(18, 12, 21, .9);
     border: 1px solid var(--edge);
@@ -193,8 +197,14 @@
     cursor: pointer;
   }
   select:focus, button:focus-visible { outline: none; border-color: var(--hot); }
-  button:hover, .controls a:hover { border-color: var(--hot); color: var(--hot); }
-  .controls a { text-decoration: none; }
+  button:hover, .go:hover { border-color: var(--hot); color: var(--hot); }
+  /* inline-flex so it stands exactly as tall as the button beside it: an inline
+     link is sized by its line box and came out three pixels shorter */
+  .go {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+  }
   select option { background: #180d13; }
 
 
