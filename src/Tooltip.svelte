@@ -1,8 +1,11 @@
 <script>
-  import { asset, odds, titleCase } from './lib/map.js';
+  import { asset, called, odds, titleCase } from './lib/map.js';
+  import { talk } from './lib/say.js';
   import ItemIcon from './ItemIcon.svelte';
 
-  let { data, title, subtitle, rows, at, foot = null, boss = null } = $props();
+  let { data, title, subtitle, rows, at, foot = null, boss = null, lang = 'en' } = $props();
+
+  const t = $derived(talk(lang, data.words));
 
   // The boss's own drops are not the zone's. An act boss stands at the end of
   // its act, in this dungeon, and what it gives up it gives up for killing it —
@@ -87,15 +90,15 @@
         </span>
       {/if}
       <div class="who">
-        <h3>{boss}</h3>
+        <h3>{called(data.bosses[boss], boss, lang)}</h3>
         <ul class="his">
           {#each b.drops as d (d.item)}
             {@const it = data.items[d.item] ?? {}}
             <li>
               <ItemIcon item={it} sheet={data.sheet} box={20} />
               <span class="tier">{data.tiers[(it.tier ?? 1) - 1] ?? '?'}</span>
-              <span class="name r-{String(it.rarity ?? 'common').toLowerCase()}">{titleCase(d.item)}</span>
-              {#if d.inferno}<span class="inferno" title="only on Inferno">INF</span>{/if}
+              <span class="name r-{String(it.rarity ?? 'common').toLowerCase()}">{called(it, d.item, lang)}</span>
+              {#if d.inferno}<span class="inferno" title={t('only on Inferno')}>INF</span>{/if}
             </li>
           {/each}
         </ul>
@@ -104,7 +107,7 @@
   {/if}
 
   {#if rows.length === 0}
-    <p class="empty">{boss ? 'Nothing else drops here.' : 'Nothing is tied to this.'}</p>
+    <p class="empty">{t(boss ? 'Nothing else drops here.' : 'Nothing is tied to this.')}</p>
   {:else}
     <ul>
       {#each shown as row (row.name)}
@@ -112,13 +115,13 @@
         <li>
           <ItemIcon item={it} sheet={data.sheet} box={20} />
           <span class="tier">{data.tiers[(it.tier ?? 1) - 1] ?? '?'}</span>
-          <span class="name r-{String(it.rarity ?? 'common').toLowerCase()}">{titleCase(row.name)}</span>
-          {#if row.inferno}<span class="inferno" title="only on Inferno">INF</span>{/if}
+          <span class="name r-{String(it.rarity ?? 'common').toLowerCase()}">{called(it, row.name, lang)}</span>
+          {#if row.inferno}<span class="inferno" title={t('only on Inferno')}>INF</span>{/if}
           <span class="odds">{odds(row.odds)}</span>
         </li>
       {/each}
     </ul>
-    {#if hidden > 0}<p class="foot">…and {hidden} more</p>{/if}
+    {#if hidden > 0}<p class="foot">…{t('and')} {hidden} {t('more')}</p>{/if}
     {#if foot}<p class="foot">{foot}</p>{/if}
   {/if}
 </div>

@@ -1,5 +1,5 @@
 <script>
-  import { asset } from './lib/map.js';
+  import { asset, called } from './lib/map.js';
 
   // Two shelves, because there are two different things here.
   //
@@ -14,7 +14,7 @@
   // `lit` is the set that drops the item being read in the menu, if one is.
   // Everything else dims, the same way the map's markers do, so a glance says
   // where the thing comes from without reading a single name.
-  let { data, hovered = $bindable(null), lit = null, controls } = $props();
+  let { data, lang = 'en', hovered = $bindable(null), lit = null, controls } = $props();
 
   const BOX = 64;
 
@@ -49,8 +49,8 @@
         class:hit={lit?.has(name)}
         class:faded={lit && !lit.has(name)}
         class:inferno={it.inferno_only}
-        title={name}
-        aria-label={name}
+        title={called(it, name, lang)}
+        aria-label={called(it, name, lang)}
         onpointerenter={() => (hovered = name)}
       >
         {#if box}
@@ -65,7 +65,7 @@
             "
           ></span>
         {:else}
-          <span class="named">{name}</span>
+          <span class="named">{called(it, name, lang)}</span>
         {/if}
       </button>
     {/each}

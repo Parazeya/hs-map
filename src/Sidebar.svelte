@@ -1,5 +1,6 @@
 <script>
-  import { KIND, asset, nameOf, odds, titleCase } from './lib/map.js';
+  import { KIND, asset, called, nameOf, odds, titleCase } from './lib/map.js';
+  import { talk } from './lib/say.js';
   import ItemIcon from './ItemIcon.svelte';
 
   let {
@@ -28,7 +29,11 @@
     const q = query.trim().toLowerCase();
     let rows = all;
     if (rarity) rows = rows.filter(([, it]) => it.rarity === rarity);
-    if (q) rows = rows.filter(([name]) => name.includes(q));
+    // by any of its names, not only the English key: a reader who has set the
+    // page to Russian types Russian, and the eleven names ride on the item
+    if (q) rows = rows.filter(([name, it]) =>
+      name.includes(q) ||
+      Object.values(it.names ?? {}).some((n) => n.toLowerCase().includes(q)));
     return rows
       .sort((a, b) =>
         (RANK[a[1].rarity] ?? 9) - (RANK[b[1].rarity] ?? 9) ||
@@ -37,6 +42,7 @@
       .slice(0, 400);
   });
 
+  const t = $derived(talk(lang, data.words));
   const cls = (r) => 'r-' + String(r ?? 'common').toLowerCase();
   const tier = (item) => data.tiers[(item?.tier ?? 1) - 1] ?? '?';
 
@@ -60,10 +66,10 @@
     <section class="zone">
       <header>
         <h2>{nameOf(active, lang)}</h2>
-        <button class="x" title="Let it go" onclick={() => (active = null)}>×</button>
+        <button class="x" title={t('Let it go')} onclick={() => (active = null)}>×</button>
       </header>
       <p class="sub">
-        {[KIND[active.kind], active.act ? `act ${active.act}` : null, active.code]
+        {[t(KIND[active.kind]), active.act ? `${t('act')} ${active.act}` : null, active.code]
           .filter(Boolean).join(' · ')}
       </p>
 
@@ -87,14 +93,14 @@
             </span>
           {/if}
           <div class="who">
-            <h3>{active.boss}</h3>
+            <h3>{called(data.bosses[active.boss], active.boss, lang)}</h3>
             <ul class="rows">
               {#each boss.drops as d (d.item)}
                 {@const item = data.items[d.item] ?? {}}
                 <li class:lit={peek?.name === d.item} onpointerenter={show(d.item)}>
                   <ItemIcon {item} sheet={data.sheet} />
-                  <span class="name {cls(item.rarity)}">{titleCase(d.item)}</span>
-                  {#if d.inferno}<span class="inferno" title="only on Inferno">INF</span>{/if}
+                  <span class="name {cls(item.rarity)}">{called(item, d.item, lang)}</span>
+                  {#if d.inferno}<span class="inferno" title={t('only on Inferno')}>INF</span>{/if}
                 </li>
               {/each}
             </ul>
@@ -104,9 +110,9 @@
 
       {#if active.drops.length === 0}
         <p class="note">
-          {boss
+          {t(boss
             ? 'Nothing else drops here.'
-            : active.kind === 'town' ? 'Nothing drops in a town.' : 'The tables tie nothing to this zone.'}
+            : active.kind === 'town' ? 'Nothing drops in a town.' : 'The tables tie nothing to this zone.')}
         </p>
       {:else}
         <ul class="rows">
@@ -114,13 +120,13 @@
             {@const item = data.items[name] ?? {}}
             <li class:lit={peek?.name === name} onpointerenter={show(name)}>
               <ItemIcon {item} sheet={data.sheet} />
-              <span class="name {cls(item.rarity)}">{titleCase(name)}</span>
-              {#if item.inferno}<span class="inferno" title="only on Inferno">INF</span>{/if}
+              <span class="name {cls(item.rarity)}">{called(item, name, lang)}</span>
+              {#if item.inferno}<span class="inferno" title={t('only on Inferno')}>INF</span>{/if}
               <span class="odds">{odds(item.chase ?? item.rate)}</span>
             </li>
           {/each}
         </ul>
-        <p class="foot">the odds are for standing in this zone</p>
+        <p class="foot">{t('the odds are for standing in this zone')}</p>
       {/if}
     </section>
   {/if}
@@ -129,28 +135,28 @@
     <input
       type="search"
       bind:value={query}
-      placeholder="Find an item…"
+      placeholder={t('Find an item…')}
       autocomplete="off"
       spellcheck="false"
     >
     <div class="rarities">
-      <button class:on={!rarity} onclick={() => (rarity = null)}>all</button>
+      <button class:on={!rarity} onclick={() => (rarity = null)}>{t('all')}</button>
       {#each grades as r (r)}
         <button class={cls(r)} class:on={rarity === r} onclick={() => (rarity = rarity === r ? null : r)}>
-          {r}
+          {t(r)}
         </button>
       {/each}
     </div>
   </div>
 
-  <p class="count">{found.length}{found.length === 400 ? '+' : ''} items</p>
+  <p class="count">{found.length}{found.length === 400 ? '+' : ''} {t('items')}</p>
   <ul class="rows list">
     {#each found as [name, item] (name)}
       <li class:lit={peek?.name === name} onpointerenter={show(name)}>
         <ItemIcon {item} sheet={data.sheet} />
         <span class="tier">{tier(item)}</span>
-        <span class="name {cls(item.rarity)}">{titleCase(name)}</span>
-        {#if item.inferno}<span class="inferno" title="only on Inferno">INF</span>{/if}
+        <span class="name {cls(item.rarity)}">{called(item, name, lang)}</span>
+        {#if item.inferno}<span class="inferno" title={t('only on Inferno')}>INF</span>{/if}
         <span class="odds">{odds(item.rate)}</span>
       </li>
     {/each}

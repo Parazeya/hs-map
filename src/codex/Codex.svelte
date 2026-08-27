@@ -1,5 +1,6 @@
 <script>
   import { asset, odds, titleCase } from '../lib/map.js';
+  import { talk } from '../lib/say.js';
   import ItemIcon from '../ItemIcon.svelte';
   import Detail from './Detail.svelte';
 
@@ -125,6 +126,8 @@
   });
 
   const nameOf = (it) => it.names?.[lang] || it.name;
+  // the game's own vocabulary first, then this site's; see lib/say.js
+  const t = $derived(data ? talk(lang, { ...data.words, ...data.types }) : (s) => s);
   const cls = (r) => 'r-' + String(r ?? 'common').toLowerCase().replace(/\s+/g, '-');
 
   function clear() {
@@ -147,54 +150,54 @@
 <svelte:window {onkeydown} />
 
 {#if failed}
-  <p class="failed">The item table would not load: {failed.message}</p>
+  <p class="failed">{t('The item table would not load')}: {failed.message}</p>
 {:else if !data}
-  <p class="failed">Reading the item table…</p>
+  <p class="failed">{t('Reading the item table…')}</p>
 {:else}
   <header>
-    <a class="back" href={asset('index.html')} title="the world map">◀ map</a>
+    <a class="back" href={asset('index.html')} title={t('the world map')}>◀ {t('Back')}</a>
     <input
       type="search"
-      placeholder="Find an item, or what it does…"
+      placeholder={t('Find an item, or what it does…')}
       autocomplete="off"
       spellcheck="false"
       bind:value={query}
     />
     <span class="count">
       {found.length}
-      {found.length === 1 ? 'item' : 'items'}{found.length > CAP ? `, showing ${CAP}` : ''}
+      {t(found.length === 1 ? 'item' : 'items')}{found.length > CAP ? `, ${t('showing')} ${CAP}` : ''}
     </span>
     {#if filtered}
-      <button class="clear" onclick={clear}>clear</button>
+      <button class="clear" onclick={clear}>{t('clear')}</button>
     {/if}
-    <select bind:value={lang} title="Item names">
+    <select bind:value={lang} title={t('Item names')}>
       {#each data.langs as l (l)}<option value={l}>{l.toUpperCase()}</option>{/each}
     </select>
   </header>
 
   <main>
     <aside class="filters">
-      <p class="head">Rarity</p>
+      <p class="head">{t('Rarity')}</p>
       <div class="chips">
         {#each grades as r (r)}
           <button class={cls(r)} class:on={rarity === r} onclick={() => (rarity = rarity === r ? null : r)}>
-            {r}
+            {t(r)}
           </button>
         {/each}
       </div>
 
-      <p class="head">Type</p>
+      <p class="head">{t('Type')}</p>
       <div class="chips">
         {#each kinds as k (k)}
-          <button class:on={kind === k} onclick={() => (kind = kind === k ? null : k)}>{k}</button>
+          <button class:on={kind === k} onclick={() => (kind = kind === k ? null : k)}>{t(k)}</button>
         {/each}
       </div>
 
-      <p class="head">Stats</p>
+      <p class="head">{t('Stats')}</p>
       <input
         class="statfind"
         type="search"
-        placeholder="a stat…"
+        placeholder={t('a stat…')}
         autocomplete="off"
         bind:value={statQuery}
       />
@@ -205,7 +208,7 @@
             <span class="n">{v.n}</span>
           </button>
         {/each}
-        {#if statList.length === 0}<p class="none">No stat by that name.</p>{/if}
+        {#if statList.length === 0}<p class="none">{t('No stat by that name.')}</p>{/if}
       </div>
     </aside>
 
@@ -226,14 +229,14 @@
         </li>
       {/each}
       {#if found.length === 0}
-        <li class="none">Nothing by that name, and nothing that does that.</li>
+        <li class="none">{t('Nothing by that name, and nothing that does that.')}</li>
       {/if}
       {#if found.length > CAP}
-        <li class="none">…and {found.length - CAP} more. Narrow it down.</li>
+        <li class="none">…{t('and')} {found.length - CAP} {t('more')}. {t('Narrow it down.')}</li>
       {/if}
     </ul>
 
-    <Detail {data} {item} {lang} sheet={SHEET} pick={(k) => (chosen = k)} />
+    <Detail {data} {item} {lang} {t} sheet={SHEET} pick={(k) => (chosen = k)} />
   </main>
 {/if}
 

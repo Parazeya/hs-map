@@ -35,6 +35,17 @@ export const KIND = { zone: 'zone', dungeon: 'boss dungeon', town: 'town', cabin
 export const nameOf = (node, lang) => node.name[lang] || node.name.en || node.room;
 
 /**
+ * An item or a source as the game names it, in the reader's language.
+ *
+ * The drop tables key everything by a lower-case English name, which is what
+ * the page has in hand; the eleven names ride on the record beside it. Falling
+ * back to the key title-cased is what this did for every language before the
+ * game's own names were carried, and it is still the answer for the six sources
+ * the game has no name for.
+ */
+export const called = (rec, key, lang) => rec?.names?.[lang] || titleCase(key);
+
+/**
  * The tables hold names folded to lower case; the game shows them capitalised.
  *
  * Not after an apostrophe: nearly every name in this game is possessive, and

@@ -2,7 +2,7 @@
   import { odds, titleCase } from '../lib/map.js';
   import ItemIcon from '../ItemIcon.svelte';
 
-  let { data, item, lang, sheet, pick = null } = $props();
+  let { data, item, lang, sheet, t = (s) => s, pick = null } = $props();
 
   /** A runeword's recipe, each socket resolved to the thing that goes in it. */
   const recipe = $derived(
@@ -36,33 +36,34 @@
 
 <section class="panel">
   {#if !item}
-    <p class="idle">Pick something on the left.</p>
+    <p class="idle">{t('Pick something on the left.')}</p>
   {:else}
     <header>
       <ItemIcon {item} sheet={data.sheet} from={sheet} box={64} />
       <div class="who">
         <h1 class={cls(item.rarity)}>{name}</h1>
         <p class="sub">
-          {[item.rarity, item.type, item.tier && `tier ${item.tier}`]
-            .filter(Boolean).join(' · ')}
+          {[t(item.rarity), t(item.type), item.tier].filter(Boolean).join(' · ')}
         </p>
       </div>
     </header>
 
     <dl class="facts">
-      {#if item.base}<dt>Made in</dt><dd>{item.base}</dd>{/if}
-      {#if item.weapons?.length}<dt>Weapons</dt><dd>{item.weapons.join(', ')}</dd>{/if}
-      {#if item.lvl}<dt>Level</dt><dd>{item.lvl}</dd>{/if}
-      {#if item.size}<dt>Space</dt><dd>{item.size[0]}×{item.size[1]}</dd>{/if}
-      {#if item.rate}<dt>Drop rate</dt><dd>{odds(item.rate)}</dd>{/if}
+      {#if item.base}<dt>{t('Made in')}</dt><dd>{t(item.base)}</dd>{/if}
+      {#if item.weapons?.length}
+        <dt>{t('Weapons')}</dt><dd>{item.weapons.map(t).join(', ')}</dd>
+      {/if}
+      {#if item.lvl}<dt>{t('Level')}</dt><dd>{item.lvl}</dd>{/if}
+      {#if item.size}<dt>{t('Space')}</dt><dd>{item.size[0]}×{item.size[1]}</dd>{/if}
+      {#if item.rate}<dt>{t('Drop rate')}</dt><dd>{odds(item.rate)}</dd>{/if}
       {#if item.chase && item.chase !== item.rate}
-        <dt title="the odds while standing in a zone it drops in">In its zone</dt>
+        <dt title={t('the odds while standing in a zone it drops in')}>{t('In its zone')}</dt>
         <dd>{odds(item.chase)}</dd>
       {/if}
     </dl>
 
     {#if recipe.length}
-      <h2>Runes, in this order</h2>
+      <h2>{t('Runes, in this order')}</h2>
       <ol class="recipe">
         {#each recipe as s, i (i)}
           <li>
@@ -81,7 +82,7 @@
     {/if}
 
     {#if item.stats?.length}
-      <h2>{item.more?.length ? 'Stats, as it comes' : 'Stats'}</h2>
+      <h2>{t(item.more?.length ? 'Stats, as it comes' : 'Stats')}</h2>
       <ul class="stats">
         {#each item.stats as s, i (s.sid + i)}
           <li>
@@ -99,7 +100,8 @@
     {/if}
 
     {#each item.more ?? [] as v (v.when)}
-      <h2>Stats, {v.when}</h2>
+      <h2>{t('Stats')}, {v.when.startsWith('with a ')
+        ? `${t('with a')} ${v.when.slice(7)}` : t(v.when)}</h2>
       <ul class="stats">
         {#each v.stats as s, i (s.sid + i)}
           <li>
@@ -123,7 +125,7 @@
             <button class:self={p.key === item.key} onclick={() => pick?.(p.key)}>
               <ItemIcon item={p.of} sheet={data.sheet} from={sheet} box={26} />
               <span class="n {cls(p.of.rarity)}">{p.of.names?.[lang] || p.of.name}</span>
-              <span class="k">{p.of.type ?? ''}</span>
+              <span class="k">{t(p.of.type ?? '')}</span>
             </button>
           </li>
         {/each}
@@ -131,14 +133,14 @@
     {/if}
 
     {#if item.places?.length}
-      <h2>Drop location</h2>
+      <h2>{t('Drop location')}</h2>
       <ul class="places">
         {#each item.places as p (p)}<li>{titleCase(p)}</li>{/each}
       </ul>
     {/if}
 
     {#if lore}
-      <h2>Lore</h2>
+      <h2>{t('Lore')}</h2>
       <p class="lore">{lore}</p>
     {/if}
 
