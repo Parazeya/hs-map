@@ -5,7 +5,20 @@
 // languages it ships, and the drop tables the tracker reads from the same
 // executable. Nothing here is typed by hand.
 
-export const asset = (path) => import.meta.env.BASE_URL + path;
+/**
+ * A file this page needs, stamped so a stale one is never used.
+ *
+ * The data and the art sit in `public/`, which means their names never change
+ * from one build to the next — and the boxes in `map.json` are coordinates into
+ * a particular sheet. Publish a new sheet and a browser holding the old one
+ * cuts every icon in the wrong place: entries slide, half of one shows, the
+ * shelf looks scrambled. That happened.
+ *
+ * The stamp is a hash of everything in `public/data` and `public/img`, so it
+ * changes when they do and not otherwise — a deploy that touches only the code
+ * leaves the megabyte of art in the reader's cache where it is.
+ */
+export const asset = (path) => `${import.meta.env.BASE_URL}${path}?v=${__STAMP__}`;
 
 export async function load() {
   const res = await fetch(asset('data/map.json'));
