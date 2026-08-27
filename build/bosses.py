@@ -160,16 +160,23 @@ SAME = {
     # game lists five for `e_uberDamien_1`, and four plus one is five.
     "uber damien": ("Uber Damien (Son of Lucifer)", "uber"),
     "son of lucifer": ("Uber Damien (Son of Lucifer)", "uber"),
-    # The ordinary chests share one loot table, so four entries listing the same
-    # things is four times the reading for no more knowledge. Shown as the
-    # crystal one, which is the one worth opening. The colossal chest is its own
-    # thing and stays apart.
+    # Three of the ordinary chests share one loot table — the common, the
+    # crystal and the golden list the same seven things, all seven in each — so
+    # reading them apart is three times the work for no more knowledge. Shown as
+    # the crystal one.
+    #
+    # The ruby chest is NOT one of them, and was merged in here on the strength
+    # of the word "chest" alone. It has two items and shares neither with the
+    # other three: Fulgurite says "Ruby Chests" on its own card in the game and
+    # was being shown under a chest it does not come out of. The colossal chest
+    # was always its own thing.
     "common chest": ("Crystal Chest", "source"),
     "crystal chest": ("Crystal Chest", "source"),
     "golden chest": ("Crystal Chest", "source"),
-    "rare chest": ("Crystal Chest", "source"),
-    "ruby chest": ("Crystal Chest", "source"),
-    "ruby chests": ("Crystal Chest", "source"),
+    # one fight, two spellings: the game's tables write it singular and the
+    # snapshot plural
+    "ruby chest": ("Ruby Chest", "source"),
+    "ruby chests": ("Ruby Chest", "source"),
     # The King is how Sheeponia is reached, not a second way into it. The game
     # states one place for all three of his items — "Sheeponia", with "(Inferno
     # Only)" on two of them — and that is what a player is shown. "The Sheep

@@ -44,8 +44,7 @@ SAME_THING = {
 #: among Sheeponia's nine, so folding the key here checks that they are still
 #: shown rather than excusing them from the check.
 MERGED = {"thesheepking": "sheeponia",
-          "commonchest": "crystalchest", "goldenchest": "crystalchest",
-          "rubychest": "crystalchest", "rarechest": "crystalchest"}
+          "commonchest": "crystalchest", "goldenchest": "crystalchest"}
 
 #: Left out on purpose. `Dev Command` is a developer's drop, and there is no
 #: Circle of Hatred in the game — the room of that name is a place, not a fight.

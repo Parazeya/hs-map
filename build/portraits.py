@@ -133,6 +133,7 @@ ALIAS = {
     "mimic": ["mimic"],
     "chaos pillar": ["chaospillar"],
     "crystal chest": ["crystalchest"],
+    "ruby chest": ["rubychest"],
     "colossal chest": ["colossalchest"],
     "chaos tower": ["chaostower"],
     "rogue chaos tower": ["chaostower"],
