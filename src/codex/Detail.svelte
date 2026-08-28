@@ -68,7 +68,7 @@
       {#if item.size}<dt>{t('Space')}</dt><dd>{item.size[0]}×{item.size[1]}</dd>{/if}
       {#if item.rate}<dt>{t('Drop rate')}</dt><dd>{odds(item.rate)}</dd>{/if}
       {#if item.chase && item.chase !== item.rate}
-        <dt title={t('the odds while standing in a zone it drops in')}>{t('In its zone')}</dt>
+        <dt>{t('In its zone')}</dt>
         <dd>{odds(item.chase)}</dd>
       {/if}
     </dl>
@@ -81,7 +81,7 @@
             <button
               class="rune"
               disabled={!s.key}
-              title={s.of ? (s.of.names?.[lang] || s.of.name) : s.name}
+              aria-label={s.of ? (s.of.names?.[lang] || s.of.name) : s.name}
               onclick={() => s.key && pick?.(s.key)}
             >
               <ItemIcon item={s.of} sheet={data.sheet} from={sheet} box={34} />

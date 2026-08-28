@@ -226,7 +226,6 @@
         class:hit
         class:faded={searching && !hit}
         style="left: {node.x}px; top: {node.y}px"
-        title={nameOf(node, lang)}
         aria-label={nameOf(node, lang)}
         aria-pressed={on}
         onpointerenter={() => (hovered = node)}

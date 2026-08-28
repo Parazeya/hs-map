@@ -158,7 +158,7 @@
   <p class="failed">{t('Reading the item table…')}</p>
 {:else}
   <header>
-    <a class="back" href={asset('index.html')} title={t('the world map')}>◀ {t('Back')}</a>
+    <a class="back" href={asset('index.html')}>◀ {t('Back')}</a>
     <input
       type="search"
       placeholder={t('Find an item, or what it does…')}
@@ -173,7 +173,7 @@
     {#if filtered}
       <button class="clear" onclick={clear}>{t('clear')}</button>
     {/if}
-    <select bind:value={lang} title={t('Item names')}>
+    <select bind:value={lang} aria-label={t('Item names')}>
       {#each data.langs as l (l)}<option value={l}>{l.toUpperCase()}</option>{/each}
     </select>
   </header>

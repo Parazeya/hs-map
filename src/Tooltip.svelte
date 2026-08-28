@@ -98,7 +98,7 @@
               <ItemIcon item={it} sheet={data.sheet} box={20} />
               <span class="tier">{data.tiers[(it.tier ?? 1) - 1] ?? '?'}</span>
               <span class="name r-{String(it.rarity ?? 'common').toLowerCase()}">{called(it, d.item, lang)}</span>
-              {#if d.inferno}<span class="inferno" title={t('only on Inferno')}>INF</span>{/if}
+              {#if d.inferno}<span class="inferno">INF</span>{/if}
             </li>
           {/each}
         </ul>
@@ -116,7 +116,7 @@
           <ItemIcon item={it} sheet={data.sheet} box={20} />
           <span class="tier">{data.tiers[(it.tier ?? 1) - 1] ?? '?'}</span>
           <span class="name r-{String(it.rarity ?? 'common').toLowerCase()}">{called(it, row.name, lang)}</span>
-          {#if row.inferno}<span class="inferno" title={t('only on Inferno')}>INF</span>{/if}
+          {#if row.inferno}<span class="inferno">INF</span>{/if}
           <span class="odds">{odds(row.odds)}</span>
         </li>
       {/each}
