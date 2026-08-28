@@ -149,7 +149,14 @@
     </div>
   </div>
 
-  <p class="count">{found.length}{found.length === 400 ? '+' : ''} {t('items')}</p>
+  <p class="count">
+    <span>{found.length}{found.length === 400 ? '+' : ''} {t('items')}</span>
+    <!-- The badge sits on rows all over this page and on the cards, and said
+         what it meant only to a pointer that stopped on it. It says it here
+         instead, once, beside the count — where the eye already goes to read
+         how many things the search found. -->
+    <span class="legend"><span class="inferno">INF</span> {t('only on Inferno')}</span>
+  </p>
   <ul class="rows list">
     {#each found as [name, item] (name)}
       <li class:lit={peek?.name === name} onpointerenter={show(name)}>
@@ -253,7 +260,16 @@
   .rarities button.on { border-color: currentColor; background: #ffffff0f; }
   .rarities button:hover { background: #ffffff14; }
 
-  .count { margin: 2px 10px 3px; color: var(--dim); font-size: 11px; }
+  .count {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 2px 10px 3px;
+    color: var(--dim);
+    font-size: 11px;
+  }
+  .legend { display: inline-flex; align-items: center; gap: 4px; }
 
   /* ── lists ────────────────────────────────────────────────────────────── */
   .rows { margin: 0; padding: 0; list-style: none; }
