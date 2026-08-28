@@ -293,10 +293,10 @@ def codex(dw, raw_items, langs, tables):
     place, missing, sheet, guessed, chosen = icons.build(
         dw, raw_items, every, IMG / "codex.png")
 
-    items, vocab, kits = encyclopedia.build(
-        raw_items, GAME / "translationsItem.csv", langs, place, icons.tidy, tables)
-
     say = vocabulary.Words(GAME)
+    items, vocab, kits = encyclopedia.build(
+        raw_items, GAME / "translationsItem.csv", langs, place, icons.tidy, tables, say)
+
     # What the game calls each stat, joined on meaning — see words.Words.stats
     told = say.stats([v["sid"] for v in vocab])
     for v in vocab:

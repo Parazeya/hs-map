@@ -168,6 +168,14 @@ def text_rows(path):
     return rows
 
 
+def out_of_key(tkey, kind):
+    """`w_throwing_darkmoon_deck` read as "Darkmoon Deck"."""
+    parts = [p for p in (tkey or "").split("_") if p]
+    while parts and (len(parts[0]) == 1 or parts[0].lower() == str(kind).lower()):
+        parts.pop(0)
+    return " ".join(p[:1].upper() + p[1:] for p in parts)
+
+
 def weapons(row):
     """The weapons a runeword may be made in, named."""
     got = row.get("runewordWeaponType")
@@ -222,7 +230,7 @@ def sockets(row, by_name, tidy):
     return out
 
 
-def build(raw_items, csv_path, langs, icons_by_name, tidy, tables):
+def build(raw_items, csv_path, langs, icons_by_name, tidy, tables, say=None):
     """Every item worth a page, keyed by the game's own translation key.
 
     `icons_by_name` is the icon sheet's boxes, so an item that has one shows it
@@ -237,10 +245,18 @@ def build(raw_items, csv_path, langs, icons_by_name, tidy, tables):
     rows = text_rows(csv_path)
 
     def said(key):
-        """One key in every language the game ships, English filled in for gaps."""
+        """One key in every language the game ships, English filled in for gaps.
+
+        `translationsItem.csv` is where an item's name belongs and where nearly
+        every one of them is. Not all: the 156 relics and one throwing weapon
+        are named in another of the game's translation files, and reading only
+        this one left them showing their key — `relic_rubberDuck` was on the
+        page in every language. So a key this file has no row for is asked of
+        the whole set before it is given up on.
+        """
         got = rows.get(key)
         if not got:
-            return None
+            return say.by_key.get(key) if say else None
         out = {}
         for i, lang in enumerate(langs):
             word = got[i].strip() if i < len(got) else ""
@@ -274,8 +290,15 @@ def build(raw_items, csv_path, langs, icons_by_name, tidy, tables):
         if tkey in items:
             continue
         told = said(tkey)
-        # the game's own English name leads; the snapshot's fills a gap
+        # The game's own English name leads; the snapshot's fills a gap. Where
+        # neither knows — one item, a Heroic throwing weapon the snapshot calls
+        # "Unknown Name" and the game names nowhere — the key is read out
+        # instead, minus the letter that says what kind of thing it is and the
+        # word that repeats its type. A name taken off the game's own identifier
+        # beats "Unknown Name" on a page whose whole job is to name things.
         shown = (told or {}).get("en") or (name or "").strip()
+        if not shown or shown == "Unknown Name":
+            shown = out_of_key(tkey, m.get("type"))
         if not shown:
             continue
         low = tidy(shown)
@@ -285,7 +308,11 @@ def build(raw_items, csv_path, langs, icons_by_name, tidy, tables):
             "name": shown,
             "rarity": m.get("rarity"),
             "tier": m.get("tier"),
-            "type": m.get("type"),
+            # "Unknown Type" is not a type. It is the snapshot shrugging at the
+            # two runewords that go in either of two bases — `base` below says
+            # which two — and offered as a filter it read like a fault. Left
+            # unset, no chip is made for it and nothing else changes.
+            "type": None if m.get("type") == "Unknown Type" else m.get("type"),
             "lvl": m.get("lvlreq"),
             "size": [m.get("Width"), m.get("Height")] if m.get("Width") else None,
             "stats": stats,
