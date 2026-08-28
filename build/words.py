@@ -78,6 +78,16 @@ VOCAB = {
     "Unholy": "unholy",
     "Runeword": "runeword",
     "Common": "common",
+    # The rest of the scale, which the codex offers as filters and showed in
+    # English beside seven Russian ones. The game's own word for "Superior" in
+    # Russian is "Начальство", which is a word about people rather than gear —
+    # but it is the word a Russian player is shown in the game, and inventing a
+    # better one here would leave the two disagreeing.
+    "Mythic": "mythic",
+    "Rare": "rare",
+    "Superior": "superior",
+    # what the phone's one column folds the filters behind
+    "Filters": "filters",
     "Rarity": "rarity",
     "Type": "type",
     "Level": "level",
