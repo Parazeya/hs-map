@@ -124,6 +124,7 @@
     {#if hidden > 0}<p class="foot">…{t('and')} {hidden} {t('more')}</p>{/if}
     {#if foot}<p class="foot">{foot}</p>{/if}
   {/if}
+
 </div>
 
 <style>
@@ -189,7 +190,11 @@
   }
   li:first-child { border-top: 0; }
 
-  .name { flex: 1; }
+  /* A name long enough to push the odds past the panel's edge loses its tail
+     instead: the box is clipped, so what was pushed out was simply gone. The
+     dungeon lists are where it showed — "Покрытые Шрамами Боевые Дротики" is
+     wider than the panel on its own. */
+  .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .tier {
     flex: none;
     min-width: 1.8rem;
