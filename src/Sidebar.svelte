@@ -66,7 +66,7 @@
     <section class="zone">
       <header>
         <h2>{nameOf(active, lang)}</h2>
-        <button class="x" title={t('Let it go')} onclick={() => (active = null)}>×</button>
+        <button class="x" aria-label={t('Let it go')} onclick={() => (active = null)}>×</button>
       </header>
       <p class="sub">
         {[t(KIND[active.kind]), active.act ? `${t('act')} ${active.act}` : null, active.code]
@@ -100,7 +100,7 @@
                 <li class:lit={peek?.name === d.item} onpointerenter={show(d.item)}>
                   <ItemIcon {item} sheet={data.sheet} />
                   <span class="name {cls(item.rarity)}">{called(item, d.item, lang)}</span>
-                  {#if d.inferno}<span class="inferno" title={t('only on Inferno')}>INF</span>{/if}
+                  {#if d.inferno}<span class="inferno">INF</span>{/if}
                 </li>
               {/each}
             </ul>
@@ -121,7 +121,7 @@
             <li class:lit={peek?.name === name} onpointerenter={show(name)}>
               <ItemIcon {item} sheet={data.sheet} />
               <span class="name {cls(item.rarity)}">{called(item, name, lang)}</span>
-              {#if item.inferno}<span class="inferno" title={t('only on Inferno')}>INF</span>{/if}
+              {#if item.inferno}<span class="inferno">INF</span>{/if}
               <span class="odds">{odds(item.chase ?? item.rate)}</span>
             </li>
           {/each}
@@ -156,7 +156,7 @@
         <ItemIcon {item} sheet={data.sheet} />
         <span class="tier">{tier(item)}</span>
         <span class="name {cls(item.rarity)}">{called(item, name, lang)}</span>
-        {#if item.inferno}<span class="inferno" title={t('only on Inferno')}>INF</span>{/if}
+        {#if item.inferno}<span class="inferno">INF</span>{/if}
         <span class="odds">{odds(item.rate)}</span>
       </li>
     {/each}

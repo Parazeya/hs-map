@@ -117,13 +117,13 @@
 <!-- The title bar was a strip of chrome across a map that is only 800px tall to
      begin with. Its two controls earn their place; the words did not. -->
 {#snippet controls()}
-  <select bind:value={lang} title={t('Zone names')}>
+  <select bind:value={lang} aria-label={t('Zone names')}>
     {#each data.langs as code (code)}
       <option value={code}>{code.toUpperCase()}</option>
     {/each}
   </select>
   <button type="button" onclick={() => { active = null; map.fit(); }}>{t('Fit')}</button>
-  <a class="go" href={asset('codex.html')} title={t('every item in the game')}>{t('Items')} ▶</a>
+  <a class="go" href={asset('codex.html')}>{t('Items')} ▶</a>
 {/snippet}
 
 {#if failed}

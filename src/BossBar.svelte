@@ -49,7 +49,6 @@
         class:hit={lit?.has(name)}
         class:faded={lit && !lit.has(name)}
         class:inferno={it.inferno_only}
-        title={called(it, name, lang)}
         aria-label={called(it, name, lang)}
         onpointerenter={() => (hovered = name)}
       >
