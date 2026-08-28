@@ -15,6 +15,11 @@
   let kind = $state(null);          // the item type: Sword, Helmet, Charm…
   let stat = $state(null);          // a sid, when the search is for what it does
   let chosen = $state(null);        // the item being read, by key
+  // Shut, which only means anything on a phone: the rule that reads this flag
+  // lives in a media query, so a wide screen shows the column whatever it says.
+  // On a narrow one the list is what the page opens on — it is what the page is
+  // for — and the button in the header is what brings the filters over it.
+  let filters = $state(false);
 
   /** Rarest first, because that is what anyone is looking for. */
   const ORDER = ['Mythic', 'Satanic Set', 'Satanic', 'Unholy', 'Angelic', 'Heroic',
@@ -159,6 +164,12 @@
 {:else}
   <header>
     <a class="back" href={asset('index.html')}>◀ {t('Back')}</a>
+    <!-- Only where the three columns cannot stand side by side. On a phone the
+         filters filled the screen on their own and the list of items, which is
+         what the page is for, was nowhere on it. -->
+    <button class="only-narrow" class:on={filters} onclick={() => (filters = !filters)}>
+      {t('Filters')}{filtered ? ' ●' : ''}
+    </button>
     <input
       type="search"
       placeholder={t('Find an item, or what it does…')}
@@ -178,8 +189,8 @@
     </select>
   </header>
 
-  <main>
-    <aside class="filters">
+  <main class:picked={item}>
+    <aside class="filters" class:shut={!filters}>
       <p class="head">{t('Rarity')}</p>
       <div class="chips">
         {#each grades as r (r)}
@@ -239,7 +250,14 @@
       {/if}
     </ul>
 
-    <Detail {data} {item} {lang} {t} sheet={SHEET} pick={(k) => (chosen = k)} />
+    <div class="detail">
+      <!-- On a phone the item covers the list rather than sitting beside it,
+           and this is the way back. -->
+      <button class="only-narrow back-to-list" onclick={() => (chosen = null)}>
+        ◀ {t('Items')}
+      </button>
+      <Detail {data} {item} {lang} {t} sheet={SHEET} pick={(k) => (chosen = k)} />
+    </div>
   </main>
 {/if}
 
@@ -317,6 +335,9 @@
     display: grid;
     grid-template-columns: 15rem minmax(0, 1fr) 24rem;
   }
+
+  .detail { display: contents; }
+  .only-narrow { display: none; }
 
   .filters, .list {
     overflow-y: auto;
@@ -422,5 +443,44 @@
   :global(.r-runeword) { color: var(--rar-runeword); }
   :global(.r-common), :global(.r-rare), :global(.r-superior), :global(.r-mythic) {
     color: var(--rar-common);
+  }
+
+  /* ── one column at a time ────────────────────────────────────────────────
+     Three columns need about 55rem; below that they were 15rem of filters,
+     whatever was left for the list, and a detail panel off the edge of the
+     screen. On a 393px phone that left the list invisible and the page
+     useless. So the filters fold away behind a button, the item covers the
+     list while it is open, and each of the three gets the whole width when it
+     is the one being read. */
+  @media (max-width: 55rem) {
+    main { grid-template-columns: minmax(0, 1fr); }
+    .only-narrow { display: inline-flex; align-items: center; }
+
+    .filters {
+      position: fixed;
+      inset: 52px 0 0 0;
+      z-index: 4;
+      background: #100a13;
+      border-right: 0;
+    }
+    .filters.shut { display: none; }
+
+    .detail {
+      display: block;
+      position: fixed;
+      inset: 52px 0 0 0;
+      z-index: 3;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      background: #100a13;
+    }
+    /* nothing picked, nothing to cover the list with */
+    main:not(.picked) .detail { display: none; }
+    .back-to-list {
+      margin: 10px 0 0 12px;
+    }
+
+    header { gap: 6px; padding: 0 8px; }
+    header .count { display: none; }
   }
 </style>

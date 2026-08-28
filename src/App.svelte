@@ -18,6 +18,11 @@
   let query = $state('');         // the sidebar's search
   let peek = $state(null);        // the item under the pointer in the menu
   let at = $state({ x: 0, y: 0 });
+  // Only a phone reads this. There the panel is 238 px of a 393 px screen and
+  // the map is what is left, so it comes over the map when it is wanted and is
+  // out of the way when it is not. A wide screen shows it whatever this says —
+  // the rule that hides it lives in a media query.
+  let panel = $state(false);
   let map = $state(null);
   let boss = $state(null);      // the boss under the pointer on the shelf
 
@@ -124,6 +129,9 @@
   </select>
   <button type="button" onclick={() => { active = null; map.fit(); }}>{t('Fit')}</button>
   <a class="go" href={asset('codex.html')}>{t('Items')} ▶</a>
+  <button type="button" class="only-narrow" class:on={panel} onclick={() => (panel = !panel)}>
+    {panel ? '✕' : '☰'}
+  </button>
 {/snippet}
 
 {#if failed}
@@ -173,12 +181,24 @@
       <ItemCard {data} name={peek.name} {lang} top={peek.top} />
     {/if}
 
-    <Sidebar {data} {lang} bind:query bind:peek bind:active />
+    <!-- The drawer covers the button that opened it, so the way out is the
+         map: a tap anywhere off the panel puts it away. Only ever there on a
+         narrow screen — on a wide one the panel is a column and never covers
+         anything. -->
+    {#if panel}
+      <button class="scrim only-narrow" aria-label={t('Close')} onclick={() => (panel = false)}></button>
+    {/if}
+    <Sidebar {data} {lang} {panel} bind:query bind:peek bind:active />
   </div>
 {/if}
 
 <style>
-  .app { display: flex; height: 100%; }
+  /* The drawer waits off the right edge, and a page that can be scrolled to it
+     is a page that wanders sideways under a thumb. `position` as well as
+     `overflow`: without it the drawer is laid out against the viewport rather
+     than against this box, and an overflow it does not belong to cannot clip
+     it — the page still scrolled 308 px to the right of itself. */
+  .app { position: relative; display: flex; height: 100%; overflow: hidden; }
 
   main {
     position: relative;
@@ -212,6 +232,28 @@
   }
   select option { background: #180d13; }
 
+
+  .only-narrow { display: none; }
+
+  .scrim {
+    position: absolute;
+    inset: 0;
+    z-index: 29;
+    padding: 0;
+    background: #0007;
+    border: 0;
+    border-radius: 0;
+    cursor: default;
+  }
+
+  /* ── the panel comes over the map ────────────────────────────────────────
+     On a phone the sidebar took 238 of 393 px and left the map a strip 155 px
+     wide, with no way to fold it. It is a drawer there instead, and this is
+     the handle. */
+  @media (max-width: 46rem) {
+    .only-narrow { display: inline-flex; align-items: center; }
+    .scrim.only-narrow { display: block; }
+  }
 
   .broke { padding: 3rem; color: var(--rar-satanic); }
   .broke code { color: var(--dim); }

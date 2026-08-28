@@ -9,6 +9,7 @@
     query = $bindable(''),
     peek = $bindable(null),      // the item under the pointer, and where its row sits
     active = $bindable(null),
+    panel = false,               // only a narrow screen reads this; see App
   } = $props();
 
   /** Rarest first, because that is what anyone is looking for. */
@@ -60,7 +61,7 @@
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<aside onpointerleave={() => (peek = null)}>
+<aside class:open={panel} onpointerleave={() => (peek = null)}>
   {#if active}
     <!-- the zone that was clicked, so it can be read without the pointer -->
     <section class="zone">
@@ -323,5 +324,26 @@
 
   @media (max-width: 900px) {
     aside { flex-basis: 17rem; }
+  }
+
+  /* A drawer rather than a column: below this the map has no room to spare, and
+     a panel that cannot be folded away leaves it a strip. It slides rather than
+     appearing, so it is plain that the map is still underneath. */
+  @media (max-width: 46rem) {
+    aside {
+      position: absolute;
+      inset: 0 0 0 auto;
+      z-index: 30;
+      width: min(90vw, 22rem);
+      flex-basis: auto;
+      transform: translateX(100%);
+      transition: transform .18s ease-out;
+      box-shadow: -12px 0 30px #0008;
+    }
+    aside.open { transform: none; }
+  }
+
+  @media (max-width: 46rem) and (prefers-reduced-motion: reduce) {
+    aside { transition: none; }
   }
 </style>

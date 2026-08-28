@@ -112,6 +112,20 @@
     padding-left: 12px;
   }
 
+  /* The shelf scrolls sideways, and `margin-left: auto` puts these past the end
+     of everything in it — which on a phone is well past the edge of the screen,
+     taking the button that opens the panel with it. Stuck to the right edge
+     they stay reachable while the portraits scroll under them. */
+  @media (max-width: 46rem) {
+    .controls {
+      position: sticky;
+      right: 0;
+      padding: 4px 0 4px 10px;
+      background: rgb(19 12 23 / 0.94);
+      box-shadow: -10px 0 12px rgb(19 12 23 / 0.94);
+    }
+  }
+
 
   .cell {
     position: relative;
