@@ -110,6 +110,12 @@ const SAY = {
     zh: '首领地城', ja: 'ボスダンジョン', ko: '보스 던전', de: 'Bossverlies',
     fr: 'donjon du boss', sp: 'mazmorra del jefe', pl: 'loch bossa',
   },
+  // Plural, because the marker stands for all of an act's dungeons at once:
+  // the drop table is written per act and never names one of them.
+  'dungeons': {
+    fi: 'luolastot', pt: 'masmorras', ru: 'подземелья', zh: '地城', ja: 'ダンジョン',
+    ko: '던전', de: 'Verliese', fr: 'donjons', sp: 'mazmorras', pl: 'lochy',
+  },
   'town': {
     fi: 'kaupunki', pt: 'cidade', ru: 'город', zh: '城镇', ja: '街', ko: '마을',
     de: 'Stadt', fr: 'ville', sp: 'ciudad', pl: 'miasto',

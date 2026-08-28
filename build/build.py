@@ -111,6 +111,17 @@ def art():
             im = unlit(im)
         picture(im, IMG / f"{out}.png")
 
+    # The map screen has no mark for an ordinary dungeon, because the game has
+    # nowhere to put one: `Dungeon_Entrance_obj` stands in no room at all — an
+    # entrance is placed as a zone is generated, so which zone holds one is not
+    # a fact until it is played. What a player does see is the minimap's own
+    # mark, and that is the honest picture of a thing any zone can get.
+    #
+    # It is not on the map screen's page, so it goes the long way round, the way
+    # the boss portraits do. Cut from the wrong page it came out a transparent
+    # 22 by 22.
+    picture(dw.sprite_frames("Minimap_Dungeon_spr")[0], IMG / "dungeonmark.png")
+
     tile = trail(cut)
     strips(dw, cut, unlit)
     return dw, bg.width, bg.height, tile
@@ -327,6 +338,71 @@ def zone_code(room):
     return None
 
 
+#: The acts as the drop tables spell them, which is how a dungeon's own place
+#: name is keyed — "Act IV Dungeons".
+ROMAN = {1: "I", 2: "II", 3: "III", 4: "IV", 5: "V", 6: "VI", 7: "VII", 8: "VIII", 9: "IX"}
+
+
+def dungeon_nodes(nodes, per_code, t, say):
+    """One marker per act for its ordinary dungeons.
+
+    The game marks them nowhere and could not: a zone is generated when it is
+    entered — `Act_01_01` holds nothing at all in the file, against 618 objects
+    in a town and 2,491 in a dungeon — and the entrance is placed then, so which
+    zone gets one is not a fact the file has. What the file does have is the
+    drop table, and it is written per act: `4-D`, never `4-2-D`, and no
+    individual dungeon is ever named as a source. So one marker per act says
+    exactly what is known and nothing more.
+
+    It stands beside the act's boss dungeon, which is the act's other dungeon
+    and already sits clear of the chain of zones. On whichever side has room.
+    """
+    made = []
+    for node in nodes:
+        act = node["act"]
+        if node["kind"] != "dungeon" or not act:
+            continue
+        drops = sorted(per_code.get(f"{act}-D", []), key=lambda name: (
+            -(t["TIER_BY_NAME"].get(name) or 0), t["DROP_RATE"].get(name, 1 << 40)))
+        if not drops:
+            continue
+        # Close enough to read as the pair they are — both are dungeons of this
+        # act — and not so close that the two marks touch: 24 px of boss dungeon
+        # and 22 of this leave 7 px of daylight at 30. It carries no name on the
+        # map, so there is no label to keep clear of anything.
+        away = 30
+        near = lambda x, y: min(
+            (abs(o["x"] - x) + abs(o["y"] - y)) for o in nodes if o is not node)
+        x = max((node["x"] + away, node["x"] - away), key=lambda c: near(c, node["y"]))
+        y = node["y"]
+        made.append({
+            "room": f"Act_{act:02d}_Dungeons",
+            "x": x,
+            "y": y,
+            "kind": "dungeons",
+            "code": f"{act}-D",
+            "act": act,
+            "name": dungeon_name(act, say),
+            "drops": drops,
+        })
+    return made
+
+
+def dungeon_name(act, say):
+    """"Act IV Dungeons" in the eleven languages the game ships.
+
+    Act IX is not in the game's table — it names I through VIII and stops — so
+    it borrows act VIII's wording and swaps the numeral. That keeps each
+    language's own word order, which composing the name out of "act" and
+    "dungeons" does not: German writes "Dungeons Akt VIII".
+    """
+    told = say.of(f"Act {ROMAN[act]} Dungeons")
+    if told:
+        return told
+    borrowed = say.of("Act VIII Dungeons") or {}
+    return {lang: text.replace("VIII", ROMAN[act]) for lang, text in borrowed.items()}
+
+
 def main():
     dw, w, h, tile = art()
     langs, names = zone_names()
@@ -439,6 +515,11 @@ def main():
     # actually carries — a name it has none for stays in English, and the count
     # below says how many that is.
     say = vocabulary.Words(GAME)
+    # After the chain of a run is drawn, so they join nothing — a dungeon is not
+    # a step on the way through an act — and after the vocabulary is up, which
+    # is what gives them their names.
+    nodes += dungeon_nodes(nodes, per_code, t, say)
+
     for name, it in items.items():
         told = say.of(name)
         if told:

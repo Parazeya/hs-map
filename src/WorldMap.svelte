@@ -203,7 +203,10 @@
          marker, in the language the page is set to. They ride inside the world,
          so they pan and zoom with it — the scale never falls below fitting the
          map to the window's height, so they never shrink out of reading. -->
-    {#each data.nodes as node (node.room)}
+    <!-- Not the dungeons of an act: theirs stands beside the boss dungeon it
+         belongs to, and two names that close is a smudge rather than a label.
+         The marker is the game's own and says what it is; the panel names it. -->
+    {#each data.nodes.filter((n) => n.kind !== 'dungeons') as node (node.room)}
       <span
         class="tag"
         class:high={node.boss}

@@ -27,10 +27,14 @@ export async function load() {
 }
 
 /** Which sprite a marker is drawn with. */
-export const ART = { zone: 'node', dungeon: 'dungeon', town: 'town', cabin: 'town' };
+export const ART = {
+  zone: 'node', dungeon: 'dungeon', dungeons: 'dungeonmark', town: 'town', cabin: 'town',
+};
 
 /** What to call it in the panel's subtitle. */
-export const KIND = { zone: 'zone', dungeon: 'boss dungeon', town: 'town', cabin: 'cabin' };
+export const KIND = {
+  zone: 'zone', dungeon: 'boss dungeon', dungeons: 'dungeons', town: 'town', cabin: 'cabin',
+};
 
 export const nameOf = (node, lang) => node.name[lang] || node.name.en || node.room;
 
