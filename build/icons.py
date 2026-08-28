@@ -333,6 +333,36 @@ def build(dw, items, wanted, out_png):
             pass
     missing = [m for m in missing if m.lower() not in cut]
 
+    # A runeword has no picture of its own, and cannot: it is a thing you make
+    # in a base, and what it wears is the base's art. The game draws it as the
+    # emblem in its own journal — four runes around a stone — and that is what
+    # goes here, the same way `portraits.py` gives a kind of place its door
+    # rather than a portrait of one. 94 of the 147 icons the codex was missing
+    # were runewords, all of them blank.
+    #
+    # `Inventory_Equipped_*_Runeword_spr` are not this: they are the empty
+    # slot plates the inventory draws behind an item, brown and featureless.
+    #
+    # Cut once and shared, not packed ninety-four times: one 128 by 128 picture
+    # per runeword took the sheet from 3,751 rows to 5,488 for one image.
+    EMBLEM = "Journal_Runewords_spr"
+    emblem_for = set()
+    if EMBLEM in dw.sprites:
+        try:
+            art = dw.sprite_frames(EMBLEM)[0]
+        except Exception:
+            art = None
+        if art is not None:
+            for it in items:
+                m = it.get("metadata") or {}
+                low = tidy(m.get("name") or "")
+                if m.get("rarity") == "Runeword" and low in wanted and low not in cut:
+                    emblem_for.add(low)
+                    chosen[low] = EMBLEM
+            if emblem_for:
+                cut[EMBLEM] = art
+                missing = [m for m in missing if tidy(m) not in emblem_for]
+
     # shelf-packed by height, which for a few hundred small icons is as good as
     # anything cleverer and fits in a dozen lines
     order = sorted(cut.items(), key=lambda kv: -kv[1].height)
@@ -351,6 +381,12 @@ def build(dw, items, wanted, out_png):
     for name, im in order:
         px, py, _, _ = place[name]
         sheet.paste(im, (px, py))
+    # After the sheet is drawn, because the paste reads `place` by the same key
+    # it was packed under: every runeword points at the one emblem, and the
+    # sentinel that carried it is not an item and does not go out.
+    for low in emblem_for:
+        place[low] = place[EMBLEM]
+    place.pop(EMBLEM, None)
     # lossless WebP: see build.py's `picture` for why
     sheet.save(out_png.with_suffix(".webp"), lossless=True, quality=100, method=6)
 
