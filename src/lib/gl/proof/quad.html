@@ -1,0 +1,19 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>gl proof — one quad, NEAREST</title>
+<style>
+  body { background: #1a121f; color: #cfc0b2; font: 13px/1.6 system-ui, sans-serif; margin: 24px; }
+  canvas { display: block; background: #000; margin: 8px 0 16px; }
+  table { border-collapse: collapse; }
+  td { padding: 2px 14px 2px 0; }
+  td.n { font-variant-numeric: tabular-nums; text-align: right; }
+  .ok { color: #7fd18a; } .bad { color: #e07a7a; }
+  h2 { font-size: 13px; font-weight: 600; margin: 20px 0 4px; }
+</style>
+<h2>NEAREST (what the port draws)</h2>
+<canvas id="near" width="440" height="320"></canvas>
+<h2>LINEAR (what the compositor did to it)</h2>
+<canvas id="lin" width="440" height="320"></canvas>
+<h2>counted</h2>
+<div id="out">…</div>
+<script type="module" src="./quad.js"></script>
