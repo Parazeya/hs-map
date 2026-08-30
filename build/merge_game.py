@@ -2,8 +2,14 @@
 
 `game_drops.json` was read out of the compiled code — the item definitions'
 own `dropPlaces`, recovered by disassembling the executable. It agrees with the
-datamined snapshot the site is otherwise built from, which is the point: the two
-corroborate each other, and where the snapshot is silent the game is not.
+item table the site is otherwise built from, which is the point: the two
+corroborate each other, and where that table is silent the game is not.
+
+That table is itself mostly the game's own word now — the extractor decodes the
+names, rarities, grades, identities and drop rates out of Hero_Siege.exe and
+carries only the stats, sizes, types and chase rates from the datamined snapshot
+it starts from. This file predates that and is kept because a second reading of
+the same thing is still worth having.
 
 Three sources existed only on the game's side — a Chest Drop, a Dungeon Chest,
 and the Colossal Mimic — so adding by hand would have fixed those three and left
