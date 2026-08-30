@@ -1,0 +1,61 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>gl proof — the world map</title>
+<link rel="stylesheet" href="../../../theme.css">
+<style>
+  /* The stage and the world carry exactly what WorldMap.svelte's do, minus
+     everything that was on a marker: there is no .glow, .pin, .ring, .fx or
+     .prop here to promote, transition or re-raster. What is left inside .world
+     is text and 72 empty buttons. */
+  .stage { position: absolute; inset: 0; cursor: grab; touch-action: none; overscroll-behavior: none; }
+  .stage.dragging { cursor: grabbing; }
+  canvas { position: absolute; inset: 0; display: block; }
+
+  .world { position: absolute; transform-origin: 0 0; will-change: transform; }
+
+  /* The hit target and the focus ring, and nothing else: the pointer never
+     reaches these (pickBox does the hit-testing on the CPU), so they cannot
+     restyle themselves under it, but Tab still finds them and a screen reader
+     still reads them. */
+  .node {
+    position: absolute; width: 34px; height: 34px; margin: -17px 0 0 -17px;
+    padding: 0; border: 0; background: none; pointer-events: none;
+  }
+  .node:focus-visible { outline: 2px solid var(--hot); border-radius: 50%; pointer-events: auto; }
+
+  .tag {
+    position: absolute; transform: translate(-50%, -100%); margin-top: -14px;
+    white-space: nowrap; font-size: 11px; font-weight: 500; letter-spacing: .2px;
+    color: #cfc0b2;
+    text-shadow:
+      1px 0 0 #1a121fcc, -1px 0 0 #1a121fcc, 0 1px 0 #1a121fcc, 0 -1px 0 #1a121fcc,
+      1px 1px 0 #1a121fcc, -1px 1px 0 #1a121fcc,
+      1px -1px 0 #1a121fcc, -1px -1px 0 #1a121fcc;
+    pointer-events: none; user-select: none;
+  }
+  .tag.high { margin-top: -30px; }
+  .tag.faded { opacity: .3; transition: opacity .15s; }
+
+  /* the count, where a person can see it — PoETools puts its own on the page
+     for the same reason */
+  .hud {
+    position: absolute; left: 10px; bottom: 10px; z-index: 5;
+    font: 12px/1.5 ui-monospace, monospace; color: #cfc0b2;
+    background: rgba(16, 10, 19, .82); border: 1px solid var(--edge);
+    border-radius: 6px; padding: 6px 9px; white-space: pre; pointer-events: none;
+  }
+  .find {
+    position: absolute; left: 10px; top: 10px; z-index: 5;
+    font: 12px/1.5 system-ui, sans-serif; color: var(--ink);
+    background: rgba(16, 10, 19, .82); border: 1px solid var(--edge);
+    border-radius: 6px; padding: 5px 8px; width: 190px;
+  }
+  .broke { position: absolute; inset: 0; display: grid; place-content: center; color: #e07a7a; }
+</style>
+<div class="stage">
+  <canvas></canvas>
+  <div class="world"></div>
+</div>
+<input class="find" placeholder="search — the .hit / .faded path">
+<div class="hud">…</div>
+<script type="module" src="./map.js"></script>
