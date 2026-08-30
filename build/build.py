@@ -17,6 +17,7 @@ from the compiled code; see that file's header.
 import csv
 import json
 import re
+import struct
 import sys
 from pathlib import Path
 
@@ -25,8 +26,11 @@ import bosses
 import encyclopedia
 import words as vocabulary
 import icons
+import langsplit
+import said
 import merge_game
 import portraits
+import unholy
 
 HERE = Path(__file__).resolve().parent.parent
 TRACKER = Path(r"e:\Workspace\HeroSiege")
@@ -35,6 +39,7 @@ GAME = Path(r"F:\Games\Steam\steamapps\common\HeroSiege\bin")
 sys.path.insert(0, str(TRACKER / "tools"))
 from datawin import DataWin           # noqa: E402
 import yytex                          # noqa: E402
+import numpy as np
 from PIL import Image                 # noqa: E402
 
 IMG = HERE / "public" / "img"
@@ -124,7 +129,336 @@ def art():
 
     tile = trail(cut)
     strips(dw, cut, unlit)
-    return dw, bg.width, bg.height, tile
+    return dw, bg.width, bg.height, tile, props(dw, cut, bg)
+
+
+def patches(moves, cell=16):
+    """The moving pixels grouped into a few rectangles, coarsely.
+
+    Whole pixels would give a hundred specks; a 16-pixel grid gives the two or
+    three places a thing actually animates in, which is what this is for.
+    """
+    h, w = moves.shape
+    rows, cols = (h + cell - 1) // cell, (w + cell - 1) // cell
+    grid = np.zeros((rows, cols), dtype=bool)
+    for r in range(rows):
+        for c in range(cols):
+            grid[r, c] = moves[r * cell:(r + 1) * cell, c * cell:(c + 1) * cell].any()
+    seen = np.zeros_like(grid)
+    boxes = []
+    for r in range(rows):
+        for c in range(cols):
+            if not grid[r, c] or seen[r, c]:
+                continue
+            stack, cells = [(r, c)], []
+            seen[r, c] = True
+            while stack:
+                y, x = stack.pop()
+                cells.append((y, x))
+                for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                    ny, nx = y + dy, x + dx
+                    if 0 <= ny < rows and 0 <= nx < cols and grid[ny, nx] and not seen[ny, nx]:
+                        seen[ny, nx] = True
+                        stack.append((ny, nx))
+            ys = [y for y, _ in cells]
+            xs = [x for _, x in cells]
+            boxes.append((min(xs) * cell, min(ys) * cell,
+                          min(w, (max(xs) + 1) * cell), min(h, (max(ys) + 1) * cell)))
+    return boxes
+
+
+#: Transparent columns between one frame of a prop's strip and the next. See
+#: where the sheet is built for what they are for.
+GUTTER = 2
+
+#: Where the game's own code lives. The map screen is a UI object built in
+#: code, not a room, so its props' places are constants in here and nowhere in
+#: the data file.
+EXE = GAME / "Hero_Siege.exe"
+
+#: A double read out of .rdata: `movsd xmmN,[rip+rel32]`, with or without the
+#: REX byte the upper eight registers need.
+RIPLOAD = re.compile(rb"\xf2[\x40-\x4f]?\x0f\x10[\x05\x0d\x15\x1d\x25\x2d\x35\x3d](....)", re.S)
+
+#: How far in front of a draw its two coordinates are written. Measured over
+#: all thirteen: the y between 365 and 396 bytes back, the x between 182 and
+#: 201, so half a kilobyte reaches both and nothing older.
+REACH = 512
+
+
+def sprite_table(dw):
+    """Every sprite's index, size and origin, straight out of SPRT.
+
+    `datawin` hands over the frames and the speed; the origin has to come from
+    the record itself, because `draw_sprite_ext` places a sprite by its origin
+    and this page places it by its corner. It is fields 12 and 13, after the six
+    margins and the four flags: 21,67 for Map_Prop_01_spr, which is what
+    `hse-extractor --mapprops` reads for the same sprite.
+    """
+    off, _ = dw.chunks["SPRT"]
+    b = dw.raw
+    n = struct.unpack_from("<I", b, off)[0]
+    out = {}
+    for i, p in enumerate(struct.unpack_from(f"<{n}I", b, off + 4)):
+        name = dw.string(struct.unpack_from("<I", b, p)[0])
+        w, h = struct.unpack_from("<ii", b, p + 4)
+        ox, oy = struct.unpack_from("<ii", b, p + 48)
+        out[name] = (i, w, h, ox, oy)
+    return out
+
+
+def drawn_at(dw, names):
+    """Where the map screen's code draws each of these sprites: corners, in map pixels.
+
+    The sprite names are not in the executable at all — searched as strings, all
+    eleven come back zero. What is in it is the asset the compiler wrote in
+    their place: `draw_sprite_ext` is handed an RValue whose low dword is the
+    sprite's SPRT index and whose top half marks it an asset, so Map_Prop_01_spr
+    at index 12552 is the eight bytes of 0100000100003108h, and that is unique
+    enough to find every draw of it in 282 MB. Nine props come back as thirteen
+    draws — Map_Prop_03_spr five times, the five torches.
+
+    Each draw's place is two doubles in .rdata, loaded a few hundred bytes in
+    front of the sprite: the y first, then the x, both added to the map's own
+    scroll before the call. The pair is read in that order because the other
+    order puts Map_Prop_08_spr at y=1277 on a map 800 tall.
+
+    The same thirteen corners come out of `hse-extractor --mapprops`, which
+    disassembles the event and reads the call's arguments properly rather than
+    scanning for the loads in front of it. Two readers, one answer, to the pixel.
+    """
+    exe = EXE.read_bytes()
+    pe = struct.unpack_from("<I", exe, 0x3c)[0]
+    count = struct.unpack_from("<H", exe, pe + 6)[0]
+    optional = struct.unpack_from("<H", exe, pe + 20)[0]
+    secs = []
+    for i in range(count):
+        o = pe + 24 + optional + i * 40
+        vsz, va, rsz, ra = struct.unpack_from("<IIII", exe, o + 8)
+        secs.append((va, max(vsz, rsz), ra, rsz))
+
+    def in_file(rva):
+        for va, size, ra, rsz in secs:
+            if va <= rva < va + size and rva - va < rsz:
+                return ra + rva - va
+        return None
+
+    def rva_of(pos):
+        for va, size, ra, rsz in secs:
+            if ra <= pos < ra + rsz:
+                return va + pos - ra
+        return None
+
+    table = sprite_table(dw)
+    found = {}
+    for name in names:
+        i, w, h, ox, oy = table[name]
+        asset = (0x0100000100000000 | i).to_bytes(8, "little")
+        spots = []
+        for site in re.finditer(re.escape(asset), exe):
+            head = exe[site.start() - REACH:site.start()]
+            reads = []
+            for load in RIPLOAD.finditer(head):
+                end = rva_of(site.start() - REACH + load.end())
+                at = in_file(end + struct.unpack_from("<i", load.group(1))[0])
+                if at is not None:
+                    reads.append(struct.unpack_from("<d", exe, at)[0])
+            if len(reads) < 2:
+                raise SystemExit(f"{name}: a draw at {rva_of(site.start()):#x} with no place")
+            y, x = reads[-2:]
+            # A misread would put a prop somewhere it cannot be, and a prop in
+            # the wrong place is worse than a prop missing, so say so and stop.
+            if not (0 <= x - ox and x - ox + w <= 2902 and 0 <= y - oy and y - oy + h <= 800):
+                raise SystemExit(f"{name}: read a place off the map, {x},{y}")
+            spots.append((int(x) - ox, int(y) - oy))
+        found[name] = spots
+    return found
+
+
+def props(dw, cut, bg):
+    """The map's own animated decorations, and where each one stands.
+
+    The game's map screen is not still: a skull blinks over Act 3, five torches
+    burn along the Act 5 road, a windmill turns, fire runs round a caldera.
+    Where each one stands is nowhere in the data file — the map screen is a UI
+    object built in code, so there are no room coordinates — and it is read out
+    of the executable instead, by `drawn_at`. Every position on this page is
+    that reading: not a search, but the numbers the game itself hands
+    `draw_sprite_ext`.
+
+    The picture is the second witness, and an independent one. The artist also
+    pasted most of these props into the background art at their first frame, so
+    where that happened the same pixels are in both pictures. Ranking every
+    offset on the whole 2902x800 map by how much of a prop's unchanging art it
+    holds, six of the nine come first — and the torch's five places are the five
+    best of 2,181,060, with the sixth-best holding less than half as much. That
+    is a search which knows nothing about the code agreeing with the code, five
+    times over on one sprite.
+
+    The paste was made by hand and can sit a pixel off the draw, so the anchor
+    is nudged onto the paste wherever the paste can be seen; see `anchor`.
+
+    What gets drawn follows from the same reading. Where the background already
+    holds a prop's still art there is no reason to paint it again and every
+    reason not to: the Act 8 rune circle is 4,500 moving pixels in an 800x800
+    sprite, and drawn whole it covered the window and took the map with it. So
+    the only pixels drawn are the ones the background does not already show —
+    everything that moves, plus any still art that was never painted in. For the
+    skull and the two big Act 8 pieces that is the moving part alone; for the
+    crater's swirl, the windmill's sails and the torches' flames, which the
+    artist left out of the map, it is nearly the whole frame, and those frames
+    are 18x45 to 339x249 rather than 800x800.
+
+    Left out: Map_Prop_09_spr, which has one frame and is in the background
+    whole. Map_Screen_Act_8_Expansion_spr, Map_Screen_Act_9_Expansion_spr and
+    Map_Screen_Border_spr, which are named by no code anywhere in the 282 MB
+    executable — not as an asset, not as a string — so nothing in the game draws
+    them. The Act 8 one is nevertheless *in* the background: cut into 64
+    hundred-pixel tiles and matched one tile at a time, 19 of them land byte for
+    byte at the same offset, (1048,0), and no other offset takes more than one.
+    The artist baked half of that sprite into the map art, which is why it is on
+    this page already, as background. Its animation is not, because nothing
+    plays it.
+    """
+    key = np.asarray(bg.convert("RGB"), dtype=np.uint8)
+    key = (key[:, :, 0].astype(np.uint32) << 16 | key[:, :, 1].astype(np.uint32) << 8
+           | key[:, :, 2])
+    flat = np.asarray(bg.convert("RGB"), dtype=np.int16)
+    tall, wide = flat.shape[:2]
+
+    def held(art, still, x, y):
+        """Which of a prop's unchanging pixels the background already shows at (x, y).
+
+        The same tolerance this map has always been checked against: a pixel
+        counts as held only where its three channels together differ by 8 or
+        less, which on this art means the same colour.
+        """
+        h, w = still.shape
+        if x < 0 or y < 0 or x + w > wide or y + h > tall:
+            return np.zeros_like(still)
+        return (np.abs(art - flat[y:y + h, x:x + w]).sum(axis=2) <= 8) & still
+
+    def rivals(art, still, x, y):
+        """How many places on the whole map hold as much of this still art as (x, y).
+
+        One is the answer that means something: this art, in this arrangement,
+        fits here and nowhere else in 2,902 by 800. Two hundred and forty still
+        pixels spread evenly are enough to tell — the torch has only 189 in all
+        and comes back unique.
+        """
+        h, w = still.shape
+        ys, xs = np.nonzero(still)
+        take = np.linspace(0, len(ys) - 1, min(240, len(ys))).astype(int)
+        ys, xs = ys[take], xs[take]
+        rows, cols = tall - h + 1, wide - w + 1
+        tally = np.zeros((rows, cols), dtype=np.int32)
+        for dy, dx in zip(ys.tolist(), xs.tolist()):
+            c = int(art[dy, dx, 0]) << 16 | int(art[dy, dx, 1]) << 8 | int(art[dy, dx, 2])
+            tally += (key[dy:dy + rows, dx:dx + cols] == c)
+        return int((tally >= tally[y, x]).sum()), len(ys)
+
+    #: How much held art is a fact rather than a coincidence, and so how much it
+    #: takes to move a prop off the place its own code gives it. Measured on
+    #: this map: 125 held pixels of the torch is the single best place of
+    #: 2,181,060, while 23 of the crater's swirl are matched by 5,473 other
+    #: places and 10 of the windmill's post by 783. A hundred sits well inside
+    #: that gap.
+    ANCHOR = 100
+
+    def anchor(art, still, x, y):
+        """The pixel within one of the draw whose background holds most of the art.
+
+        The shipped background is a hand-placed copy of what the code draws and
+        it lands a pixel out: one right of the code for the skull, one right and
+        one down for four others, one down for all five torches. The only
+        runtime terms in the game's own sum are both written zero, so that pixel
+        is not the game's, it is the paste — and sitting on the paste is what
+        keeps a prop from doubling its own baked edge.
+        """
+        tries = [(int(held(art, still, x + dx, y + dy).sum()), -(abs(dx) + abs(dy)),
+                  x + dx, y + dy)
+                 for dy in (-1, 0, 1) for dx in (-1, 0, 1)]
+        most, _, bx, by = max(tries)
+        return (bx, by) if most >= ANCHOR else (x, y)
+
+    out = []
+    every = [f"Map_Prop_0{i}_spr" for i in range(1, 10)]
+    every += ["Map_Screen_Act_8_Expansion_spr", "Map_Screen_Act_9_Expansion_spr"]
+    places = drawn_at(dw, every)
+    for spr in every:
+        if not places[spr]:
+            print(f"note: {spr} is named by no code in the game, so nothing draws it")
+            continue
+        frames = dw.sprites[spr]["frames"]
+        shots = [np.asarray(cut(spr, i).convert("RGBA"), dtype=np.int16)
+                 for i in range(len(frames))]
+        art = shots[0][:, :, :3]
+        h, w = art.shape[:2]
+        solid = np.ones((h, w), dtype=bool)
+        for s in shots:
+            solid &= s[:, :, 3] > 250
+        moves = np.zeros((h, w), dtype=bool)
+        for s in shots[1:]:
+            moves |= np.abs(s - shots[0]).sum(axis=2) > 12
+        still = solid & ~moves
+
+        at, need = [], moves.copy()
+        for x, y in places[spr]:
+            x, y = anchor(art, still, x, y)
+            at.append((x, y))
+            # Whatever the background does not already show has to be drawn or
+            # half the prop is missing. Where one sprite stands in five places on
+            # different ground, the union serves them all: a pixel drawn over the
+            # identical pixel underneath changes nothing.
+            need |= still & ~held(art, still, x, y)
+        show = max(at, key=lambda p: held(art, still, *p).sum())
+        keeps = int(held(art, still, *show).sum())
+        same, probes = rivals(art, still, *show)
+        witness = (f"the background holds {keeps} of its {int(still.sum())} still pixels"
+                   + (", the only place on the map that does" if same == 1 else
+                      f", and {same - 1} other places hold as many of the {probes} checked,"
+                      f" so the picture cannot speak for it"))
+        if not need.any():
+            print(f"note: {spr} has {len(frames)} frame(s) and {witness} — nothing left to draw")
+            continue
+
+        # The rate the artist gave the sprite. The game does not read it: all
+        # thirteen draws pass a sub-image of their own, one counter that the
+        # Step event advances by the 0.15 at 14F1A62D8 every step — so the props
+        # run in lockstep, at 0.15 times whatever the player set the frame rate
+        # to (there is an option for it, UiUpOptionsVideoFps). With no one rate
+        # to copy, the sprite's own 6 stands, and all nine agree on it.
+        fps = int(dw.sprites[spr]["speed"]) or 6
+        name = spr[:-4].lower().replace("map_prop_", "prop").replace("map_screen_", "")
+        # One box around everything is not enough: a prop can change in two
+        # places far apart — the Act 8 expansion in a rune circle and a sparkle
+        # above the peaks — and a rectangle holding both is 43% of the sprite for
+        # 1.6% of it moving. So the pixels are grouped and each group placed on
+        # its own.
+        boxes = patches(need)
+        for k, box in enumerate(boxes):
+            bw, bh = box[2] - box[0], box[3] - box[1]
+            # A transparent gutter between the frames, and the page steps by the
+            # wider figure while its window stays the frame.
+            #
+            # The strip slides behind a clipping box and the whole map is drawn
+            # at a fractional scale, so the box's left edge lands mid-pixel and
+            # the compositor samples what is beside the frame — the right-hand
+            # column of the frame before it, which showed up as a hairline down
+            # the left of the burning skull. Two columns of nothing there means
+            # the worst it can sample is nothing.
+            step = bw + GUTTER
+            sheet = Image.new("RGBA", (step * len(frames), bh))
+            for i in range(len(frames)):
+                sheet.paste(cut(spr, i).crop(box), (step * i, 0))
+            piece = name if k == 0 else f"{name}-{k}"
+            picture(sheet, IMG / f"{piece}.png")
+            out.append({"art": piece, "w": bw, "h": bh, "step": step, "n": len(frames),
+                        "fps": fps, "at": [[x + box[0], y + box[1]] for x, y in at]})
+        share = 100 * sum((b[2] - b[0]) * (b[3] - b[1]) for b in boxes) / (w * h)
+        print(f"prop     {spr} — {len(at)} place(s) from the game's code, {len(frames)} frames "
+              f"at {fps}/s; {witness}; draws {len(boxes)} piece(s), {share:.0f}% of {w}x{h}")
+    return out
 
 
 def trail(cut):
@@ -181,10 +515,17 @@ def strips(dw, cut, unlit):
         frames = dw.sprites[spr]["frames"]
         fps = int(dw.sprites[spr]["speed"]) or 6
         first = cut(spr, 0)
-        sheet = Image.new("RGBA", (first.width * len(frames), first.height))
+        # The same transparent gutter the props carry, for the same reason: the
+        # strip slides behind a clipping box, the box is centred on a marker
+        # with a half-pixel translate, and without two empty columns the edge
+        # samples the frame beside it and draws a hairline.
+        step = first.width + GUTTER
+        sheet = Image.new("RGBA", (step * len(frames), first.height))
         for i in range(len(frames)):
-            sheet.paste(unlit(cut(spr, i)), (first.width * i, 0))
+            sheet.paste(unlit(cut(spr, i)), (step * i, 0))
         picture(sheet, IMG / f"{out}.{len(frames)}x{fps}.png")
+        print(f"strip    {out} — {len(frames)} frames of {first.width}x{first.height} "
+              f"at {fps}/s, laid out every {step}px; WorldMap.svelte carries these numbers")
 
 
 # ── the names, in every language the game ships ──────────────────────────────
@@ -308,18 +649,57 @@ def codex(dw, raw_items, langs, tables):
           f"{named} of {seen} stat lines a reader meets ({100 * named // seen}%)")
 
     out = {"langs": langs, "sheet": {"w": sheet[0], "h": sheet[1]},
-           "words": say.vocab(), "types": types_said(say, items),
-           "stats": vocab, "sets": kits, "items": items}
-    path = DATA / "codex.json"
-    path.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")),
-                    encoding="utf-8")
+           "words": {**said.SAID, **say.vocab()}, "types": types_said(say, items),
+           "stats": vocab, "sets": kits, "items": items,
+           "unholy": unholy.labelled(say)}
     with_stats = sum(1 for r in items.values() if r.get("stats") or r.get("more"))
     with_lore = sum(1 for r in items.values() if r.get("lore"))
     print(f"codex    {len(items)} items, {with_stats} with stats, {with_lore} with lore, "
           f"{len(vocab)} distinct stats, {len(kits)} sets")
     print(f"         icons {len(place)} cut into a {sheet[0]}x{sheet[1]} sheet, "
           f"{len(missing)} without one")
-    print(f"written  {path}  ({path.stat().st_size // 1024} KB)")
+    rows = squeeze(out)
+    report(langsplit.write(out, langs, DATA / "codex.json"))
+    print(f"squeeze  {rows} stat lines say their name and unit by number now")
+
+
+def squeeze(out):
+    """Take out of the file what the file already says somewhere else.
+
+    Four things were written twice. Each item repeated its own dictionary key
+    (55 KB) and its English name (43 KB) beside `names.en`. Every one of the
+    8678 stat lines carried the stat's English `text` and its `unit` (226 KB),
+    both of which the `stats` vocabulary at the root already holds under the
+    same `sid` — checked: not one of the 8678 disagreed with it. And the `sid`
+    itself is a long identifier repeated up to 379 times, so a line names its
+    stat by its index into that vocabulary instead (137 KB).
+
+    Together 461 KB of the raw 2237, and `hydrate` in src/codex/Codex.svelte
+    puts all four back on arrival so nothing downstream knows the difference.
+    """
+    at = {v["sid"]: i for i, v in enumerate(out["stats"])}
+    lines = 0
+    for it in out["items"].values():
+        it.pop("key", None)
+        if it.get("name") == (it.get("names") or {}).get("en"):
+            it.pop("name", None)
+        for row in [*it.get("stats", []),
+                    *(r for m in it.get("more") or [] for r in m["stats"])]:
+            row.pop("text", None)
+            row.pop("unit", None)
+            row["sid"] = at[row["sid"]]
+            lines += 1
+    return lines
+
+
+def report(made):
+    """What a reader downloads, which is the only size that matters."""
+    kb = langsplit.over_the_wire
+    worst = max(made[1:], key=lambda p: p.stat().st_size)
+    print(f"written  {made[0]}  ({made[0].stat().st_size // 1024} KB, "
+          f"{kb(made[0])} KB gzipped) + {len(made) - 1} languages")
+    print(f"         a first visit is {kb(made[0])} KB in English and "
+          f"{kb(made[0]) + kb(worst)} KB at worst ({worst.suffixes[0][1:]})")
 
 
 # ── a room name to the code the drop tables use ──────────────────────────────
@@ -404,7 +784,7 @@ def dungeon_name(act, say):
 
 
 def main():
-    dw, w, h, tile = art()
+    dw, w, h, tile, decor = art()
     langs, names = zone_names()
     t = tracker_tables()
 
@@ -561,14 +941,15 @@ def main():
         "langs": langs,
         "tiers": t["TIER_LETTERS"],
         "sheet": {"w": sheet[0], "h": sheet[1]},
-        "words": say.vocab(),
+        "words": {**said.SAID, **say.vocab()},
         "places": spoken,
         "nodes": nodes,
         "links": links,
         "linkTile": list(tile),
+        "props": decor,
         "items": items,
     }
-    (DATA / "map.json").write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    made = langsplit.write(out, langs, DATA / "map.json")
 
     placed = sum(1 for n in nodes if n["drops"])
     print(f"map      {w}x{h}")
@@ -591,7 +972,7 @@ def main():
         print(f"         {len(guessed)} matched by nearest name, e.g. {guessed[0]}")
     if missing:
         print(f"         no sprite for: {', '.join(missing[:6])}{' …' if len(missing) > 6 else ''}")
-    print(f"written  {DATA / 'map.json'}  ({(DATA / 'map.json').stat().st_size // 1024} KB)")
+    report(made)
 
 
 if __name__ == "__main__":
