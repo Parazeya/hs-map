@@ -1,0 +1,174 @@
+HeroSiege Extractor — F:\Games\Steam\steamapps\common\HeroSiege\bin
+  31 chunks, 32268 sprites, 325 texture pages, 80193 strings
+  2718 sounds in 8 groups, 124 shipped here
+  OBJT 6016  ROOM 306  BGND 834  SCPT 6211  PATH 17  SHDR 45  FONT 1
+  16 translation tables, 19772 rows
+  1679 items with a rarity, a grade and a drop rate
+  1671 drop rates from Hero_Siege.exe: 867 decoded, 804 by the engine default, 79 withheld
+    against the snapshot: 834 agree, 29 differ, 65 new, 743 the reader could not bind
+  the snapshot in data/items.json is behind the game by 29 values
+  148286 things to search, indexed in 814 ms
+
+  LoadRandomSatanicStat, compiled body 0x428d370..0x4291d2c (18876 bytes)
+  Four pools, not one. Argument 0 is switched against the case table at
+  0x10c90760 — cases 1, 2, 3, 5, and no case 4 — and the dispatch at 0x428db2d
+  sends each to its own switch (irandom(n)).
+
+  GenerateItemRandomStats (0x6f9560) is the caller, with the call unrolled
+  4 times at 0x6f9b0e, 0x6fa00f, 0x6fa510, 0x6faa0c. Each passes four:
+    arg 0  the pool selector, out of the item's stat struct by
+           variable_struct_get (its name id at 0x107fdc78, called at 0x6f9702)
+    arg 1  the item struct — the shared tail reads itemType off it at
+           0x4290343 and itemDefinitionStruct at 0x42903be
+    arg 2  one plus irandom(4), built at 0x6f98bd..0x6f98df, so 1..5,
+           rolled afresh at every one of the call sites
+    arg 3  the slot: the boxed constants 0, 1, 2, 3, one per unrolled call
+  A stored selector of 4 never arrives here: the caller writes a 4 at
+  0x6f999c, tests the stored value against it at 0x6f99ba and passes
+  irandom(2)+1 instead, so a stored 4 means "roll pool 1, 2 or 3". Selector 5
+  is its own pool and shares nothing. The pool is argument 0 and the slot is
+  argument 3 — separate arguments, and argument 2 is a third thing again.
+
+  -- selector 1 -- entry 0x428fa62, irandom(22), 23 arms, jump table 0x4291cd0
+     arm  line  site         stat id    min     max   name
+       0    17  0x0428fe7e       33     20      40   strength
+       1    18  0x0428feac       36     20      40   dexterity
+       2    19  0x0428fedd       25     10      20   movement_speed
+       3    20  0x0428ff0e       57      6      12   life_per_hit
+       4    21  0x0428ff3f       59     15      30   hp_kill
+       5    22  0x0428ff70       64      6      12   mana_per_hit
+       6    23  0x0428ffa1       66     15      30   mana_kill
+       7    24  0x0428ffd2       68     10      20   attack_speed
+       8    25  0x04290003       72      4      10   critical_chance
+       9    26  0x04290039       73     10      30   critical_damage
+      10    27  0x0429006a       74    250     400   attack_rating
+      11    28  0x0429009b       75     15      25   attack_rating_p
+      12    29  0x042900cc       76      3       5   attack_rating_per_level
+      13    30  0x042900fd       95     10      20   deadly_blow
+      14    31  0x0429012e       97     10      20   crushing_blow
+      15    32  0x0429015f       99     10      20   open_wounds
+      16    33  0x04290190      129     15      50   physical_damage_p
+      17    34  0x042901c1      282      1       5   exp_gain
+      18    35  0x042901eb       80      8      20   extra_damage_bleed
+      19    36  0x0429021c       79      8      20   extra_damage_stunned
+      20    37  0x0429024d       51     10      25   all_stats
+      21    38  0x0429027b      128     18      38   physical_damage
+      22    39  0x042902a9      222      1       3   physical_skills
+     23 ids: 25 33 36 51 57 59 64 66 68 72 73 74 75 76 79 80 95 97 99 128 129 222 282
+
+  -- selector 2 -- entry 0x428ec3c, irandom(16), 17 arms, jump table 0x4291c8c
+     arm  line  site         stat id    min     max   name
+       0    49  0x0428ef8f       39     20      40   energy
+       1    50  0x0428efbd       42     20      40   intelligence
+       2    51  0x0428efee       25     10      20   movement_speed
+       3    52  0x0428f01f       58      6      12   hp_per_second
+       4    53  0x0428f050       59     15      30   hp_kill
+       5    54  0x0428f081       65      6      12   mana_per_second
+       6    55  0x0428f0b2       66     15      30   mana_kill
+       7    56  0x0428f0e3      196     10      20   faster_cast_rate
+       8    57  0x0428f114      198      5      15   cooldown_reduction
+       9    58  0x0428f14a      200      5      15   mana_costs
+      10    61  0x0428f329      224      2       4   arcane_skills
+      10    62  0x0428f31a      223      2       4   cold_skills
+      10    63  0x0428f30b      225      2       4   fire_skills
+      10    64  0x0428f2fc      226      2       4   lightning_skills
+      10    65  0x0428f2ed      227      2       4   poison_skills
+          ^ one arm, 5 ids. Argument 2 is read at 0x428f186 and picks
+            which of them is boxed; all five then share the one [min, max]
+            array built at 0x428f363, so it moves the id, not the range
+            arg2: 1->224  2->223  3->225  4->226  5->227
+      11    73  0x0428f539      143     15      25   ignore_magic_resist
+      11    74  0x0428f52a      139     15      25   ignore_cold_resist
+      11    75  0x0428f51b      135     15      25   ignore_fire_resist
+      11    76  0x0428f50c      147     15      25   ignore_lightning_resist
+      11    77  0x0428f4fd      151     15      25   ignore_poison_resist
+          ^ one arm, 5 ids. Argument 2 is read at 0x428f39a and picks
+            which of them is boxed; all five then share the one [min, max]
+            array built at 0x428f573, so it moves the id, not the range
+            arg2: 1->143  2->139  3->135  4->147  5->151
+      12    83  0x0428f5a4      437      5      10   explosion_aoe
+      13    86  0x0428f775      141     22      50   magic_damage_f
+      13    87  0x0428f766      137     22      50   cold_damage_f
+      13    88  0x0428f757      133     22      50   fire_damage_f
+      13    89  0x0428f748      145     22      50   lightning_damage_f
+      13    90  0x0428f739      149     22      50   poison_damage_f
+          ^ one arm, 5 ids. Argument 2 is read at 0x428f5e0 and picks
+            which of them is boxed; all five then share the one [min, max]
+            array built at 0x428f7af, so it moves the id, not the range
+            arg2: 1->141  2->137  3->133  4->145  5->149
+      14    96  0x0428f7e0      167     15      25   damage_taken_mana
+      15    99  0x0428f9a5      142     15      40   magic_damage_increased
+      15   100  0x0428f996      138     15      40   cold_damage_increased
+      15   101  0x0428f987      134     15      40   fire_damage_increased
+      15   102  0x0428f978      146     15      40   lightning_damage_increased
+      15   103  0x0428f969      150     15      40   poison_damage_increased
+          ^ one arm, 5 ids. Argument 2 is read at 0x428f817 and picks
+            which of them is boxed; all five then share the one [min, max]
+            array built at 0x428f9df, so it moves the id, not the range
+            arg2: 1->142  2->138  3->134  4->146  5->150
+      16   109  0x0428fa0d      282      1       5   exp_gain
+     33 ids: 25 39 42 58 59 65 66 133 134 135 137 138 139 141 142 143 145 146 147 149 150 151 167 196 198 200 223 224 225 226 227 282 437
+
+  -- selector 3 -- entry 0x428e23f, irandom(16), 17 arms, jump table 0x4291c48
+     arm  line  site         stat id    min     max   name
+       0   119  0x0428e529       45     20      40   armor
+       1   120  0x0428e557       48     20      40   vitality
+       2   121  0x0428e588       25     10      20   movement_speed
+       3   122  0x0428e5b9       55     20      50   health_regen
+       4   123  0x0428e5ea       54      4       8   hp_per_level
+       5   124  0x0428e620       63     20      50   mana_regen
+       6   125  0x0428e651       62      4       8   mana_per_level
+       7   126  0x0428e687      155     10      20   defense_p
+       8   127  0x0428e6b8      160      3       6   magic_reduction
+       9   128  0x0428e6ee      159      3       6   reduction
+      10   129  0x0428e724      162     50     100   damage_reduced
+      11   130  0x0428e755      169    125     200   defense_vs_missile
+      12   131  0x0428e786      171     40      60   damage_return
+      13   132  0x0428e7b7      173     10      20   all_resistance
+      14   135  0x0428e984      195      4       8   arcane_absorb
+      14   136  0x0428e975      192      4       8   cold_absorb
+      14   137  0x0428e966      191      4       8   fire_absorb
+      14   138  0x0428e957      194      4       8   lightning_absorb
+      14   139  0x0428e948      193      4       8   poison_absorb
+          ^ one arm, 5 ids. Argument 2 is read at 0x428e7ee and picks
+            which of them is boxed; all five then share the one [min, max]
+            array built at 0x428e9be, so it moves the id, not the range
+            arg2: 1->195  2->192  3->191  4->194  5->193
+      15   147  0x0428eb84      181     50      75   arcane_resistance
+      15   148  0x0428eb75      177     50      75   cold_resistance
+      15   149  0x0428eb66      175     50      75   fire_resistance
+      15   150  0x0428eb57      179     50      75   lightning_resistance
+      15   151  0x0428eb48      183     50      75   poison_resistance
+          ^ one arm, 5 ids. Argument 2 is read at 0x428e9f4 and picks
+            which of them is boxed; all five then share the one [min, max]
+            array built at 0x428ebbe, so it moves the id, not the range
+            arg2: 1->181  2->177  3->175  4->179  5->183
+      16   157  0x0428ebeb      282      1       5   exp_gain
+     25 ids: 25 45 48 54 55 62 63 155 159 160 162 169 171 173 175 177 179 181 183 191 192 193 194 195 282
+
+  -- selector 5 -- entry 0x428db57, irandom(17), 18 arms, jump table 0x4291c00
+     arm  line  site         stat id    min     max   name
+       0   167  0x0428de88      350      1       2   buff_loot_slots
+       1   168  0x0428debb      351      2       8   buff_rune_chance
+       2   169  0x0428def1      352      5      15   buff_gold_drops
+       3   170  0x0428df14      353      5      10   buff_heroic_chance
+       4   171  0x0428df3e      354      5      10   buff_angelic_chance
+       5   172  0x0428df68      355     40      60   buff_movement_speed
+       6   173  0x0428df9e      356     25      40   buff_attack_speed
+       7   174  0x0428dfd4      357     25      50   buff_cast_rate
+       8   175  0x0428e00a      358     35      50   buff_attack_damage
+       9   176  0x0428e040      359     35      50   buff_skill_damage
+      10   177  0x0428e076      360      1       5   buff_ancient_relic
+      11   178  0x0428e0ac      361      1       3   buff_ancient_goblin
+      12   179  0x0428e0e2      362     50     100   buff_magic_find
+      13   180  0x0428e118      363     40      60   buff_experience_gain
+      14   181  0x0428e14e      364    200     300   buff_recovery
+      15   182  0x0428e184      365      1       5   buff_enemy_miniboss
+      16   183  0x0428e1b7      366    150     200   buff_critical_damage
+      17   184  0x0428e1ea      367      5      15   buff_ancient_pack
+     18 ids: 350 351 352 353 354 355 356 357 358 359 360 361 362 363 364 365 366 367
+
+  75 arms over the four pools, 99 id sites, 93 distinct stat ids
+  6 of the 75 arms read argument 2 and hold five sibling ids each;
+  the other 69 never read it, so for them argument 2 does nothing at all.
+  ids: 25 33 36 39 42 45 48 51 54 55 57 58 59 62 63 64 65 66 68 72 73 74 75 76 79 80 95 97 99 128 129 133 134 135 137 138 139 141 142 143 145 146 147 149 150 151 155 159 160 162 167 169 171 173 175 177 179 181 183 191 192 193 194 195 196 198 200 222 223 224 225 226 227 282 350 351 352 353 354 355 356 357 358 359 360 361 362 363 364 365 366 367 437

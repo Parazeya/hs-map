@@ -28,6 +28,62 @@
    * are joined — which is nine in ten of the lines anyone actually meets.
    */
   const place = $derived(places(lang, data?.words));
+
+  /**
+   * The Unholy slots, grouped by the pool each rolls from.
+   *
+   * An Unholy item does not carry these modifiers, it carries a slot: the game
+   * rolls one when the item drops, so the honest thing to show is what the
+   * slot can become. Three slots reading the same pool are one line and one
+   * list, not three of each.
+   */
+  // Held against the item and not as a plain flag, so opening one item's list
+  // does not leave the next item's already open.
+  let openFor = $state(null);
+  const showPool = $derived(openFor != null && openFor === item?.key);
+  const unholy = $derived.by(() => {
+    const slots = (item?.stats ?? []).filter((v) => v.sid === 'unholy_none');
+    if (!slots.length || !data?.unholy) return [];
+    const by = new Map();
+    for (const v of slots) {
+      const sel = String(v.pool ?? '');
+      by.set(sel, (by.get(sel) ?? 0) + 1);
+    }
+    return [...by].map(([sel, n]) => {
+      const from = data.unholy.selects[sel] ?? [];
+      const rolls = from.flatMap((k) => data.unholy.pools[String(k)]?.rolls ?? []);
+      return { sel, n, rolls };
+    });
+  });
+  /**
+   * A modifier's name, or the five an elemental roll chooses between.
+   *
+   * Written down the middle rather than five times over: the five differ by one
+   * word and share the rest, so "Ignore Arcane Resistance · Ignore Cold
+   * Resistance · …" is the same sentence four times too many. The words they
+   * agree on at each end are kept once and the elements listed between them,
+   * which works in every language because it is measured off the names
+   * themselves and not off a rule about where the element goes.
+   */
+  function middle(names) {
+    const words = names.map((n) => n.split(' '));
+    const short = Math.min(...words.map((w) => w.length));
+    let head = 0;
+    while (head < short - 1 && words.every((w) => w[head] === words[0][head])) head++;
+    let tail = 0;
+    while (
+      tail < short - head - 1 &&
+      words.every((w) => w[w.length - 1 - tail] === words[0][words[0].length - 1 - tail])
+    ) tail++;
+    const between = words.map((w) => w.slice(head, w.length - tail).join(' ')).join(' / ');
+    return [words[0].slice(0, head).join(' '), between, words[0].slice(words[0].length - tail).join(' ')]
+      .filter(Boolean)
+      .join(' ');
+  }
+  const rolled = $derived((r) => {
+    const names = (r.elements ?? [r]).map((e) => e.said?.[lang] || e.said?.en || e.name);
+    return names.length > 1 ? middle(names) : names[0];
+  });
   const byStat = $derived(Object.fromEntries((data?.stats ?? []).map((v) => [v.sid, v])));
   const said = $derived((s) => byStat[s.sid]?.names?.[lang] || s.text);
 
@@ -95,7 +151,7 @@
     {#if item.stats?.length}
       <h2>{t(item.more?.length ? 'Stats, as it comes' : 'Stats')}</h2>
       <ul class="stats">
-        {#each item.stats as s, i (s.sid + i)}
+        {#each item.stats.filter((v) => v.sid !== 'unholy_none') as s, i (s.sid + i)}
           <li>
             <span class="v">{span(s.min, s.max, s.unit ?? '')}</span>
             <span class="t">
@@ -109,6 +165,29 @@
         {/each}
       </ul>
     {/if}
+
+    {#each unholy as g (g.sel)}
+      <h2>{t('Unholy')}</h2>
+      <p class="rolls">
+        {g.n} × {t('rolled when the item drops')} — {t('one of')} {g.rolls.length}
+      </p>
+      <button class="more" onclick={() => (openFor = showPool ? null : item.key)}>
+        {showPool ? t('Hide') : t('Show')}
+      </button>
+      {#if showPool}
+        <ul class="stats pool">
+          {#each g.rolls as r, i (i)}
+            <li>
+              <span class="v">{span(r.min, r.max)}</span>
+              <span class="t">
+                {rolled(r)}
+                {#if r.elements}<span class="second">{t('one element of the five')}</span>{/if}
+              </span>
+            </li>
+          {/each}
+        </ul>
+      {/if}
+    {/each}
 
     {#each item.more ?? [] as v (v.when)}
       <h2>{t('Stats')}, {v.when.startsWith('with a ')
@@ -211,6 +290,24 @@
   }
   .stats .t { flex: 1; min-width: 0; }
   .second { color: var(--dim); }
+
+  /* What an Unholy slot can roll. Folded away by default because a slot that
+     draws from all three pools offers 57 lines, which would bury the stats the
+     item actually carries. */
+  .rolls { margin: 0 0 6px; color: var(--dim); font-size: 12px; line-height: 1.4; }
+  .more {
+    padding: 3px 9px;
+    color: inherit;
+    font: inherit;
+    font-size: 12px;
+    background: none;
+    border: 1px solid var(--edge);
+    border-radius: 7px;
+    cursor: pointer;
+  }
+  .more:hover { background: #ffffff10; }
+  .stats.pool { margin-top: 8px; }
+  .stats.pool .second { display: block; font-size: 11px; }
 
   /* The recipe reads left to right, because the order matters: the same runes
      in another order are another runeword, or none. */

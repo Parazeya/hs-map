@@ -1,0 +1,648 @@
+{
+ "note": "read out of Hero_Siege.exe; see build/unholy.py",
+ "selects": {
+  "1": [
+   1
+  ],
+  "2": [
+   2
+  ],
+  "3": [
+   3
+  ],
+  "4": [
+   1,
+   2,
+   3
+  ]
+ },
+ "elements": [
+  "Arcane",
+  "Cold",
+  "Fire",
+  "Lightning",
+  "Poison"
+ ],
+ "pools": {
+  "1": {
+   "arms": 23,
+   "rolls": [
+    {
+     "id": 33,
+     "name": "strength",
+     "min": 20,
+     "max": 40
+    },
+    {
+     "id": 36,
+     "name": "dexterity",
+     "min": 20,
+     "max": 40
+    },
+    {
+     "id": 25,
+     "name": "movement_speed",
+     "min": 10,
+     "max": 20
+    },
+    {
+     "id": 57,
+     "name": "life_per_hit",
+     "min": 6,
+     "max": 12
+    },
+    {
+     "id": 59,
+     "name": "hp_kill",
+     "min": 15,
+     "max": 30
+    },
+    {
+     "id": 64,
+     "name": "mana_per_hit",
+     "min": 6,
+     "max": 12
+    },
+    {
+     "id": 66,
+     "name": "mana_kill",
+     "min": 15,
+     "max": 30
+    },
+    {
+     "id": 68,
+     "name": "attack_speed",
+     "min": 10,
+     "max": 20
+    },
+    {
+     "id": 72,
+     "name": "critical_chance",
+     "min": 4,
+     "max": 10
+    },
+    {
+     "id": 73,
+     "name": "critical_damage",
+     "min": 10,
+     "max": 30
+    },
+    {
+     "id": 74,
+     "name": "attack_rating",
+     "min": 250,
+     "max": 400
+    },
+    {
+     "id": 75,
+     "name": "attack_rating_p",
+     "min": 15,
+     "max": 25
+    },
+    {
+     "id": 76,
+     "name": "attack_rating_per_level",
+     "min": 3,
+     "max": 5
+    },
+    {
+     "id": 95,
+     "name": "deadly_blow",
+     "min": 10,
+     "max": 20
+    },
+    {
+     "id": 97,
+     "name": "crushing_blow",
+     "min": 10,
+     "max": 20
+    },
+    {
+     "id": 99,
+     "name": "open_wounds",
+     "min": 10,
+     "max": 20
+    },
+    {
+     "id": 129,
+     "name": "physical_damage_p",
+     "min": 15,
+     "max": 50
+    },
+    {
+     "id": 282,
+     "name": "exp_gain",
+     "min": 1,
+     "max": 5
+    },
+    {
+     "id": 80,
+     "name": "extra_damage_bleed",
+     "min": 8,
+     "max": 20
+    },
+    {
+     "id": 79,
+     "name": "extra_damage_stunned",
+     "min": 8,
+     "max": 20
+    },
+    {
+     "id": 51,
+     "name": "all_stats",
+     "min": 10,
+     "max": 25
+    },
+    {
+     "id": 128,
+     "name": "physical_damage",
+     "min": 18,
+     "max": 38
+    },
+    {
+     "id": 222,
+     "name": "physical_skills",
+     "min": 1,
+     "max": 3
+    }
+   ]
+  },
+  "2": {
+   "arms": 17,
+   "rolls": [
+    {
+     "id": 39,
+     "name": "energy",
+     "min": 20,
+     "max": 40
+    },
+    {
+     "id": 42,
+     "name": "intelligence",
+     "min": 20,
+     "max": 40
+    },
+    {
+     "id": 25,
+     "name": "movement_speed",
+     "min": 10,
+     "max": 20
+    },
+    {
+     "id": 58,
+     "name": "hp_per_second",
+     "min": 6,
+     "max": 12
+    },
+    {
+     "id": 59,
+     "name": "hp_kill",
+     "min": 15,
+     "max": 30
+    },
+    {
+     "id": 65,
+     "name": "mana_per_second",
+     "min": 6,
+     "max": 12
+    },
+    {
+     "id": 66,
+     "name": "mana_kill",
+     "min": 15,
+     "max": 30
+    },
+    {
+     "id": 196,
+     "name": "faster_cast_rate",
+     "min": 10,
+     "max": 20
+    },
+    {
+     "id": 198,
+     "name": "cooldown_reduction",
+     "min": 5,
+     "max": 15
+    },
+    {
+     "id": 200,
+     "name": "mana_costs",
+     "min": 5,
+     "max": 15
+    },
+    {
+     "min": 2,
+     "max": 4,
+     "elements": [
+      {
+       "id": 224,
+       "name": "arcane_skills",
+       "element": "Arcane"
+      },
+      {
+       "id": 223,
+       "name": "cold_skills",
+       "element": "Cold"
+      },
+      {
+       "id": 225,
+       "name": "fire_skills",
+       "element": "Fire"
+      },
+      {
+       "id": 226,
+       "name": "lightning_skills",
+       "element": "Lightning"
+      },
+      {
+       "id": 227,
+       "name": "poison_skills",
+       "element": "Poison"
+      }
+     ]
+    },
+    {
+     "min": 15,
+     "max": 25,
+     "elements": [
+      {
+       "id": 143,
+       "name": "ignore_magic_resist",
+       "element": "Arcane"
+      },
+      {
+       "id": 139,
+       "name": "ignore_cold_resist",
+       "element": "Cold"
+      },
+      {
+       "id": 135,
+       "name": "ignore_fire_resist",
+       "element": "Fire"
+      },
+      {
+       "id": 147,
+       "name": "ignore_lightning_resist",
+       "element": "Lightning"
+      },
+      {
+       "id": 151,
+       "name": "ignore_poison_resist",
+       "element": "Poison"
+      }
+     ]
+    },
+    {
+     "id": 437,
+     "name": "explosion_aoe",
+     "min": 5,
+     "max": 10
+    },
+    {
+     "min": 22,
+     "max": 50,
+     "elements": [
+      {
+       "id": 141,
+       "name": "magic_damage_f",
+       "element": "Arcane"
+      },
+      {
+       "id": 137,
+       "name": "cold_damage_f",
+       "element": "Cold"
+      },
+      {
+       "id": 133,
+       "name": "fire_damage_f",
+       "element": "Fire"
+      },
+      {
+       "id": 145,
+       "name": "lightning_damage_f",
+       "element": "Lightning"
+      },
+      {
+       "id": 149,
+       "name": "poison_damage_f",
+       "element": "Poison"
+      }
+     ]
+    },
+    {
+     "id": 167,
+     "name": "damage_taken_mana",
+     "min": 15,
+     "max": 25
+    },
+    {
+     "min": 15,
+     "max": 40,
+     "elements": [
+      {
+       "id": 142,
+       "name": "magic_damage_increased",
+       "element": "Arcane"
+      },
+      {
+       "id": 138,
+       "name": "cold_damage_increased",
+       "element": "Cold"
+      },
+      {
+       "id": 134,
+       "name": "fire_damage_increased",
+       "element": "Fire"
+      },
+      {
+       "id": 146,
+       "name": "lightning_damage_increased",
+       "element": "Lightning"
+      },
+      {
+       "id": 150,
+       "name": "poison_damage_increased",
+       "element": "Poison"
+      }
+     ]
+    },
+    {
+     "id": 282,
+     "name": "exp_gain",
+     "min": 1,
+     "max": 5
+    }
+   ]
+  },
+  "3": {
+   "arms": 17,
+   "rolls": [
+    {
+     "id": 45,
+     "name": "armor",
+     "min": 20,
+     "max": 40
+    },
+    {
+     "id": 48,
+     "name": "vitality",
+     "min": 20,
+     "max": 40
+    },
+    {
+     "id": 25,
+     "name": "movement_speed",
+     "min": 10,
+     "max": 20
+    },
+    {
+     "id": 55,
+     "name": "health_regen",
+     "min": 20,
+     "max": 50
+    },
+    {
+     "id": 54,
+     "name": "hp_per_level",
+     "min": 4,
+     "max": 8
+    },
+    {
+     "id": 63,
+     "name": "mana_regen",
+     "min": 20,
+     "max": 50
+    },
+    {
+     "id": 62,
+     "name": "mana_per_level",
+     "min": 4,
+     "max": 8
+    },
+    {
+     "id": 155,
+     "name": "defense_p",
+     "min": 10,
+     "max": 20
+    },
+    {
+     "id": 160,
+     "name": "magic_reduction",
+     "min": 3,
+     "max": 6
+    },
+    {
+     "id": 159,
+     "name": "reduction",
+     "min": 3,
+     "max": 6
+    },
+    {
+     "id": 162,
+     "name": "damage_reduced",
+     "min": 50,
+     "max": 100
+    },
+    {
+     "id": 169,
+     "name": "defense_vs_missile",
+     "min": 125,
+     "max": 200
+    },
+    {
+     "id": 171,
+     "name": "damage_return",
+     "min": 40,
+     "max": 60
+    },
+    {
+     "id": 173,
+     "name": "all_resistance",
+     "min": 10,
+     "max": 20
+    },
+    {
+     "min": 4,
+     "max": 8,
+     "elements": [
+      {
+       "id": 195,
+       "name": "arcane_absorb",
+       "element": "Arcane"
+      },
+      {
+       "id": 192,
+       "name": "cold_absorb",
+       "element": "Cold"
+      },
+      {
+       "id": 191,
+       "name": "fire_absorb",
+       "element": "Fire"
+      },
+      {
+       "id": 194,
+       "name": "lightning_absorb",
+       "element": "Lightning"
+      },
+      {
+       "id": 193,
+       "name": "poison_absorb",
+       "element": "Poison"
+      }
+     ]
+    },
+    {
+     "min": 50,
+     "max": 75,
+     "elements": [
+      {
+       "id": 181,
+       "name": "arcane_resistance",
+       "element": "Arcane"
+      },
+      {
+       "id": 177,
+       "name": "cold_resistance",
+       "element": "Cold"
+      },
+      {
+       "id": 175,
+       "name": "fire_resistance",
+       "element": "Fire"
+      },
+      {
+       "id": 179,
+       "name": "lightning_resistance",
+       "element": "Lightning"
+      },
+      {
+       "id": 183,
+       "name": "poison_resistance",
+       "element": "Poison"
+      }
+     ]
+    },
+    {
+     "id": 282,
+     "name": "exp_gain",
+     "min": 1,
+     "max": 5
+    }
+   ]
+  }
+ },
+ "zone": {
+  "arms": 18,
+  "rolls": [
+   {
+    "id": 350,
+    "name": "buff_loot_slots",
+    "min": 1,
+    "max": 2
+   },
+   {
+    "id": 351,
+    "name": "buff_rune_chance",
+    "min": 2,
+    "max": 8
+   },
+   {
+    "id": 352,
+    "name": "buff_gold_drops",
+    "min": 5,
+    "max": 15
+   },
+   {
+    "id": 353,
+    "name": "buff_heroic_chance",
+    "min": 5,
+    "max": 10
+   },
+   {
+    "id": 354,
+    "name": "buff_angelic_chance",
+    "min": 5,
+    "max": 10
+   },
+   {
+    "id": 355,
+    "name": "buff_movement_speed",
+    "min": 40,
+    "max": 60
+   },
+   {
+    "id": 356,
+    "name": "buff_attack_speed",
+    "min": 25,
+    "max": 40
+   },
+   {
+    "id": 357,
+    "name": "buff_cast_rate",
+    "min": 25,
+    "max": 50
+   },
+   {
+    "id": 358,
+    "name": "buff_attack_damage",
+    "min": 35,
+    "max": 50
+   },
+   {
+    "id": 359,
+    "name": "buff_skill_damage",
+    "min": 35,
+    "max": 50
+   },
+   {
+    "id": 360,
+    "name": "buff_ancient_relic",
+    "min": 1,
+    "max": 5
+   },
+   {
+    "id": 361,
+    "name": "buff_ancient_goblin",
+    "min": 1,
+    "max": 3
+   },
+   {
+    "id": 362,
+    "name": "buff_magic_find",
+    "min": 50,
+    "max": 100
+   },
+   {
+    "id": 363,
+    "name": "buff_experience_gain",
+    "min": 40,
+    "max": 60
+   },
+   {
+    "id": 364,
+    "name": "buff_recovery",
+    "min": 200,
+    "max": 300
+   },
+   {
+    "id": 365,
+    "name": "buff_enemy_miniboss",
+    "min": 1,
+    "max": 5
+   },
+   {
+    "id": 366,
+    "name": "buff_critical_damage",
+    "min": 150,
+    "max": 200
+   },
+   {
+    "id": 367,
+    "name": "buff_ancient_pack",
+    "min": 5,
+    "max": 15
+   }
+  ]
+ }
+}
