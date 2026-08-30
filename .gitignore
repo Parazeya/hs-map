@@ -1,2 +1,6 @@
 node_modules/
 .vite/
+
+# the build writes these beside its own sources
+__pycache__/
+*.pyc
