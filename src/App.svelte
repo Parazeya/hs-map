@@ -1,5 +1,6 @@
 <script>
   import { KIND, asset, called, load, nameOf } from './lib/map.js';
+  import { speak } from './lib/lang.js';
   import { talk } from './lib/say.js';
   import WorldMap from './WorldMap.svelte';
   import Sidebar from './Sidebar.svelte';
@@ -81,15 +82,52 @@
     }
   };
 
+  // map.json carries English; the other ten are a file each, fetched when they
+  // are picked. `lang` moves only once the names are on the records, so the map
+  // is never half in one language and half in another — see src/lib/lang.js.
+  let loading = $state(null);
+
+  async function pickLang(want) {
+    if (want === lang || !data) return;
+    loading = want;
+    try {
+      await speak(data, 'map', want);
+      lang = want;
+    } catch {
+      // the page is whole and readable in the language it is in; taking it down
+      // to an error because a second file did not arrive would be the worse
+      // answer, and the picker snapping back is what says the switch failed
+    } finally {
+      loading = null;
+    }
+  }
+
   load()
-    .then((d) => {
-      data = d;
+    .then(async (d) => {
       // the game ships eleven languages; the stored choice first, else the
       // browser's, and English if neither is one of them
       const want = remembered() || (navigator.language || 'en').slice(0, 2).toLowerCase();
-      lang = d.langs.includes(want) ? want : 'en';
+      const first = d.langs.includes(want) ? want : 'en';
+      // before the first paint, so the map is never drawn in English and then
+      // relabelled a moment later
+      if (first !== 'en') await speak(d, 'map', first).catch(() => {});
+      data = d;
+      lang = first;
     })
     .catch((e) => (failed = e));
+
+
+  /**
+   * Take the boot screen down once there is something to look at.
+   *
+   * It lives in the HTML rather than here so it paints before this file has
+   * been fetched, let alone run — which is the whole point of it — and so
+   * taking it down is this file's job. Removed rather than hidden: it covers
+   * the window, and a hidden thing that covers the window is a bug waiting.
+   */
+  $effect(() => {
+    if (data) document.getElementById('boot')?.remove();
+  });
 
   $effect(() => {
     if (!data) return;
@@ -122,7 +160,13 @@
 <!-- The title bar was a strip of chrome across a map that is only 800px tall to
      begin with. Its two controls earn their place; the words did not. -->
 {#snippet controls()}
-  <select bind:value={lang} aria-label={t('Zone names')}>
+  <select
+    value={loading ?? lang}
+    aria-label={t('Zone names')}
+    aria-busy={loading ? 'true' : null}
+    class:loading
+    onchange={(e) => pickLang(e.currentTarget.value)}
+  >
     {#each data.langs as code (code)}
       <option value={code}>{code.toUpperCase()}</option>
     {/each}
@@ -222,6 +266,9 @@
     cursor: pointer;
   }
   select:focus, button:focus-visible { outline: none; border-color: var(--hot); }
+  /* while its names are on the wire — the map stays readable in the language it
+     is in, and the picker is what says another one is coming */
+  select.loading { opacity: .55; cursor: progress; }
   button:hover, .go:hover { border-color: var(--hot); color: var(--hot); }
   /* inline-flex so it stands exactly as tall as the button beside it: an inline
      link is sized by its line box and came out three pixels shorter */
