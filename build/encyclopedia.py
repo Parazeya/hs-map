@@ -138,6 +138,12 @@ def stat_line(s):
     cast Shadowflames at level 1 to 3" is one stat with two ranges — and the
     named fields beside them say which spell, class or range it is about.
     """
+    # An Unholy slot is not a stat with a value. The number the snapshot
+    # records against it is the pool the game rolls from — `LoadRandomSatanicStat`
+    # switches on it, and a stored 4 means "pool 1, 2 or 3" — so it is written
+    # as a pool and never as a magnitude. See build/unholy.py.
+    if s.get("sid") == "unholy_none":
+        return {"sid": "unholy_none", "pool": s.get("min1"), "text": "Unholy"}
     out = {
         "sid": s.get("sid"),
         "min": s.get("min1"),
@@ -166,6 +172,22 @@ def text_rows(path):
             if parts and parts[0] and not parts[0].startswith("["):
                 rows[parts[0]] = parts[1:]
     return rows
+
+
+#: What the engine leaves in a record that never states a drop rate. It is not
+#: a chance of one in fifty million; it is the game's way of saying it does not
+#: fall out of the world at all — from a boss, a chest or a tower instead. The
+#: tracker's own tables already refuse it; this file was reading the snapshot's
+#: raw number as a fallback and printing it, on 701 of 1,728 items.
+#:
+#: Exactly this number, not everything above it: three items are written rarer
+#: than the default and mean it — 50,696,969, 111,111,111 and 999,999,999.
+NO_DROP = 50_000_000
+
+
+def plain(rate):
+    """A drop rate, or None where the number is the engine's shrug."""
+    return None if rate == NO_DROP else rate
 
 
 def out_of_key(tkey, kind):
@@ -317,7 +339,7 @@ def build(raw_items, csv_path, langs, icons_by_name, tidy, tables, say=None):
             "size": [m.get("Width"), m.get("Height")] if m.get("Width") else None,
             "stats": stats,
             "places": tables["DROP_PLACES"].get(low) or it.get("dropPlaces") or [],
-            "rate": tables["DROP_RATE"].get(low) or (it.get("droprate") or {}).get("base"),
+            "rate": tables["DROP_RATE"].get(low) or plain((it.get("droprate") or {}).get("base")),
             "chase": tables["DROP_CHASE"].get(low),
             "names": told,
             "lore": said(f"lore_{tkey}"),

@@ -262,6 +262,16 @@ def build(dw, items, wanted, out_png):
     # it is how a helmet came to wear a flail
     kind_of = {tidy((it.get("metadata") or {}).get("name")):
                (it.get("metadata") or {}).get("type") for it in items}
+    # A runeword is not a thing with a picture. It is what a base becomes when
+    # the runes go in, so the art it wears is the base's — and there is no
+    # sprite anywhere in the game under a runeword's name. Every match one gets
+    # by name is therefore some other item's picture, and the names are close
+    # enough that it lands: the runeword "Justice" took the Justice tarot
+    # card's scales, "Shroud of Elements" a hood, "Shadow" a black disc. So
+    # they are kept out of the matching entirely and given the emblem below.
+    runewords = {tidy((it.get("metadata") or {}).get("name"))
+                 for it in items if (it.get("metadata") or {}).get("rarity") == "Runeword"}
+    runewords.discard("")
 
     cut = {}
     chosen = {}          # item -> the sprite it was cut from, for arguing with
@@ -273,8 +283,23 @@ def build(dw, items, wanted, out_png):
         if not tk or not nm:
             continue
         low = tidy(nm)
-        if low not in wanted or low in cut:
+        if low not in wanted or low in cut or low in runewords:
             continue
+        # The game names a boss's soulgem after the boss and nothing else:
+        # `socketable_gem_gurag` is drawn by `Boss_Gemstone_Gurag_spr`. Neither
+        # the key nor the display name shares a word with that, so nine gems
+        # came out blank. Read off the key rather than written out: the nine
+        # follow the same rule and a tenth boss would too.
+        gem = re.fullmatch(r"socketable_gem_(\w+)", tk or "")
+        if gem:
+            art = f"Boss_Gemstone_{gem.group(1).capitalize()}_spr"
+            if art in dw.sprites:
+                try:
+                    cut[low] = dw.sprite_frames(art)[0]
+                    chosen[low] = art
+                    continue
+                except Exception:
+                    pass
         named = NAMED.get(low)
         if named and named in dw.sprites:
             try:
@@ -311,7 +336,7 @@ def build(dw, items, wanted, out_png):
     # Some items the drop tables know are not in the datamined snapshot at all,
     # so the loop above never sees them and never asks. They still have a name,
     # and a name is enough to look with.
-    for low in sorted(wanted - set(cut)):
+    for low in sorted(wanted - set(cut) - runewords):
         name = None
         want = kind_of.get(low)
         got = by_core.get(core(low))
@@ -353,12 +378,9 @@ def build(dw, items, wanted, out_png):
         except Exception:
             art = None
         if art is not None:
-            for it in items:
-                m = it.get("metadata") or {}
-                low = tidy(m.get("name") or "")
-                if m.get("rarity") == "Runeword" and low in wanted and low not in cut:
-                    emblem_for.add(low)
-                    chosen[low] = EMBLEM
+            for low in sorted(runewords & set(wanted)):
+                emblem_for.add(low)
+                chosen[low] = EMBLEM
             if emblem_for:
                 cut[EMBLEM] = art
                 missing = [m for m in missing if tidy(m) not in emblem_for]

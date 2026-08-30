@@ -89,6 +89,8 @@ VOCAB = {
     # what the phone's one column folds the filters behind
     "Filters": "filters",
     "Rarity": "rarity",
+    # what the game calls the D..SS grade, and what it calls the column of names
+    "Tier": "tier",
     "Type": "type",
     "Level": "level",
     "Drop": "drop",
@@ -189,6 +191,17 @@ class Words:
 
         out = {}
         for sid in sids:
+            # A stat the extractor read out of the executable carries the
+            # GAME's own name for itself — `strength`, `hp_kill`,
+            # `arcane_skills`, straight off the loot filter's labels — and
+            # those are already keys of the attribute table, under
+            # [Global Stats] rather than [Item Stats]. No join on meaning is
+            # needed for them, and none should be attempted: guessing at a
+            # name the file already states is how a stat ends up labelled as
+            # its neighbour.
+            if sid in self.by_key:
+                out[sid] = self.by_key[sid]
+                continue
             t = self._toks(sid)
             key = STAT_NAMED.get(sid) or by_key.get(t) or by_text.get(t) or best(t)
             said = self.by_key.get(key) if key else None
