@@ -17,8 +17,36 @@
     (kit?.of ?? []).map((k) => ({ key: k, of: data.items[k] })).filter((p) => p.of),
   );
 
+  /** The classes this item's stats are built for, and what pointed at them. */
+  const suits = $derived(
+    (item?.suits ?? []).map((s) => ({
+      name: data.classes?.find((c) => c.id === s.c)?.names?.[lang] || s.c,
+      why: (s.why ?? []).map((w) => data.about?.[w]?.[lang] || data.about?.[w]?.en || w),
+    })),
+  );
+
   const name = $derived(item ? (item.names?.[lang] || item.name) : '');
   const lore = $derived(item ? (item.lore?.[lang] || item.lore?.en || null) : null);
+
+  /** One of the game's phrases, in the reader's language. */
+  const word = (o) => o?.[lang] || o?.en || '';
+
+  /**
+   * What a potion grants, which is a talent and not a stat.
+   *
+   * The item states the talent as a number and the levels it grants it at as a
+   * range, and neither means anything on a page: the number is an enum the
+   * compiler turned into a constant. The talent behind it carries the lines a
+   * player actually reads, so those two stats are dropped from the list and the
+   * talent is drawn in their place.
+   */
+  const gives = $derived(item?.grants ?? null);
+  const HELD_BY_TALENT = ['singular_skill', 'stat_random_skill'];
+  const shown = $derived(
+    (item?.stats ?? []).filter(
+      (v) => v.sid !== 'unholy_none' && !(gives && HELD_BY_TALENT.includes(v.sid)),
+    ),
+  );
   const cls = (r) => 'r-' + String(r ?? 'common').toLowerCase().replace(/\s+/g, '-');
 
   /**
@@ -148,10 +176,10 @@
       </ol>
     {/if}
 
-    {#if item.stats?.length}
+    {#if shown.length}
       <h2>{t(item.more?.length ? 'Stats, as it comes' : 'Stats')}</h2>
       <ul class="stats">
-        {#each item.stats.filter((v) => v.sid !== 'unholy_none') as s, i (s.sid + i)}
+        {#each shown as s, i (s.sid + i)}
           <li>
             <span class="v">{span(s.min, s.max, s.unit ?? '')}</span>
             <span class="t">
@@ -164,6 +192,31 @@
           </li>
         {/each}
       </ul>
+    {/if}
+
+    {#if gives}
+      <h2>{t('Grants')}</h2>
+      <p class="grant">
+        {#if gives.levels?.[0] != null}
+          <span class="lvl">+[{gives.levels[0]}{gives.levels[1] != null && gives.levels[1] !== gives.levels[0] ? `-${gives.levels[1]}` : ''}]</span>
+        {/if}
+        <strong>{word(gives.names)}</strong>
+        {#if gives.lasts}<span class="second">{gives.lasts} {t('seconds')}</span>{/if}
+      </p>
+      <ul class="stats">
+        {#each gives.lines ?? [] as l, i (i)}
+          <li>
+            <span class="v">{l.start}{l.mark}</span>
+            <span class="t">
+              {word(l.of)}
+              {#if l.per}<span class="second">+{l.per}{l.mark} {t('per level')}</span>{/if}
+            </span>
+          </li>
+        {/each}
+      </ul>
+      {#if word(gives.lore)}
+        <p class="lore">{word(gives.lore)}</p>
+      {/if}
     {/if}
 
     {#each unholy as g (g.sel)}
@@ -207,8 +260,24 @@
       </ul>
     {/each}
 
-    {#if pieces.length}
+    {#if kit?.bonuses?.length}
       <h2>{kitName}</h2>
+      <!-- What the set gives at each count of pieces worn. The wording is the
+           game's own English; there is no translated table for it. -->
+      <ul class="bonuses">
+        {#each kit.bonuses as step (step.pieces)}
+          <li>
+            <span class="worn">{step.pieces}</span>
+            <span class="gives">
+              {#each step.lines as l, i (i)}<span class="line">{l.says}</span>{/each}
+            </span>
+          </li>
+        {/each}
+      </ul>
+    {/if}
+
+    {#if pieces.length}
+      {#if !kit?.bonuses?.length}<h2>{kitName}</h2>{/if}
       <ul class="pieces">
         {#each pieces as p (p.key)}
           <li>
@@ -217,6 +286,26 @@
               <span class="n {cls(p.of.rarity)}">{p.of.names?.[lang] || p.of.name}</span>
               <span class="k">{t(p.of.type ?? '')}</span>
             </button>
+          </li>
+        {/each}
+      </ul>
+    {/if}
+
+    {#if item.aura}
+      <h2>{t('Suits')}</h2>
+      <!-- An aura is worn for whoever is standing near it, so the item is not
+           any one class's — and as often as not it is worn by a mercenary. -->
+      <p class="anyone">{t('Any class — often carried by a mercenary.')}</p>
+    {:else if suits.length}
+      <h2>{t('Suits')}</h2>
+      <!-- Nothing in the game says who an item is for. This is read off the
+           stats: the classes whose skills and sub-skills are built out of what
+           this item gives, and the part of it that says so. -->
+      <ul class="suits">
+        {#each suits as s (s.name)}
+          <li>
+            <span class="who">{s.name}</span>
+            <span class="why">{s.why.join(' · ')}</span>
           </li>
         {/each}
       </ul>
@@ -360,7 +449,34 @@
   .pieces .k { flex: none; color: var(--dim); font-size: 11px; }
 
   .places li { padding: 1px 0; font-size: 13px; }
+  .anyone { margin: 0; font-size: 13px; }
+  .suits { list-style: none; margin: 0; padding: 0; }
+  .suits li {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    padding: 3px 0;
+  }
+  .suits .who { flex: none; }
+  .suits .why { color: var(--dim); font-size: 12px; }
+
+  .bonuses { list-style: none; margin: 0 0 10px; padding: 0; }
+  .bonuses li { display: flex; gap: 10px; padding: 4px 0; border-top: 1px solid var(--edge); }
+  .bonuses li:first-child { border-top: 0; }
+  .bonuses .worn {
+    flex: none;
+    min-width: 22px;
+    text-align: right;
+    color: var(--hot);
+    font-variant-numeric: tabular-nums;
+  }
+  .bonuses .gives { display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
+
   .lore { margin: 0; color: var(--dim); font-size: 13px; line-height: 1.45; font-style: italic; }
+  .grant { margin: 6px 0 2px; font-size: 13px; }
+  .grant .lvl { color: var(--dim); }
+  .grant strong { color: var(--gold, #d8b45a); font-weight: 600; }
+  .grant .second { margin-left: 6px; }
   .key {
     margin: 22px 0 0;
     color: var(--dim);
