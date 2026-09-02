@@ -165,6 +165,13 @@ def stat_line(s):
     out["text"] = text
     if unit:
         out["unit"] = unit
+    # A relic's stat is not rolled but climbed: the item carries the ten values
+    # the stat takes at the relic's ten levels, and no min or max at all, so
+    # without this those lines printed their name and no number.
+    if out["min"] is None and s.get("values"):
+        ladder = [v for v in s["values"] if v is not None]
+        if ladder:
+            out["min"], out["max"], out["rank"] = ladder[0], ladder[-1], 1
     if s.get("min2") is not None or s.get("max2") is not None:
         out["min2"] = s.get("min2")
         out["max2"] = s.get("max2")
@@ -268,6 +275,15 @@ def sockets(row, by_name, tidy):
 #: of levels it grants it at. The game writes "+[1-5] to Drunken Kung Fu" out
 #: of the pair.
 GRANTS, GRANT_LEVELS = "singular_skill", "stat_random_skill"
+#: The other way an item says what it grants: the spell by name, in a field
+#: beside the stat. Runewords are written this way and a few uniques with them,
+#: and Torment names three this way in one go.
+BY_NAME = "grant_spell"
+
+def flat(text):
+    """A name with nothing in it but letters and digits, for comparing two."""
+    return re.sub(r"[^a-z0-9]", "", (text or "").lower())
+
 
 def camel(key):
     """`consumable_bottle_of_sake` -> `bottleOfSake`, which is what the talent
@@ -276,74 +292,237 @@ def camel(key):
     return parts[0] + "".join(p[:1].upper() + p[1:] for p in parts[1:])
 
 
-#: Why an item's granted talent is not read from the number it states.
+#: Where an item's key and its talent's key parted.
 #:
-#: The number is the talent's place in an order the compiler settled, and our
-#: count of the talents is not that order: it runs about twenty ahead by the
-#: end of the list, and not by a constant. The difference can be measured —
-#: the potions name their talent by number and by a key their own key spells
-#: out, and the planner names two hundred more — so a correction can be fitted
-#: between anchors that agree.
-#:
-#: It was, and then it was checked against the items where both ways can
-#: answer: of 127 such items the fitted number agreed with the name on 69 and
-#: disagreed on 58. Sight of the Gods came out as Angelic Vibrance instead of
-#: Teleport, Reaver's Headplate as Berserk instead of Whirlwind. Forty-six per
-#: cent wrong is not a reading, so the number is left on the card as a number
-#: and only a name somebody has actually read is printed.
+#: The two are the same word everywhere else, so each of these is a rename that
+#: happened on one side only: a typo (Basiliks for Basilisks, Vajdra for
+#: Vadjra, Almighty for Allmighty), a word dropped from the end, or an
+#: ampersand spelled out. Each names a talent no other item claims, and the
+#: spelling on the right is the game's own — this is a list of what the game
+#: calls things, not a guess at what it might have meant.
+RENAMED = {
+    "relic_thiefsGlove": "relicThievesGlove",
+    "relic_basilisksTooth": "relicBasiliksTooth",
+    "relic_theAllmightyFedora": "relicTheAlmightyFedora",
+    "relic_vadjra": "relicVajdra",
+    "relic_fireIce": "relicFireAndIce",
+    "relic_rainbowGate": "relicRainbow",
+    "relic_squishyTheSuicidalPig": "relicSquishy",
+    "relic_angelStaffOfApocalypse": "relicAngelStaff",
+    "relic_daPlayersDislocatedHead": "relicDaPlayer",
+    "relic_shocker3000": "relicShocker",
+}
 
 
-def granted(tkey, stats, talents, told, said):
-    """What the item does, out of the talent it grants.
+def called(key):
+    """Every name the talent an item grants could be filed under.
 
-    Asked two ways. A potion says which talent it is in its own key —
-    `consumable_bottle_of_sake` grants `bottleOfSake` — and that is exact, so
-    it is asked first. Everything else says only the number, which is read
-    where the count is pinned; see `PINNED`.
+    A relic keeps the word: `relic_shrunkenHead` grants `relicShrunkenHead`,
+    where a potion drops it — `consumable_bottle_of_sake` grants `bottleOfSake`.
+    Eighty-two relics answer to the second spelling and none to the first, and
+    two more drop the article the item keeps.
+    """
+    got = [camel(key)]
+    if key.startswith("relic_"):
+        parts = key.split("_", 1)[1].split("_")
+        stuck = lambda ps: "relic" + "".join(p[:1].upper() + p[1:] for p in ps)
+        whole = stuck(parts)
+        got.append(whole)
+        # `relic_theHolyGrail` grants `relicHolyGrail`: the item keeps the
+        # article and the talent does not.
+        if whole.startswith("relicThe"):
+            got.append("relic" + whole[len("relicThe"):])
+    if key in RENAMED:
+        got.append(RENAMED[key])
+    return got
+
+
+def fits(number, got, pins):
+    """Whether the talent an item's key names can be the one its number means.
+
+    A key can name a talent by coincidence rather than by grant: the ring
+    Absolute Zero is spelled like the Jotunn ultimate and does not give it. The
+    item states a number as well, and the two together settle it — the
+    difference between the number and where that talent sits has to lie between
+    what the anchors either side of it measure, and for the ring it is two
+    hundred and fifty-one where they allow one to three.
+
+    Relics are not asked. Their numbers and the order the talents are defined in
+    have come apart — whole runs of relics are numbered twenty-six places from
+    where they are made — while their keys still name their talents exactly,
+    agreeing with the planner on seventy-three of the seventy-four it also names.
+    """
+    if number is None or not got.get("id"):
+        return True
+    drift = number - got["id"]
+    below = [d for at, d in pins if at <= number]
+    above = [d for at, d in pins if at >= number]
+    return drift >= (below[-1] if below else 0) and (not above or drift <= above[0])
+
+
+def pinned(raw_items, talents):
+    """How far the talents' numbering runs from ours, where an item says so.
+
+    An item names the talent it grants by a number, and the number is its place
+    in the order the game defines them. The extractor numbers them the same way
+    and the two agree for the first five hundred and fifty — but past that it
+    makes three fewer records than the game, and each one missed puts every
+    number after it out by one more.
+
+    An item whose own key spells the talent out says both things at once, so it
+    measures the difference at its own number. Measured rather than written
+    down because it moves: every repair to the populator reader changes how
+    many records it makes.
+
+    The relics are left out of it although their keys name their talents too.
+    What they show is not a count running behind but an order running
+    differently: whole runs of them sit twenty-six places later than the game
+    puts them and others twenty earlier, so past where the potions reach there
+    is no single difference to measure and the number is not read at all.
+    """
+    seen = []
+    for row in raw_items:
+        key = (row.get("metadata") or {}).get("tkey")
+        if not key:
+            continue
+        number = next((s.get("min1") for s in row.get("stats") or []
+                       if s.get("sid") == GRANTS), None)
+        got = talents.get(camel(key).lower())
+        if number is not None and got and got.get("id"):
+            seen.append((number, number - got["id"]))
+    seen.sort()
+    # The difference only grows: a record can be missed, never invented. An
+    # anchor that says otherwise is not measuring the same thing — Absolute
+    # Zero is a ring whose key spells a Jotunn talent it does not grant — and
+    # is dropped rather than left to poison the numbers around it.
+    kept = []
+    for at, drift in seen:
+        while kept and kept[-1][1] > drift:
+            kept.pop()
+        kept.append((at, drift))
+    return kept
+
+
+def at_number(n, by_number, pins):
+    """The talent an item's number names, where the numbering can be trusted.
+
+    Trusted means bracketed: an anchor at or below the number and another at or
+    above it, both saying the same thing. Below the first anchor there is
+    nothing to bracket against, but nothing can be missing either while that
+    anchor still reads nought. Above the last one the difference is unbounded,
+    and the number is left on the card as a number.
+    """
+    above = [(at, d) for at, d in pins if at >= n]
+    if not above:
+        return None
+    below = [(at, d) for at, d in pins if at <= n]
+    drift = below[-1][1] if below else 0
+    if drift != above[0][1]:
+        return None
+    return by_number.get(n - drift)
+
+
+def granted(tkey, stats, talents, told, by_number, by_spoken, pins, said):
+    """What the item does, out of the talents it grants — a list, because some
+    items grant several.
+
+    Asked four ways, in the order of how much each one knows.
+
+    The game spells the spell out itself on a hundred-odd items, in a field
+    beside the stat that grants it, and Torment names three that way in one go.
+    A potion or a relic says which talent it is in its own key —
+    `consumable_bottle_of_sake` grants `bottleOfSake` — which is exact for the
+    same reason. Then the number, where `at_number` can vouch for the numbering.
+    A name somebody has read off the tooltip comes last: where it and the number
+    both answer they disagree sixty times over, and the third witness sides with
+    the number on fifty-nine of them.
     """
     if not talents:
         return None
-    named = next((s for s in stats if s.get("sid") == GRANTS), None)
-    if named is None:
-        return None
-    got = talents.get(camel(tkey).lower()) or (told or {}).get(tkey)
-    if not got:
-        return None
-    # The level it is granted at is a roll like any other. A potion states it
-    # under the random-skill mark; the rest state it as a range of skill levels
-    # with no name on it, which is the only line on the item that carries one.
-    levels = next((s for s in stats
-                   if s.get("sid") == GRANT_LEVELS and s.get("max") is not None), None)
-    if levels is None:
-        levels = next((s for s in stats
-                       if s.get("sid") in ("all_talents", "all_skills_flat")
-                       and s.get("max") is not None), None)
+    out = []
+    for line in [s for s in stats if s.get("sid") == BY_NAME and s.get("spell")]:
+        got = by_spoken.get(flat(line["spell"]))
+        if got:
+            stats.remove(line)
+            out.append(spoken(got, [line.get("min"), line.get("max")], said))
 
-    # The range is how many levels of the granted talent the item rolls, not a
-    # bonus to every skill the character has. Left in the stat list it reads as
-    # the second, and the card says the item does both.
-    if levels is not None and levels.get("sid") != GRANT_LEVELS:
-        stats.remove(levels)
-    # and the number itself is plumbing: the game prints the talent's name in
-    # its place, which is now what this returns
-    stats.remove(named)
-    return spoken(got, [levels.get("min"), levels.get("max")] if levels else None, said)
+    marks = [s for s in stats if s.get("sid") == GRANTS]
+    # The item's own key spells out one talent and only one, so it answers only
+    # where the item grants only one. Shadow Carver and the Witch's Wand grant
+    # two, and there the number is the only thing that tells them apart.
+    alone = len(marks) <= 1
+    by_key = None
+    # A key is asked only where the game has named nothing itself. It can name
+    # a talent by coincidence — the runeword Martyr is spelled like the talent
+    # `martyr` and grants Thorn's Aura, which the item says in as many words.
+    if alone and not out and not any(s.get("spell") for s in stats):
+        by_key = next((talents[k] for k in (c.lower() for c in called(tkey)) if k in talents), None)
+        told_number = marks[0].get("min") if marks else None
+        if by_key and not tkey.startswith("relic_") and not fits(told_number, by_key, pins):
+            by_key = None
+
+    # A relic states no number at all — the ability is the relic and its key
+    # says which — so twenty-three of them are named here and nowhere else.
+    if not marks:
+        if by_key:
+            out.append(spoken(by_key, None, said))
+        return out or None
+
+    for named in marks:
+        got = by_key
+        if not got and named.get("min") is not None:
+            got = at_number(named["min"], by_number, pins)
+        if not got and alone and not out:
+            got = (told or {}).get(tkey)
+        if not got:
+            continue
+        # The level it is granted at is a roll like any other, stated under the
+        # random-skill mark that follows the talent it belongs to. A few items
+        # state it as a range of skill levels with no name on it instead, which
+        # is the only line on them that carries one.
+        after = stats[stats.index(named) + 1:]
+        levels = next((s for s in after
+                       if s.get("sid") == GRANT_LEVELS and s.get("max") is not None), None)
+        if levels is None and alone:
+            levels = next((s for s in stats
+                           if s.get("sid") in ("all_talents", "all_skills_flat")
+                           and s.get("max") is not None), None)
+            # That range is how many levels of the granted talent the item
+            # rolls, not a bonus to every skill the character has. Left in the
+            # stat list it reads as the second, and the card says both.
+            if levels is not None:
+                stats.remove(levels)
+        # and the number itself is plumbing: the game prints the talent's name
+        # in its place, which is now what this returns
+        stats.remove(named)
+        out.append(spoken(got, [levels.get("min"), levels.get("max")] if levels else None, said))
+    return out or None
 
 
 def spoken(got, levels, said):
     """A talent as the block an item's card shows for it."""
+    def line(e):
+        # The mark after the number is either punctuation the game writes out —
+        # a per cent sign — or a key it looks up, and `tal_seconds` is "s" in
+        # English and "с" in Russian. Printed raw it read "40tal_seconds".
+        mark, unit = e["mark"], said(e["mark"]) if e["mark"].startswith("tal_") else None
+        got_line = {"start": e["start"], "per": e["per_level"],
+                    "mark": "" if unit else mark,
+                    "of": said(e["desc"]) or {"en": e["desc"]}}
+        if unit:
+            got_line["unit"] = unit
+        return got_line
+
     return {
         "names": said(f"talent_name_{got['key']}"),
         "lore": said(f"talent_desc_{got['key']}"),
-        "lines": [{"start": e["start"], "per": e["per_level"], "mark": e["mark"],
-                   "of": said(e["desc"]) or {"en": e["desc"]}}
-                  for e in got.get("effects") or []],
+        "lines": [line(e) for e in got.get("effects") or []],
         "lasts": got.get("duration"),
         "levels": levels,
     }
 
 
-def build(raw_items, csv_path, langs, icons_by_name, tidy, tables, say=None, talents=None,
+def build(raw_items, csv_path, langs, icons_by_name, tidy, tables, say=None, talent_rows=None,
           named=None):
     """Every item worth a page, keyed by the game's own translation key.
 
@@ -356,7 +535,20 @@ def build(raw_items, csv_path, langs, icons_by_name, tidy, tables, say=None, tal
     odds it read "1 in 1", which is a promise the game does not make. The
     tracker's `DROP_CHASE` is the "one in N" the game's own tooltip prints.
     """
-    # the same talents, by the number an item names them with
+    # the talents by the key a potion names them with, and by the number
+    # everything else names them with. Both off the list rather than one off
+    # the other: two talents are called `blazingTrail`, so a table keyed by
+    # name is one number short.
+    talents = {}
+    for row in talent_rows or []:
+        talents.setdefault(row["key"].lower(), row)
+    by_number = {t["id"]: t for t in (talent_rows or []) if t.get("id")}
+    by_spoken = {}
+    for row in talent_rows or []:
+        spoken_as = ((say.by_key.get(f"talent_name_{row['key']}") if say else None) or {}).get("en")
+        if spoken_as:
+            by_spoken.setdefault(flat(spoken_as), row)
+    pins = pinned(raw_items, talents)
     rows = text_rows(csv_path)
 
     def said(key):
@@ -418,7 +610,7 @@ def build(raw_items, csv_path, langs, icons_by_name, tidy, tables, say=None, tal
             continue
         low = tidy(shown)
         stats = [stat_line(s) for s in (it.get("stats") or []) if s.get("sid") or s.get("id") in BY_ID]
-        gives = granted(tkey, stats, talents, named, said)
+        gives = granted(tkey, stats, talents, named, by_number, by_spoken, pins, said)
         rec = {
             "key": tkey,
             "name": shown,

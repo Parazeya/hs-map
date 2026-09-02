@@ -35,16 +35,17 @@
    * What a potion grants, which is a talent and not a stat.
    *
    * The item states the talent as a number and the levels it grants it at as a
-   * range, and neither means anything on a page: the number is an enum the
-   * compiler turned into a constant. The talent behind it carries the lines a
-   * player actually reads, so those two stats are dropped from the list and the
-   * talent is drawn in their place.
+   * range, and neither means anything on a page: the number is the talent's
+   * place in the order the game defines them. The talent behind it carries the
+   * lines a player actually reads, so those two stats are dropped from the list
+   * and the talent is drawn in their place. A list because Shadow Carver and
+   * the Witch's Wand grant two.
    */
-  const gives = $derived(item?.grants ?? null);
+  const gives = $derived(item?.grants ?? []);
   const HELD_BY_TALENT = ['singular_skill', 'stat_random_skill'];
   const shown = $derived(
     (item?.stats ?? []).filter(
-      (v) => v.sid !== 'unholy_none' && !(gives && HELD_BY_TALENT.includes(v.sid)),
+      (v) => v.sid !== 'unholy_none' && !(gives.length && HELD_BY_TALENT.includes(v.sid)),
     ),
   );
   const cls = (r) => 'r-' + String(r ?? 'common').toLowerCase().replace(/\s+/g, '-');
@@ -183,40 +184,45 @@
           <li>
             <span class="v">{span(s.min, s.max, s.unit ?? '')}</span>
             <span class="t">
-              {said(s)}{#if s.spell}: {s.spell}{/if}{#if s.cls && s.cls !== 'Any'} ({s.cls}){/if}
+              {said(s)}{#if s.spell}: {s.spell}{/if}{#if s.cls && s.cls !== 'Any'}{' (' + s.cls + ')'}{/if}
               {#if s.min2 != null || s.max2 != null}
                 <span class="second">at {span(s.min2, s.max2)}</span>
               {/if}
               {#if s.range}<span class="second">range {s.range}</span>{/if}
+              {#if s.rank}<span class="second">{t('by relic level')}</span>{/if}
             </span>
           </li>
         {/each}
       </ul>
     {/if}
 
-    {#if gives}
+    {#if gives.length}
       <h2>{t('Grants')}</h2>
-      <p class="grant">
-        {#if gives.levels?.[0] != null}
-          <span class="lvl">+[{gives.levels[0]}{gives.levels[1] != null && gives.levels[1] !== gives.levels[0] ? `-${gives.levels[1]}` : ''}]</span>
+      {#each gives as g, n (n)}
+        <p class="grant">
+          {#if g.levels?.[0] != null}
+            <span class="lvl">+[{g.levels[0]}{g.levels[1] != null && g.levels[1] !== g.levels[0] ? `-${g.levels[1]}` : ''}]</span>
+          {/if}
+          <strong>{word(g.names)}</strong>
+          {#if g.lasts}<span class="second">{g.lasts} {t('seconds')}</span>{/if}
+        </p>
+        <ul class="stats">
+          {#each g.lines ?? [] as l, i (i)}
+            <li>
+              <span class="v">{l.start}{l.mark}{#if l.unit}{word(l.unit)}{/if}</span>
+              <span class="t">
+                {word(l.of)}
+                {#if l.per}<span class="second"
+                  >+{l.per}{l.mark}{#if l.unit}{word(l.unit)}{/if} {t('per level')}</span
+                >{/if}
+              </span>
+            </li>
+          {/each}
+        </ul>
+        {#if word(g.lore)}
+          <p class="lore">{word(g.lore)}</p>
         {/if}
-        <strong>{word(gives.names)}</strong>
-        {#if gives.lasts}<span class="second">{gives.lasts} {t('seconds')}</span>{/if}
-      </p>
-      <ul class="stats">
-        {#each gives.lines ?? [] as l, i (i)}
-          <li>
-            <span class="v">{l.start}{l.mark}</span>
-            <span class="t">
-              {word(l.of)}
-              {#if l.per}<span class="second">+{l.per}{l.mark} {t('per level')}</span>{/if}
-            </span>
-          </li>
-        {/each}
-      </ul>
-      {#if word(gives.lore)}
-        <p class="lore">{word(gives.lore)}</p>
-      {/if}
+      {/each}
     {/if}
 
     {#each unholy as g (g.sel)}
@@ -250,7 +256,7 @@
           <li>
             <span class="v">{span(s.min, s.max, s.unit ?? '')}</span>
             <span class="t">
-              {said(s)}{#if s.spell}: {s.spell}{/if}{#if s.cls && s.cls !== 'Any'} ({s.cls}){/if}
+              {said(s)}{#if s.spell}: {s.spell}{/if}{#if s.cls && s.cls !== 'Any'}{' (' + s.cls + ')'}{/if}
               {#if s.min2 != null || s.max2 != null}
                 <span class="second">at {span(s.min2, s.max2)}</span>
               {/if}
