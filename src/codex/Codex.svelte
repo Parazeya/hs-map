@@ -1,5 +1,5 @@
 <script>
-  import { asset, odds, titleCase } from '../lib/map.js';
+  import { asset, odds, titleCase, recall, remember } from '../lib/map.js';
   import { speak } from '../lib/lang.js';
   import { places, talk } from '../lib/say.js';
   import ItemIcon from '../ItemIcon.svelte';
@@ -15,6 +15,11 @@
   let rarity = $state(null);
   let kind = $state(null);          // the item type: Sword, Helmet, Charm…
   let stat = $state(null);          // a sid, when the search is for what it does
+  // Read before anything else runs: the effect that writes the address back
+  // fires as soon as the page mounts, and with nothing open yet that erases
+  // what the address was holding before the table has arrived to check it.
+  const asked = recall('item');
+
   let chosen = $state(null);        // the item being read, by key
   // Shut, which only means anything on a phone: the rule that reads this flag
   // lives in a media query, so a wide screen shows the column whatever it says.
@@ -103,6 +108,8 @@
       // is already Russian rather than English replaced a moment later
       if (first !== 'en') await speak(d, 'codex', first).catch(() => {});
       data = hydrate(d);
+      // what the address was holding, now that there is a table to check it
+      if (asked && data.items[asked]) chosen = asked;
       lang = first;
     })
     .catch((e) => (failed = e));
@@ -262,6 +269,13 @@
   /// "Act I Dungeons" and "Colossal Chest" as the reader's language spells them.
   const place = $derived(data ? places(lang, data.words) : (x) => x);
 
+  // What is open, in the address, so a card can be reloaded or sent to
+  // somebody. Read once when the table arrives, because until then there is
+  // nothing to check the key against.
+  $effect(() => {
+    remember({ item: chosen });
+  });
+
   function clear() {
     query = '';
     rarity = null;
@@ -344,7 +358,7 @@
 
   <main class:picked={item}>
     <aside class="filters" class:shut={!filters}>
-      <p class="head">{t('Rarity')}</p>
+      <p class="head">{t('Rarity')}{#if rarity}<button class="drop" title={t('clear')} aria-label={t('clear')} onclick={() => { rarity = null; }}>×</button>{/if}</p>
       <div class="chips">
         {#each grades as r (r)}
           <button class={cls(r)} class:on={rarity === r} onclick={() => (rarity = rarity === r ? null : r)}>
@@ -353,7 +367,7 @@
         {/each}
       </div>
 
-      <p class="head">{t('Type')}</p>
+      <p class="head">{t('Type')}{#if kind}<button class="drop" title={t('clear')} aria-label={t('clear')} onclick={() => { pickKind(null); }}>×</button>{/if}</p>
       <!-- Thirty-four of them, and as a wrapped cloud of chips they were a wall
            to read rather than a thing to choose from. Typed instead: the box
            narrows the list as it is written, the same way the stats below
@@ -376,7 +390,7 @@
         </div>
       {/if}
 
-      <p class="head">{t('Stats')}</p>
+      <p class="head">{t('Stats')}{#if stat || statQuery}<button class="drop" title={t('clear')} aria-label={t('clear')} onclick={() => { stat = null; statQuery = ''; }}>×</button>{/if}</p>
       <input
         class="statfind"
         type="search"
@@ -506,6 +520,21 @@
     border-radius: 8px;
   }
   .count { flex: none; color: var(--dim); font-size: 12px; }
+  /* the cross that clears one filter, on that filter's own heading */
+  .head { display: flex; align-items: center; gap: 6px; }
+  .drop {
+    margin-left: auto;
+    padding: 0 4px;
+    line-height: 1;
+    color: var(--dim);
+    background: none;
+    border: 0;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .drop:hover { color: var(--hot); }
+
   .clear {
     flex: none;
     color: var(--dim);

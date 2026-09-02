@@ -17,6 +17,7 @@ missing icon is a gap in this file, not a fact about the game.
 """
 
 import json
+from pathlib import Path
 import re
 from collections import defaultdict
 
@@ -110,10 +111,17 @@ def contradicts(sprite, kind):
 
 
 def core(text):
-    """Whatever is left once the category words are gone."""
+    """Whatever is left once the category words are gone.
+
+    When every word is a category word there is nothing left to keep, and what
+    the two sides have left is not the same: the item is `Magic Tome` and the
+    art is `Normal_Book_Magic_Tome_spr`, so falling back to the whole name
+    compares four words against two. The last word is the thing itself on both
+    sides — a tome is a tome — so that is what is left standing.
+    """
     parts = [p for p in re.split(r"[^A-Za-z0-9]+", text) if p]
     kept = [p for p in parts if p.lower() not in CATEGORY]
-    return squash("".join(kept or parts))
+    return squash("".join(kept or parts[-1:] or parts))
 
 
 def index(dw):
@@ -124,6 +132,12 @@ def index(dw):
             continue
         stem = name[:-4]
         out[core(stem)].append(name)
+        # Art that comes in numbered variants is one item with several looks —
+        # `Charms_Normal_Small_Charm_01` through `_04` are all the Small Charm —
+        # and the item is named once, without the number.
+        numbered = re.fullmatch(r"(.+?)_(\d\d)", stem)
+        if numbered:
+            out[core(numbered.group(1))].append(name)
     for key in out:
         out[key].sort(key=lambda n: (n.startswith("Pickup_"), len(n)))
     return out
@@ -251,6 +265,16 @@ def nearest(dw, by_words, item_words, kind):
     return None
 
 
+#: What the game itself draws each item with, where its own record proves the
+#: reading — see `--emit-icons` in the extractor.
+#:
+#: A sprite named after an item is not proof the game uses it:
+#: `Shields_Storm_Gladiators_Wall_spr` exists and nothing draws it, while the
+#: item's record names the base shield's round red art. So where the game has
+#: said, that is taken; where it has not, the name is still matched as before.
+TOLD = json.loads((Path(__file__).parent / "item_icons.json").read_text("utf-8"))     if (Path(__file__).parent / "item_icons.json").exists() else {}
+
+
 def build(dw, items, wanted, out_png):
     """Pack the icons of `wanted` (lower-case names) into one sheet.
 
@@ -300,7 +324,7 @@ def build(dw, items, wanted, out_png):
                     continue
                 except Exception:
                     pass
-        named = NAMED.get(low)
+        named = TOLD.get(tk) or NAMED.get(low)
         if named and named in dw.sprites:
             try:
                 cut[low] = dw.sprite_frames(named)[0]

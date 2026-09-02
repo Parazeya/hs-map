@@ -66,6 +66,16 @@ SAID = {
     "double_jump": ("Double jump", ""),
 }
 
+#: A stat the snapshot numbers but does not name.
+#:
+#: Stat 20 sits on 399 items and no item carries both it and `socketed_flat`,
+#: which is the same thing coming from the snapshot's named half. Its values
+#: are pairs like 2-4, 0-3 and 4-6 — nothing else on an item is bounded that
+#: way — and the game draws it as `Sockets (4) [2-4]` on the very item whose
+#: reading raised the question. So the two are one stat under two names, and
+#: this gives the numbered half the name the other half already has.
+BY_ID = {20: "socketed_flat"}
+
 #: An unread stat: the snapshot gives a number for a name it does not explain.
 UNREAD = re.compile(r"^\d+$")
 
@@ -144,6 +154,8 @@ def stat_line(s):
     # as a pool and never as a magnitude. See build/unholy.py.
     if s.get("sid") == "unholy_none":
         return {"sid": "unholy_none", "pool": s.get("min1"), "text": "Unholy"}
+    if s.get("sid") is None and s.get("id") in BY_ID:
+        s = dict(s, sid=BY_ID[s["id"]])
     out = {
         "sid": s.get("sid"),
         "min": s.get("min1"),
@@ -228,11 +240,11 @@ def variants(it):
                 named = r.get("ID")
                 out.append({
                     "when": f"with a {named}" if named else when,
-                    "stats": [stat_line(s) for s in r["stats"] if s.get("sid")],
+                    "stats": [stat_line(s) for s in r["stats"] if s.get("sid") or s.get("id") in BY_ID],
                 })
         else:
             out.append({"when": when,
-                        "stats": [stat_line(s) for s in rows if s.get("sid")]})
+                        "stats": [stat_line(s) for s in rows if s.get("sid") or s.get("id") in BY_ID]})
     return [v for v in out if v["stats"]]
 
 
@@ -252,7 +264,128 @@ def sockets(row, by_name, tidy):
     return out
 
 
-def build(raw_items, csv_path, langs, icons_by_name, tidy, tables, say=None):
+#: The stat a potion states its talent in, and the one that states the range
+#: of levels it grants it at. The game writes "+[1-5] to Drunken Kung Fu" out
+#: of the pair.
+GRANTS, GRANT_LEVELS = "singular_skill", "stat_random_skill"
+
+def camel(key):
+    """`consumable_bottle_of_sake` -> `bottleOfSake`, which is what the talent
+    populators call it."""
+    parts = key.split("_", 1)[1].split("_") if "_" in key else [key]
+    return parts[0] + "".join(p[:1].upper() + p[1:] for p in parts[1:])
+
+
+def pinned(raw_items, talents, also=None):
+    """How far our count of the talents runs from the game's, where it can be told.
+
+    An item names the talent it grants by a number, and the number is its place
+    in an order the compiler settled. Reading the populators gives an order too
+    and the two do not match: ours runs about twenty ahead by the end of the
+    list, and the difference is not constant.
+
+    It can be measured, though, and by the items themselves. A potion names its
+    talent twice over — by number and by a key its own key spells out — so each
+    of them says what the difference is at its own number. Between two that
+    agree, the difference is known; outside them it is not, and an item there
+    keeps its number rather than be given a name that may be the neighbour's.
+
+    Measured rather than written down because it moves: every repair to the
+    populator reader changes how many records it makes, and a table of numbers
+    would then be quietly wrong instead of loudly absent.
+    """
+    seen = []
+    for row in raw_items:
+        key = (row.get("metadata") or {}).get("tkey")
+        if not key:
+            continue
+        number = next((s.get("min1") for s in row.get("stats") or []
+                       if s.get("sid") == GRANTS), None)
+        if number is None:
+            continue
+        # the item's own key spells the talent out, or somebody has read the
+        # tooltip and named it
+        got = talents.get(camel(key).lower()) or (also or {}).get(key)
+        if got and got.get("id"):
+            seen.append((number, number - got["id"]))
+    seen.sort()
+    return seen
+
+
+def at_number(n, talents, pins):
+    """The talent an item's number names, where the count can be trusted.
+
+    Trusted means bracketed: an anchor at or below the number and another at or
+    above it, both saying the same thing about the difference.
+    """
+    below = [(at, d) for at, d in pins if at <= n]
+    above = [(at, d) for at, d in pins if at >= n]
+    if len(below) < 2 or len(above) < 2:
+        return None
+    # Three in a row saying the same thing. Two would do if every anchor were
+    # sound, and they are not: a name matched to the wrong talent puts a wild
+    # difference into the list, and two neighbouring wild ones would agree with
+    # each other about nothing in particular.
+    near = [below[-2][1], below[-1][1], above[0][1], above[1][1]]
+    if len(set(near)) != 1:
+        return None
+    return talents.get(n - near[0])
+
+
+def granted(tkey, stats, talents, by_number, pins, said):
+    """What the item does, out of the talent it grants.
+
+    Asked two ways. A potion says which talent it is in its own key —
+    `consumable_bottle_of_sake` grants `bottleOfSake` — and that is exact, so
+    it is asked first. Everything else says only the number, which is read
+    where the count is pinned; see `PINNED`.
+    """
+    if not talents:
+        return None
+    named = next((s for s in stats if s.get("sid") == GRANTS), None)
+    if named is None:
+        return None
+    got = talents.get(camel(tkey).lower())
+    if not got and named.get("min") is not None:
+        got = at_number(named["min"], by_number, pins)
+    if not got:
+        return None
+    # The level it is granted at is a roll like any other. A potion states it
+    # under the random-skill mark; the rest state it as a range of skill levels
+    # with no name on it, which is the only line on the item that carries one.
+    levels = next((s for s in stats
+                   if s.get("sid") == GRANT_LEVELS and s.get("max") is not None), None)
+    if levels is None:
+        levels = next((s for s in stats
+                       if s.get("sid") in ("all_talents", "all_skills_flat")
+                       and s.get("max") is not None), None)
+
+    # The range is how many levels of the granted talent the item rolls, not a
+    # bonus to every skill the character has. Left in the stat list it reads as
+    # the second, and the card says the item does both.
+    if levels is not None and levels.get("sid") != GRANT_LEVELS:
+        stats.remove(levels)
+    # and the number itself is plumbing: the game prints the talent's name in
+    # its place, which is now what this returns
+    stats.remove(named)
+    return spoken(got, [levels.get("min"), levels.get("max")] if levels else None, said)
+
+
+def spoken(got, levels, said):
+    """A talent as the block an item's card shows for it."""
+    return {
+        "names": said(f"talent_name_{got['key']}"),
+        "lore": said(f"talent_desc_{got['key']}"),
+        "lines": [{"start": e["start"], "per": e["per_level"], "mark": e["mark"],
+                   "of": said(e["desc"]) or {"en": e["desc"]}}
+                  for e in got.get("effects") or []],
+        "lasts": got.get("duration"),
+        "levels": levels,
+    }
+
+
+def build(raw_items, csv_path, langs, icons_by_name, tidy, tables, say=None, talents=None,
+          named=None):
     """Every item worth a page, keyed by the game's own translation key.
 
     `icons_by_name` is the icon sheet's boxes, so an item that has one shows it
@@ -264,6 +397,11 @@ def build(raw_items, csv_path, langs, icons_by_name, tidy, tables, say=None):
     odds it read "1 in 1", which is a promise the game does not make. The
     tracker's `DROP_CHASE` is the "one in N" the game's own tooltip prints.
     """
+    # the same talents, by the number an item names them with
+    by_number = {t["id"]: t for t in (talents or {}).values() if t.get("id")}
+    # what the items themselves say about the numbering, before the numbers are
+    # taken off them
+    pins = pinned(raw_items, talents or {}, named)
     rows = text_rows(csv_path)
 
     def said(key):
@@ -324,7 +462,8 @@ def build(raw_items, csv_path, langs, icons_by_name, tidy, tables, say=None):
         if not shown:
             continue
         low = tidy(shown)
-        stats = [stat_line(s) for s in (it.get("stats") or []) if s.get("sid")]
+        stats = [stat_line(s) for s in (it.get("stats") or []) if s.get("sid") or s.get("id") in BY_ID]
+        gives = granted(tkey, stats, talents, by_number, pins, said)
         rec = {
             "key": tkey,
             "name": shown,
@@ -338,6 +477,7 @@ def build(raw_items, csv_path, langs, icons_by_name, tidy, tables, say=None):
             "lvl": m.get("lvlreq"),
             "size": [m.get("Width"), m.get("Height")] if m.get("Width") else None,
             "stats": stats,
+            "grants": gives,
             "places": tables["DROP_PLACES"].get(low) or it.get("dropPlaces") or [],
             "rate": tables["DROP_RATE"].get(low) or plain((it.get("droprate") or {}).get("base")),
             "chase": tables["DROP_CHASE"].get(low),

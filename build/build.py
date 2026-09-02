@@ -21,6 +21,11 @@ import struct
 import sys
 from pathlib import Path
 
+# Item names carry characters a Windows console's default code page cannot
+# encode, and printing one killed the run after every file was already written.
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 import against_game
 import bosses
 import encyclopedia
@@ -29,6 +34,9 @@ import icons
 import langsplit
 import said
 import merge_game
+import gear
+import skills as skilltree
+import suits
 import portraits
 import unholy
 
@@ -635,8 +643,36 @@ def codex(dw, raw_items, langs, tables):
         dw, raw_items, every, IMG / "codex.png")
 
     say = vocabulary.Words(GAME)
+    # What a potion grants, read out of the game beside the items themselves
+    talent_file = TRACKER / "tools" / "data" / "helper" / "talents.json"
+    talent_rows, talents = [], {}
+    if talent_file.exists():
+        talent_rows = json.loads(talent_file.read_text("utf-8"))
+        # keyed for the potions, which look a talent up by the item's own key;
+        # the list is kept because two keys can share a lowercase spelling
+        talents = {t["key"].lower(): t for t in talent_rows}
+    # Read before the codex is built: an item that grants a talent names it by
+    # a number, and how far our count of the talents runs from the game's can
+    # only be told where something else names the same talent outright. The
+    # planner does, for two hundred and more of them, spread across the whole
+    # list — the potions alone pin two short stretches at the end of it.
+    kit_data = gear.read(HERE / "build" / "planner" / "gear")
+    said_by = {}
+    for t in talent_rows:
+        told = say.by_key.get(f"talent_name_{t['key']}") or {}
+        if told.get("en"):
+            said_by.setdefault(gear.flat(told["en"]), t)
+    named_talent = {}
+    for key, (skill, _) in gear.grants(kit_data, {
+            (r["metadata"] or {}).get("tkey"): {"names": {"en": (r["metadata"] or {}).get("name")}}
+            for r in raw_items if (r.get("metadata") or {}).get("tkey")}).items():
+        got = said_by.get(gear.flat(skill))
+        if got:
+            named_talent[key] = got
+
     items, vocab, kits = encyclopedia.build(
-        raw_items, GAME / "translationsItem.csv", langs, place, icons.tidy, tables, say)
+        raw_items, GAME / "translationsItem.csv", langs, place, icons.tidy, tables, say, talents,
+        named_talent)
 
     # What the game calls each stat, joined on meaning — see words.Words.stats
     told = say.stats([v["sid"] for v in vocab])
@@ -647,6 +683,39 @@ def codex(dw, raw_items, langs, tables):
     named = sum(v["n"] for v in vocab if v.get("names"))
     print(f"stats    {len(told)} of {len(vocab)} named by the game, which is "
           f"{named} of {seen} stat lines a reader meets ({100 * named // seen}%)")
+
+    # What the game states about an item that the datamined tables leave out:
+    # whether a stat is a percentage, how many sockets it rolls, and what a set
+    # gives for wearing more of it
+    told_unit = gear.units(kit_data, vocab, items, lambda k: say.by_key.get(k))
+    for v in vocab:
+        if told_unit.get(v["sid"]) == "percent" and not v.get("unit"):
+            v["unit"] = "%"
+    fitted = gear.sets(kit_data, kits, lambda k: say.by_key.get(k), told_unit)
+
+    # An item names the talent it grants by a number whose count runs behind
+    # the game's, which can only be read where the difference is pinned. The
+    # planner names it outright, so where it does, that is what is used.
+    by_said = {}
+    for t in talent_rows:
+        told = say.by_key.get(f"talent_name_{t['key']}") or {}
+        if told.get("en"):
+            by_said.setdefault(gear.flat(told["en"]), t)
+    named_skill = 0
+    for key, (skill, level) in gear.grants(kit_data, items).items():
+        got = by_said.get(gear.flat(skill))
+        if not got:
+            continue
+        # The range the item rolls the talent's level over is on the item and
+        # the planner states one number, so ours is kept where it was read.
+        was = (items[key].get("grants") or {}).get("levels")
+        span = was or (level if len(level) == 2 else [level[0], None])
+        items[key]["grants"] = encyclopedia.spoken(got, span, lambda k: say.by_key.get(k))
+        named_skill += 1
+    print(f"grants   {named_skill} items name the talent they grant by name, "
+          f"{sum(1 for r in items.values() if r.get('grants'))} in all")
+    print(f"gear     {sum(1 for v in vocab if v.get('unit') == '%')} of {len(vocab)} stats are "
+          f"percentages, {fitted} of {len(kits)} sets say what they give")
 
     out = {"langs": langs, "sheet": {"w": sheet[0], "h": sheet[1]},
            "words": {**said.SAID, **say.vocab()}, "types": types_said(say, items),
@@ -659,8 +728,57 @@ def codex(dw, raw_items, langs, tables):
     print(f"         icons {len(place)} cut into a {sheet[0]}x{sheet[1]} sheet, "
           f"{len(missing)} without one")
     rows = squeeze(out)
+
+    # Which class an item is for, argued from what its stats do — after the
+    # squeeze, so a stat line names itself by its place in the vocabulary
+    profiles = suits.profile(talent_rows, HERE / "build" / "planner")
+    suits.tag(items, profiles, [v["sid"] for v in vocab])
+    borne = gear.auras(kit_data, items, [v["sid"] for v in vocab])
+    suits.report(items, profiles)
+    print(f"         {borne} carry an aura, which is nobody's in particular")
+    out["classes"] = [{"id": c, "names": class_said(say, c)} for c in sorted(profiles)]
+    out["about"] = suits.words(lambda k: say.by_key.get(k))
+
     report(langsplit.write(out, langs, DATA / "codex.json"))
     print(f"squeeze  {rows} stat lines say their name and unit by number now")
+
+    # The class trees, out of the same table the potions' talents come from
+    subs = [l.split("|")[0] for l in
+            (GAME / "translationsSubTalent.csv").read_text("utf-8", "replace").splitlines() if l.strip()]
+    tree, bound, wanted, known, loose = skilltree.build(
+        talent_rows, subs, lambda k: say.by_key.get(k), langs, HERE / "build" / "planner")
+    for c in tree["classes"]:
+        c["names"] = class_said(say, c["id"])
+    tree["words"] = {**said.SAID, **say.vocab()}
+    boxes, nodes, sheet_size, iconless, faces, blank = skilltree.art(
+        dw, talent_rows, IMG / "skills.png", HERE / "build" / "planner")
+    tree["nodes"] = nodes
+    tree["faces"] = faces
+    for key, s in tree["skills"].items():
+        if key in boxes:
+            s["icon"] = boxes[key]
+    tree["sheet"] = {"w": sheet_size[0], "h": sheet_size[1]}
+    print(f"         icons {len(boxes)} cut into a {sheet_size[0]}x{sheet_size[1]} sheet, "
+          f"{len(iconless)} without one")
+    print(f"         nodes {sum(len([x for x in v if x]) for v in faces['at'].values())} "
+          f"cut into a {faces['w']}x{faces['h']} sheet"
+          + (f", {len(blank)} trees without art" if blank else ""))
+    skilltree.report(tree, bound, wanted, known, loose)
+    report(langsplit.write(tree, langs, DATA / "skills.json"))
+
+
+def class_said(say, name):
+    """What the game calls a class, in every language it says it in.
+
+    The keys disagree with themselves: some classes are keyed as one word and
+    some as two — `stormWeaver` beside `demon_slayer` — and a class our tables
+    call `Stormweaver` matches neither by lowering it. What both sides do agree
+    on is the English name, which is the other way the game's tables are
+    indexed, so a key that misses is asked for again by what it says.
+    """
+    return (say.by_key.get(name.lower())
+            or say.by_english.get(vocabulary.squash(name))
+            or {"en": name})
 
 
 def squeeze(out):

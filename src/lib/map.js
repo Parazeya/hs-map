@@ -64,3 +64,32 @@ export function odds(n) {
   if (n >= 1000) return `1 in ${Math.round(n / 1000)}k`;
   return `1 in ${n}`;
 }
+
+/**
+ * What the address bar is holding, so a page can be reloaded or sent to
+ * somebody and open on the same thing.
+ *
+ * `replaceState` rather than `pushState`: opening one item after another would
+ * otherwise stack up a history a reader has to walk back through, and the back
+ * button should leave the page rather than step through what was read on it.
+ */
+export function recall(key) {
+  try {
+    return new URL(location.href).searchParams.get(key);
+  } catch {
+    return null;
+  }
+}
+
+export function remember(pairs) {
+  try {
+    const url = new URL(location.href);
+    for (const [key, value] of Object.entries(pairs)) {
+      if (value == null || value === '') url.searchParams.delete(key);
+      else url.searchParams.set(key, String(value));
+    }
+    history.replaceState(null, '', url);
+  } catch {
+    /* a browser that will not have it still shows the page */
+  }
+}
