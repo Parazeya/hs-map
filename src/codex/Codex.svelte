@@ -1,5 +1,6 @@
 <script>
   import { asset, odds, titleCase, recall, remember } from '../lib/map.js';
+  import { hydrate } from '../lib/book.js';
   import { speak } from '../lib/lang.js';
   import { places, talk } from '../lib/say.js';
   import ItemIcon from '../ItemIcon.svelte';
@@ -48,31 +49,6 @@
       return null;
     }
   };
-
-  /**
-   * Put back what the file leaves out, so nothing below has to know it was gone.
-   *
-   * codex.json says four things once that it used to say for every item: the
-   * key, the English name, and on each of the 8678 stat lines the stat's own
-   * English text and its unit — all of which the `stats` vocabulary at the root
-   * or the record's own place in `items` already answers. A line names its stat
-   * by index into that vocabulary; here it gets its identifier back. 461 KB of
-   * the 2237 raw, and it costs one pass over seventeen hundred records.
-   * See `squeeze` in build/build.py.
-   */
-  function hydrate(d) {
-    for (const [key, it] of Object.entries(d.items)) {
-      it.key = key;
-      it.name ??= it.names?.en;
-      for (const row of [...(it.stats ?? []), ...(it.more ?? []).flatMap((m) => m.stats)]) {
-        const said = d.stats[row.sid];
-        row.sid = said.sid;
-        row.text = said.text;
-        if (said.unit !== undefined) row.unit = said.unit;
-      }
-    }
-    return d;
-  }
 
   // The language a name is in and the language it is fetched in are two things
   // now: `lang` only moves once the names for it are on the records, so the

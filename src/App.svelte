@@ -6,6 +6,7 @@
   import Sidebar from './Sidebar.svelte';
   import Tooltip from './Tooltip.svelte';
   import ItemCard from './ItemCard.svelte';
+  import ItemSheet from './ItemSheet.svelte';
   import BossBar from './BossBar.svelte';
 
   let data = $state(null);
@@ -18,6 +19,7 @@
   let hovered = $state(null);     // under the pointer
   let query = $state('');         // the sidebar's search
   let peek = $state(null);        // the item under the pointer in the menu
+  let reading = $state(null);     // the item whose card is open over the map
   let at = $state({ x: 0, y: 0 });
   // Only a phone reads this. There the panel is 238 px of a 393 px screen and
   // the map is what is left, so it comes over the map when it is wanted and is
@@ -222,9 +224,10 @@
 
     </main>
 
-    {#if peek}
+    {#if peek && !reading}
       <ItemCard {data} name={peek.name} {lang} top={peek.top} />
     {/if}
+    <ItemSheet name={reading} {lang} onclose={() => (reading = null)} />
 
     <!-- The drawer covers the button that opened it, so the way out is the
          map: a tap anywhere off the panel puts it away. Only ever there on a
@@ -233,7 +236,8 @@
     {#if panel}
       <button class="scrim only-narrow" aria-label={t('Close')} onclick={() => (panel = false)}></button>
     {/if}
-    <Sidebar {data} {lang} {panel} bind:query bind:peek bind:active />
+    <Sidebar {data} {lang} {panel} bind:query bind:peek bind:active
+             open={(name) => (reading = name)} />
   </div>
 {/if}
 

@@ -10,6 +10,7 @@
     peek = $bindable(null),      // the item under the pointer, and where its row sits
     active = $bindable(null),
     panel = false,               // only a narrow screen reads this; see App
+    open = null,                 // what a click on a row does, if anything
   } = $props();
 
   /** Rarest first, because that is what anyone is looking for. */
@@ -55,9 +56,25 @@
   const face = $derived(boss?.icon ?? null);
   const scale = $derived(face ? Math.min(1, BOX / Math.max(face[2], face[3])) : 1);
 
-  /** Hovering a row shows its card; there is nothing here to click. */
-  const show = (name) => (e) =>
-    (peek = { name, top: e.currentTarget.getBoundingClientRect().top });
+  /**
+   * One row of the list: the pointer shows what it drops for, a click opens it.
+   *
+   * The card that follows the pointer answers the map's question — how often,
+   * and where else — and there is a second question it does not answer, which
+   * is what the thing does. That one is a click away.
+   */
+  const row = (name) => ({
+    onpointerenter: (e) => (peek = { name, top: e.currentTarget.getBoundingClientRect().top }),
+    onclick: () => open?.(name),
+    onkeydown: (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        open?.(name);
+      }
+    },
+    role: open ? 'button' : undefined,
+    tabindex: open ? 0 : undefined,
+  });
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -98,7 +115,7 @@
             <ul class="rows">
               {#each boss.drops as d (d.item)}
                 {@const item = data.items[d.item] ?? {}}
-                <li class:lit={peek?.name === d.item} onpointerenter={show(d.item)}>
+                <li class:lit={peek?.name === d.item} {...row(d.item)}>
                   <ItemIcon {item} sheet={data.sheet} />
                   <span class="name {cls(item.rarity)}">{called(item, d.item, lang)}</span>
                   {#if d.inferno}<span class="inferno">INF</span>{/if}
@@ -119,7 +136,7 @@
         <ul class="rows">
           {#each active.drops as name (name)}
             {@const item = data.items[name] ?? {}}
-            <li class:lit={peek?.name === name} onpointerenter={show(name)}>
+            <li class:lit={peek?.name === name} {...row(name)}>
               <ItemIcon {item} sheet={data.sheet} />
               <span class="name {cls(item.rarity)}">{called(item, name, lang)}</span>
               {#if item.inferno}<span class="inferno">INF</span>{/if}
@@ -160,7 +177,7 @@
   </p>
   <ul class="rows list">
     {#each found as [name, item] (name)}
-      <li class:lit={peek?.name === name} onpointerenter={show(name)}>
+      <li class:lit={peek?.name === name} {...row(name)}>
         <ItemIcon {item} sheet={data.sheet} />
         <span class="tier">{tier(item)}</span>
         <span class="name {cls(item.rarity)}">{called(item, name, lang)}</span>
