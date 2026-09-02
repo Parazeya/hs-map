@@ -276,63 +276,24 @@ def camel(key):
     return parts[0] + "".join(p[:1].upper() + p[1:] for p in parts[1:])
 
 
-def pinned(raw_items, talents, also=None):
-    """How far our count of the talents runs from the game's, where it can be told.
-
-    An item names the talent it grants by a number, and the number is its place
-    in an order the compiler settled. Reading the populators gives an order too
-    and the two do not match: ours runs about twenty ahead by the end of the
-    list, and the difference is not constant.
-
-    It can be measured, though, and by the items themselves. A potion names its
-    talent twice over — by number and by a key its own key spells out — so each
-    of them says what the difference is at its own number. Between two that
-    agree, the difference is known; outside them it is not, and an item there
-    keeps its number rather than be given a name that may be the neighbour's.
-
-    Measured rather than written down because it moves: every repair to the
-    populator reader changes how many records it makes, and a table of numbers
-    would then be quietly wrong instead of loudly absent.
-    """
-    seen = []
-    for row in raw_items:
-        key = (row.get("metadata") or {}).get("tkey")
-        if not key:
-            continue
-        number = next((s.get("min1") for s in row.get("stats") or []
-                       if s.get("sid") == GRANTS), None)
-        if number is None:
-            continue
-        # the item's own key spells the talent out, or somebody has read the
-        # tooltip and named it
-        got = talents.get(camel(key).lower()) or (also or {}).get(key)
-        if got and got.get("id"):
-            seen.append((number, number - got["id"]))
-    seen.sort()
-    return seen
+#: Why an item's granted talent is not read from the number it states.
+#:
+#: The number is the talent's place in an order the compiler settled, and our
+#: count of the talents is not that order: it runs about twenty ahead by the
+#: end of the list, and not by a constant. The difference can be measured —
+#: the potions name their talent by number and by a key their own key spells
+#: out, and the planner names two hundred more — so a correction can be fitted
+#: between anchors that agree.
+#:
+#: It was, and then it was checked against the items where both ways can
+#: answer: of 127 such items the fitted number agreed with the name on 69 and
+#: disagreed on 58. Sight of the Gods came out as Angelic Vibrance instead of
+#: Teleport, Reaver's Headplate as Berserk instead of Whirlwind. Forty-six per
+#: cent wrong is not a reading, so the number is left on the card as a number
+#: and only a name somebody has actually read is printed.
 
 
-def at_number(n, talents, pins):
-    """The talent an item's number names, where the count can be trusted.
-
-    Trusted means bracketed: an anchor at or below the number and another at or
-    above it, both saying the same thing about the difference.
-    """
-    below = [(at, d) for at, d in pins if at <= n]
-    above = [(at, d) for at, d in pins if at >= n]
-    if len(below) < 2 or len(above) < 2:
-        return None
-    # Three in a row saying the same thing. Two would do if every anchor were
-    # sound, and they are not: a name matched to the wrong talent puts a wild
-    # difference into the list, and two neighbouring wild ones would agree with
-    # each other about nothing in particular.
-    near = [below[-2][1], below[-1][1], above[0][1], above[1][1]]
-    if len(set(near)) != 1:
-        return None
-    return talents.get(n - near[0])
-
-
-def granted(tkey, stats, talents, by_number, pins, said):
+def granted(tkey, stats, talents, told, said):
     """What the item does, out of the talent it grants.
 
     Asked two ways. A potion says which talent it is in its own key —
@@ -345,9 +306,7 @@ def granted(tkey, stats, talents, by_number, pins, said):
     named = next((s for s in stats if s.get("sid") == GRANTS), None)
     if named is None:
         return None
-    got = talents.get(camel(tkey).lower())
-    if not got and named.get("min") is not None:
-        got = at_number(named["min"], by_number, pins)
+    got = talents.get(camel(tkey).lower()) or (told or {}).get(tkey)
     if not got:
         return None
     # The level it is granted at is a roll like any other. A potion states it
@@ -398,10 +357,6 @@ def build(raw_items, csv_path, langs, icons_by_name, tidy, tables, say=None, tal
     tracker's `DROP_CHASE` is the "one in N" the game's own tooltip prints.
     """
     # the same talents, by the number an item names them with
-    by_number = {t["id"]: t for t in (talents or {}).values() if t.get("id")}
-    # what the items themselves say about the numbering, before the numbers are
-    # taken off them
-    pins = pinned(raw_items, talents or {}, named)
     rows = text_rows(csv_path)
 
     def said(key):
@@ -463,7 +418,7 @@ def build(raw_items, csv_path, langs, icons_by_name, tidy, tables, say=None, tal
             continue
         low = tidy(shown)
         stats = [stat_line(s) for s in (it.get("stats") or []) if s.get("sid") or s.get("id") in BY_ID]
-        gives = granted(tkey, stats, talents, by_number, pins, said)
+        gives = granted(tkey, stats, talents, named, said)
         rec = {
             "key": tkey,
             "name": shown,
