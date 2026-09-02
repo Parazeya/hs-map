@@ -597,6 +597,12 @@ SAID = {
         "ja": "特化", "ko": "특화", "de": "Spezialisierungen", "fr": "Spécialisations",
         "sp": "Especializaciones", "pl": "Specjalizacje",
     },
+    "by relic level": {
+        "fi": "reliikin tason mukaan", "pt": "por nível da relíquia", "ru": "по уровню реликвии",
+        "zh": "随遗物等级", "ja": "レリックのレベルごと", "ko": "유물 레벨에 따라",
+        "de": "je Reliktstufe", "fr": "selon le niveau de la relique",
+        "sp": "según el nivel de la reliquia", "pl": "wg poziomu reliktu",
+    },
     "per level": {
         "fi": "per taso", "pt": "por nível", "ru": "за уровень", "zh": "每级",
         "ja": "レベルごと", "ko": "레벨당", "de": "pro Stufe", "fr": "par niveau",

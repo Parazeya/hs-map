@@ -234,8 +234,8 @@ def auras(gear, items, vocab):
         by_stat = any(vocab[s['sid']] in AURA if isinstance(s.get('sid'), int)
                       else s.get('sid') in AURA
                       for s in record.get('stats') or [])
-        gives = ((record.get('grants') or {}).get('names') or {}).get('en')
-        if by_stat or (gives and flat(gives) in named):
+        gives = [(g.get('names') or {}).get('en') for g in record.get('grants') or []]
+        if by_stat or any(g and flat(g) in named for g in gives):
             record.pop('suits', None)
             record['aura'] = 1
             n += 1
