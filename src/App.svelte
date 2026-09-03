@@ -1,5 +1,5 @@
 <script>
-  import { KIND, asset, called, load, nameOf } from './lib/map.js';
+  import { KIND, asset, called, load, nameOf, recall } from './lib/map.js';
   import { speak } from './lib/lang.js';
   import { talk } from './lib/say.js';
   import WorldMap from './WorldMap.svelte';
@@ -17,7 +17,10 @@
 
   let active = $state(null);      // clicked, and stays put
   let hovered = $state(null);     // under the pointer
-  let query = $state('');         // the sidebar's search
+  // The sidebar's search. It opens on whatever the address was handed — a card
+  // in the codex links here by name, and the same box that finds an item by
+  // hand lights every zone it drops in.
+  let query = $state(recall('find') ?? '');
   let peek = $state(null);        // the item under the pointer in the menu
   let reading = $state(null);     // the item whose card is open over the map
   // What was clicked on the boss bar. A zone and a source are both "what is

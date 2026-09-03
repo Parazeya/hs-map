@@ -1,5 +1,5 @@
 <script>
-  import { odds, titleCase } from '../lib/map.js';
+  import { asset, odds, titleCase } from '../lib/map.js';
   import { places } from '../lib/say.js';
   import ItemIcon from '../ItemIcon.svelte';
 
@@ -9,6 +9,20 @@
   const recipe = $derived(
     (item?.sockets ?? []).map((s) => ({ ...s, of: s.key ? data.items[s.key] : null })),
   );
+
+  /**
+   * What asks for this one.
+   *
+   * A rune's card said what the rune does and nothing about the hundred
+   * runewords that call for it, which is the question anyone holding a rune
+   * actually has. Read off the recipes rather than written down.
+   */
+  const wanted = $derived.by(() => {
+    if (!item?.key || !item.key.startsWith('socketable')) return [];
+    return Object.entries(data?.items ?? {})
+      .filter(([, r]) => (r.sockets ?? []).some((k) => k.key === item.key))
+      .map(([key, r]) => ({ key, of: r }));
+  });
 
   /** The set this belongs to, and the other pieces of it. */
   const kit = $derived(item?.set ? data.sets[item.set] : null);
@@ -26,6 +40,19 @@
   );
 
   const name = $derived(item ? (item.names?.[lang] || item.name) : '');
+
+  /// Where the map would open for this item, or nothing for something that
+  /// drops nowhere the map draws.
+  ///
+  /// The map keys its items by the lowercased English name and takes the name
+  /// in `find`. Anything with a place or a drop rate is worth offering: of the
+  /// 1140 that pass, the map knows 1129, and it knows nothing this refuses.
+  /// `asset` already puts a query on the path, so the second one is joined.
+  const onMap = $derived.by(() => {
+    if (!item?.name || !(item.places?.length || item.rate != null)) return null;
+    const at = asset('index.html');
+    return `${at}${at.includes('?') ? '&' : '?'}find=${encodeURIComponent(item.name.toLowerCase())}`;
+  });
   const lore = $derived(item ? (item.lore?.[lang] || item.lore?.en || null) : null);
 
   /** One of the game's phrases, in the reader's language. */
@@ -317,11 +344,33 @@
       </ul>
     {/if}
 
+    {#if wanted.length}
+      <h2>{t('Asked for by')}</h2>
+      <ul class="pieces">
+        {#each wanted as w (w.key)}
+          <li>
+            <button onclick={() => pick?.(w.key)}>
+              <ItemIcon item={w.of} sheet={data.sheet} from={sheet} box={26} />
+              <span class="n {cls(w.of.rarity)}">{w.of.names?.[lang] || w.of.name}</span>
+              <span class="k">{(w.of.sockets ?? []).map((x) => x.name).join(' · ')}</span>
+            </button>
+          </li>
+        {/each}
+      </ul>
+    {/if}
+
     {#if item.places?.length}
       <h2>{t('Drop location')}</h2>
       <ul class="places">
         {#each item.places as p (p)}<li>{place(titleCase(p))}</li>{/each}
       </ul>
+    {/if}
+
+    <!-- The two pages knew the same item and had no way to say so: this one
+         names the places, the map draws them. The link carries the name the map
+         keys its items by, which is what its own search box takes. -->
+    {#if onMap}
+      <p class="tomap"><a href={onMap}>{t('Show it on the map')} ▶</a></p>
     {/if}
 
     {#if lore}
@@ -455,6 +504,9 @@
   .pieces .k { flex: none; color: var(--dim); font-size: 11px; }
 
   .places li { padding: 1px 0; font-size: 13px; }
+  .tomap { margin: 10px 0 0; }
+  .tomap a { color: var(--hot); font-size: 12px; text-decoration: none; }
+  .tomap a:hover { text-decoration: underline; }
   .anyone { margin: 0; font-size: 13px; }
   .suits { list-style: none; margin: 0; padding: 0; }
   .suits li {

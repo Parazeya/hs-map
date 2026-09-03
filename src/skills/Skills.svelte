@@ -45,14 +45,41 @@
     Object.entries(data?.skills ?? {}).map(([key, s]) => ({ ...s, key })),
   );
 
+  /**
+   * Where a word was found in a skill, if it was found at all.
+   *
+   * The specialisations are searched as well as the skill. Three thousand three
+   * hundred of them are drawn on this page and none of them was reachable by
+   * typing what it does: "stun" found nothing, while Tectonic Hit — a chance to
+   * stun monsters on hit — sat two clicks away on a tree nobody had a reason to
+   * open.
+   *
+   * The node that answered is carried back so the row can say so and the tree
+   * can open on it. A skill whose own name matches says nothing extra: it is
+   * already the thing on the row.
+   */
+  function found(s, q) {
+    if (!q) return { hit: true, at: null };
+    if (word(s.names).toLowerCase().includes(q) || word(s.lore).toLowerCase().includes(q)) {
+      return { hit: true, at: null };
+    }
+    const at = (s.subs ?? []).find(
+      (n) =>
+        word(n.names).toLowerCase().includes(q) ||
+        word(n.lore).toLowerCase().includes(q) ||
+        (n.gives?.base ?? []).some((g) => String(g.of).toLowerCase().includes(q)),
+    );
+    return at ? { hit: true, at } : { hit: false, at: null };
+  }
+
   const shown = $derived.by(() => {
     const q = query.trim().toLowerCase();
     return all
       .filter((s) => !hero || s.class === hero)
       .filter((s) => !element || s.element.includes(element))
       .filter((s) => !tag || s.tags.includes(tag))
-      .filter((s) => !q || word(s.names).toLowerCase().includes(q)
-        || word(s.lore).toLowerCase().includes(q))
+      .map((s) => ({ ...s, via: found(s, q) }))
+      .filter((s) => s.via.hit)
       // By hero first, because a tree read together is what a hero's page is;
       // inside one, the order it is learned in.
       .sort((a, b) =>
@@ -117,9 +144,9 @@
   });
   const reading = $derived(node == null ? null : open?.subs?.find((x) => x.i === node));
 
-  function read(key) {
+  function read(key, at = null) {
     chosen = key;
-    node = null;
+    node = at;
   }
 
   // What is open, in the address, so a skill can be reloaded or sent to
@@ -291,9 +318,18 @@
       <ul>
         {#each shown as s (s.key)}
           <li>
-            <button class="row" class:on={chosen === s.key} onclick={() => read(s.key)}>
+            <button
+              class="row"
+              class:on={chosen === s.key}
+              onclick={() => read(s.key, s.via.at?.i ?? null)}
+            >
               <ItemIcon item={s} sheet={data.sheet} from={SHEET} box={22} />
-              <span class="nm">{word(s.names)}</span>
+              <span class="nm">
+                {word(s.names)}
+                <!-- the word was not in the skill but in one of its
+                     specialisations, and the row says which -->
+                {#if s.via.at}<span class="via">{word(s.via.at.names)}</span>{/if}
+              </span>
               <span class="cl">{word(data.classes.find((c) => c.id === s.class)?.names)}</span>
               {#if s.lvl}<span class="lv">{t('lvl')} {s.lvl}</span>{/if}
               {#if s.subs.length}<span class="sub">{s.subs.length}</span>{/if}
@@ -578,6 +614,8 @@
   .row:hover { background: rgba(255, 255, 255, .05); }
   .row.on { background: #33203c; }
   .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* the specialisation the search found, under the skill holding it */
+  .via { display: block; color: var(--dim); font-size: 10px; }
   .cl, .lv { color: var(--dim); font-size: 12px; white-space: nowrap; }
   .sub {
     color: var(--hot); font-size: 11px; border: 1px solid var(--edge);
