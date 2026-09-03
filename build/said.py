@@ -603,6 +603,23 @@ SAID = {
         "de": "je Reliktstufe", "fr": "selon le niveau de la relique",
         "sp": "según el nivel de la reliquia", "pl": "wg poziomu reliktu",
     },
+    "Set": {
+        "fi": "Sarja", "pt": "Conjunto", "ru": "Набор", "zh": "套装",
+        "ja": "セット", "ko": "세트", "de": "Set", "fr": "Ensemble",
+        "sp": "Conjunto", "pl": "Zestaw",
+    },
+    "Asked for by": {
+        "fi": "Tarvitaan tähän", "pt": "Pedida por", "ru": "Нужна для",
+        "zh": "被以下需要", "ja": "これに必要", "ko": "다음에 필요",
+        "de": "Verlangt von", "fr": "Demandée par",
+        "sp": "Pedida por", "pl": "Potrzebna do",
+    },
+    "Show it on the map": {
+        "fi": "Näytä kartalla", "pt": "Ver no mapa", "ru": "Показать на карте",
+        "zh": "在地图上查看", "ja": "地図で見る", "ko": "지도에서 보기",
+        "de": "Auf der Karte zeigen", "fr": "Voir sur la carte",
+        "sp": "Ver en el mapa", "pl": "Pokaż na mapie",
+    },
     "per level": {
         "fi": "per taso", "pt": "por nível", "ru": "за уровень", "zh": "每级",
         "ja": "レベルごと", "ko": "레벨당", "de": "pro Stufe", "fr": "par niveau",

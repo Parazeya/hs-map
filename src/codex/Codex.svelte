@@ -32,6 +32,12 @@
   // folds the list away, which is what says a choice has been made.
   let kindQuery = $state('');
   let kindOpen = $state(false);
+  // Sixty-nine sets, and until now the only way to one was to open a piece of
+  // it by luck. The bonuses were on the card the whole time; nothing listed the
+  // sets themselves.
+  let kit = $state(null);
+  let kitQuery = $state('');
+  let kitOpen = $state(false);
 
   /** Rarest first, because that is what anyone is looking for. */
   // Rarest first, which is the order anyone looks in — and the order the
@@ -131,6 +137,23 @@
     kindOpen = false;
   }
 
+  /** The sets, by the name they are shown under. */
+  const kits = $derived(
+    Object.entries(data?.sets ?? {})
+      .map(([key, it]) => ({ key, name: it.names?.[lang] || it.names?.en || key, of: it.of ?? [] }))
+      .sort((a, b) => a.name.localeCompare(b.name)),
+  );
+  const kitHits = $derived.by(() => {
+    const q = kitQuery.trim().toLowerCase();
+    if (!q || (kit && kits.find((k) => k.key === kit)?.name.toLowerCase() === q)) return kits;
+    return kits.filter((k) => k.name.toLowerCase().includes(q) || k.key.toLowerCase().includes(q));
+  });
+  function pickKit(k) {
+    kit = k;
+    kitQuery = k ? (kits.find((x) => x.key === k)?.name ?? '') : '';
+    kitOpen = false;
+  }
+
   /**
    * Everything an item can be found by, as one lower-case string.
    *
@@ -154,6 +177,8 @@
         it.type, it.rarity, it.tier,
         it.set, ...Object.values(data.sets[it.set]?.names ?? {}),
         ...(it.weapons ?? []),
+        // the runes a runeword asks for, so "Vex" finds the six that want one
+        ...(it.sockets ?? []).flatMap((k) => [k.name, k.key]),
         ...[...(it.stats ?? []), ...(it.more ?? []).flatMap((m) => m.stats)]
           .map((v) => `${v.text} ${v.spell ?? ''} ${v.cls ?? ''}`),
         ...(it.places ?? []),
@@ -181,6 +206,7 @@
     const q = query.trim().toLowerCase();
     let out = rows;
     if (rarity) out = out.filter(([, it]) => it.rarity === rarity);
+    if (kit) out = out.filter(([key]) => data.sets[kit]?.of?.includes(key));
     if (kind) out = out.filter(([, it]) => it.type === kind);
     // a stat counts wherever it is written: fifty-six runewords keep theirs
     // under "in armour" and nowhere else
@@ -256,11 +282,14 @@
     query = '';
     rarity = null;
     kind = null;
+    kindQuery = '';
+    kit = null;
+    kitQuery = '';
     stat = null;
     statQuery = '';
   }
 
-  const filtered = $derived(Boolean(query.trim() || rarity || kind || stat));
+  const filtered = $derived(Boolean(query.trim() || rarity || kind || kit || stat));
 
   let box;                          // the search field, for the shortcut below
 
@@ -363,6 +392,26 @@
             <button class:on={kind === k} onclick={() => pickKind(k)}>{t(k)}</button>
           {/each}
           {#if kindHits.length === 0}<p class="none">{t('No stat by that name.')}</p>{/if}
+        </div>
+      {/if}
+
+      <p class="head">{t('Set')}{#if kit || kitQuery}<button class="drop" title={t('clear')} aria-label={t('clear')} onclick={() => { pickKit(null); }}>×</button>{/if}</p>
+      <input
+        class="kindfind"
+        type="search"
+        placeholder={t('all')}
+        autocomplete="off"
+        bind:value={kitQuery}
+        onfocus={() => (kitOpen = true)}
+      />
+      {#if kitOpen}
+        <div class="kindlist">
+          <button class:on={!kit} onclick={() => pickKit(null)}>{t('all')}</button>
+          {#each kitHits as k (k.key)}
+            <button class:on={kit === k.key} onclick={() => pickKit(k.key)}>
+              {k.name}<span class="count">{k.of.length}</span>
+            </button>
+          {/each}
         </div>
       {/if}
 
