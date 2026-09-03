@@ -14,7 +14,17 @@
   // `lit` is the set that drops the item being read in the menu, if one is.
   // Everything else dims, the same way the map's markers do, so a glance says
   // where the thing comes from without reading a single name.
-  let { data, lang = 'en', hovered = $bindable(null), lit = null, controls } = $props();
+  // `pick` is what a click does. Hovering has always shown the drops by the
+  // cursor and let go of them the moment the pointer left, which is no use for
+  // a list of four with their odds — it is read, not glanced at.
+  let {
+    data,
+    lang = 'en',
+    hovered = $bindable(null),
+    lit = null,
+    controls,
+    pick = null,
+  } = $props();
 
   const BOX = 64;
 
@@ -51,6 +61,7 @@
         class:inferno={it.inferno_only}
         aria-label={called(it, name, lang)}
         onpointerenter={() => (hovered = name)}
+        onclick={() => pick?.(name)}
       >
         {#if box}
           <span
