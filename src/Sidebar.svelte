@@ -9,6 +9,9 @@
     query = $bindable(''),
     peek = $bindable(null),      // the item under the pointer, and where its row sits
     active = $bindable(null),
+    // A boss, a chest or the rift, clicked on the bar below the map. It sits
+    // where a zone would and is the same card without a place around it.
+    source = $bindable(null),
     panel = false,               // only a narrow screen reads this; see App
     open = null,                 // what a click on a row does, if anything
   } = $props();
@@ -56,6 +59,8 @@
   const face = $derived(boss?.icon ?? null);
   const scale = $derived(face ? Math.min(1, BOX / Math.max(face[2], face[3])) : 1);
 
+  const pinned = $derived(source ? data.bosses[source] : null);
+
   /**
    * One row of the list: the pointer shows what it drops for, a click opens it.
    *
@@ -77,8 +82,66 @@
   });
 </script>
 
+<!-- Whoever drops it: the face, the name, and the list. Written once and used
+     twice — under the zone a boss stands in, and on its own for something
+     clicked on the bar, which stands nowhere. -->
+{#snippet whoever(name, it, named)}
+  {@const art = it.icon ?? null}
+  {@const k = art ? Math.min(1, BOX / Math.max(art[2], art[3])) : 1}
+  <div class="boss">
+    {#if art}
+      <span
+        class="facebox"
+        style="width: {Math.round(art[2] * k)}px; height: {Math.round(art[3] * k)}px"
+      >
+        <span
+          class="face"
+          style="
+            width: {art[2]}px; height: {art[3]}px;
+            transform: scale({k});
+            background-image: url({asset('img/bosses.webp')});
+            background-position: {-art[0]}px {-art[1]}px;
+            background-size: {data.bossSheet.w}px {data.bossSheet.h}px;
+          "
+        ></span>
+      </span>
+    {/if}
+    <div class="who">
+      {#if named}<h3>{called(it, name, lang)}</h3>{/if}
+      <ul class="rows">
+        {#each it.drops as d (d.item)}
+          {@const item = data.items[d.item] ?? {}}
+          <li class:lit={peek?.name === d.item} {...row(d.item)}>
+            <ItemIcon {item} sheet={data.sheet} />
+            <span class="name {cls(item.rarity)}">{called(item, d.item, lang)}</span>
+            {#if d.inferno}<span class="inferno">INF</span>{/if}
+            <span class="odds">{odds(data.items[d.item]?.rate)}</span>
+          </li>
+        {/each}
+      </ul>
+    </div>
+  </div>
+{/snippet}
+
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <aside class:open={panel} onpointerleave={() => (peek = null)}>
+  {#if pinned}
+    <!-- what was clicked on the bar: a boss, a chest, the rift -->
+    <section class="zone">
+      <header>
+        <h2>{called(pinned, source, lang)}</h2>
+        <button class="x" aria-label={t('Let it go')} onclick={() => (source = null)}>×</button>
+      </header>
+      <p class="sub">
+        {[t(pinned.kind === 'source' ? 'not a boss' : 'boss'),
+          pinned.inferno_only ? t('only gives these up on Inferno') : null]
+          .filter(Boolean).join(' · ')}
+      </p>
+      <!-- the heading above already says who this is -->
+      {@render whoever(source, pinned, false)}
+    </section>
+  {/if}
+
   {#if active}
     <!-- the zone that was clicked, so it can be read without the pointer -->
     <section class="zone">
@@ -91,40 +154,7 @@
           .filter(Boolean).join(' · ')}
       </p>
 
-      {#if boss}
-        <div class="boss">
-          {#if face}
-            <span
-              class="facebox"
-              style="width: {Math.round(face[2] * scale)}px; height: {Math.round(face[3] * scale)}px"
-            >
-              <span
-                class="face"
-                style="
-                  width: {face[2]}px; height: {face[3]}px;
-                  transform: scale({scale});
-                  background-image: url({asset('img/bosses.webp')});
-                  background-position: {-face[0]}px {-face[1]}px;
-                  background-size: {data.bossSheet.w}px {data.bossSheet.h}px;
-                "
-              ></span>
-            </span>
-          {/if}
-          <div class="who">
-            <h3>{called(data.bosses[active.boss], active.boss, lang)}</h3>
-            <ul class="rows">
-              {#each boss.drops as d (d.item)}
-                {@const item = data.items[d.item] ?? {}}
-                <li class:lit={peek?.name === d.item} {...row(d.item)}>
-                  <ItemIcon {item} sheet={data.sheet} />
-                  <span class="name {cls(item.rarity)}">{called(item, d.item, lang)}</span>
-                  {#if d.inferno}<span class="inferno">INF</span>{/if}
-                </li>
-              {/each}
-            </ul>
-          </div>
-        </div>
-      {/if}
+      {#if boss}{@render whoever(active.boss, boss, true)}{/if}
 
       {#if active.drops.length === 0}
         <p class="note">

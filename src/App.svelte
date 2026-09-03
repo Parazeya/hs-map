@@ -20,6 +20,14 @@
   let query = $state('');         // the sidebar's search
   let peek = $state(null);        // the item under the pointer in the menu
   let reading = $state(null);     // the item whose card is open over the map
+  // What was clicked on the boss bar. A zone and a source are both "what is
+  // pinned in the panel", so opening one closes the other rather than stacking
+  // two cards nobody asked to read at once.
+  let source = $state(null);
+  // and a zone clicked on the map takes the panel back from the bar
+  $effect(() => {
+    if (active) source = null;
+  });
   let at = $state({ x: 0, y: 0 });
   // Only a phone reads this. There the panel is 238 px of a 393 px screen and
   // the map is what is left, so it comes over the map when it is wanted and is
@@ -220,7 +228,17 @@
         />
       {/if}
 
-      <BossBar {data} {lang} bind:hovered={boss} lit={from?.who ?? null} {controls} />
+      <BossBar
+        {data}
+        {lang}
+        bind:hovered={boss}
+        lit={from?.who ?? null}
+        {controls}
+        pick={(name) => {
+          source = source === name ? null : name;
+          if (source) active = null;
+        }}
+      />
 
     </main>
 
@@ -236,7 +254,7 @@
     {#if panel}
       <button class="scrim only-narrow" aria-label={t('Close')} onclick={() => (panel = false)}></button>
     {/if}
-    <Sidebar {data} {lang} {panel} bind:query bind:peek bind:active
+    <Sidebar {data} {lang} {panel} bind:query bind:peek bind:active bind:source
              open={(name) => (reading = name)} />
   </div>
 {/if}
