@@ -1,5 +1,6 @@
 <script>
-  import { asset, odds, titleCase } from '../lib/map.js';
+  import { asset, figure, odds, titleCase, withMF } from '../lib/map.js';
+  import { mf } from '../lib/mf.svelte.js';
   import { places } from '../lib/say.js';
   import ItemIcon from '../ItemIcon.svelte';
 
@@ -178,10 +179,15 @@
       {/if}
       {#if item.lvl}<dt>{t('Level')}</dt><dd>{item.lvl}</dd>{/if}
       {#if item.size}<dt>{t('Space')}</dt><dd>{item.size[0]}×{item.size[1]}</dd>{/if}
-      {#if item.rate}<dt>{t('Drop rate')}</dt><dd>{odds(item.rate)}</dd>{/if}
+      <!-- and beside each, what it is for whoever is reading: the same figure
+           divided by the magic find they gave the map. See mf.svelte.js. -->
+      {#if item.rate}
+        <dt>{t('Drop rate')}</dt>
+        <dd>{odds(item.rate)}{#if mf.value > 0}<span class="mine">({figure(withMF(item.rate, mf.value))})</span>{/if}</dd>
+      {/if}
       {#if item.chase && item.chase !== item.rate}
         <dt>{t('In its zone')}</dt>
-        <dd>{odds(item.chase)}</dd>
+        <dd>{odds(item.chase)}{#if mf.value > 0}<span class="mine">({figure(withMF(item.chase, mf.value))})</span>{/if}</dd>
       {/if}
     </dl>
 
@@ -542,4 +548,7 @@
     font-size: 11px;
     font-family: ui-monospace, monospace;
   }
+  /* the same odds for whoever is reading; a margin and not a space, which
+     Svelte trims at the edge of an {#if} */
+  .mine { color: #e8c860; margin-left: .45em; }
 </style>
