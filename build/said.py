@@ -36,6 +36,12 @@ SAID = {
         "de": "eines der fünf Elemente", "fr": "l'un des cinq éléments",
         "sp": "uno de los cinco elementos", "pl": "jeden z pięciu żywiołów",
     },
+    # a dungeon's door is locked, and the panel says by what
+    "opened with": {
+        "fi": "avataan esineellä", "pt": "aberto com", "ru": "открывается",
+        "zh": "需要", "ja": "必要な鍵", "ko": "열쇠",
+        "de": "geöffnet mit", "fr": "ouvert avec", "sp": "se abre con", "pl": "otwierane",
+    },
     "Show": {
         "fi": "Näytä", "pt": "Mostrar", "ru": "Показать", "zh": "显示", "ja": "表示", "ko": "보기",
         "de": "Zeigen", "fr": "Afficher", "sp": "Mostrar", "pl": "Pokaż",
@@ -144,11 +150,12 @@ SAID = {
         "ja": "ボスダンジョン", "ko": "보스 던전", "de": "Bossverlies", "fr": "donjon du boss",
         "sp": "mazmorra del jefe", "pl": "loch bossa",
     },
-    # Plural, because the marker stands for all of an act's dungeons at once:
-    # the drop table is written per act and never names one of them.
-    "dungeons": {
-        "fi": "luolastot", "pt": "masmorras", "ru": "подземелья", "zh": "地城", "ja": "ダンジョン",
-        "ko": "던전", "de": "Verliese", "fr": "donjons", "sp": "mazmorras", "pl": "lochy",
+    # Singular: each marker is one dungeon, standing beside the zone whose
+    # presets place its door. What falls in it is still the act's list, because
+    # that is how the tables are written — `4-D`, never `4-2-D`.
+    "dungeon": {
+        "fi": "luolasto", "pt": "masmorra", "ru": "подземелье", "zh": "地城", "ja": "ダンジョン",
+        "ko": "던전", "de": "Verlies", "fr": "donjon", "sp": "mazmorra", "pl": "loch",
     },
     "town": {
         "fi": "kaupunki", "pt": "cidade", "ru": "город", "zh": "城镇", "ja": "街", "ko": "마을",

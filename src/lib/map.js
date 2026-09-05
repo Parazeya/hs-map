@@ -33,7 +33,7 @@ export const ART = {
 
 /** What to call it in the panel's subtitle. */
 export const KIND = {
-  zone: 'zone', dungeon: 'boss dungeon', dungeons: 'dungeons', town: 'town', cabin: 'cabin',
+  zone: 'zone', dungeon: 'boss dungeon', dungeons: 'dungeon', town: 'town', cabin: 'cabin',
 };
 
 export const nameOf = (node, lang) => node.name[lang] || node.name.en || node.room;
