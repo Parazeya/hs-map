@@ -1,5 +1,6 @@
 <script>
-  import { asset, odds, titleCase, recall, remember } from '../lib/map.js';
+  import { asset, figure, odds, titleCase, withMF, recall, remember } from '../lib/map.js';
+  import { mf, setMF } from '../lib/mf.svelte.js';
   import { hydrate } from '../lib/book.js';
   import { speak } from '../lib/lang.js';
   import { places, talk } from '../lib/say.js';
@@ -346,6 +347,23 @@
     />
 
     <span class="side end">
+      <!-- The same box the map has, and the same stored number: a reader who
+           opens this page straight from a link has no map to set it on. -->
+      <label class="mf" title={t('Your magic find, as your character sheet shows it')}>
+        <span class="cap">MF</span>
+        <input
+          type="number"
+          min="0"
+          max="10000"
+          step="1"
+          inputmode="numeric"
+          value={mf.value || ''}
+          placeholder="0"
+          aria-label={t('Your magic find, as your character sheet shows it')}
+          oninput={(e) => setMF(e.currentTarget.value)}
+        />
+        <span class="pc">%</span>
+      </label>
       {#if filtered}
         <button class="clear" onclick={clear}>{t('clear')}</button>
       {/if}
@@ -469,7 +487,7 @@
                  its placeholder said "one in fifty million" of a thing that
                  simply does not fall out of the world. -->
             <span class="from">{(it.places ?? []).map(place).join(', ')}</span>
-            <span class="odds">{odds(it.rate) || '—'}</span>
+            <span class="odds">{odds(it.rate) || '—'}{#if mf.value > 0 && it.rate}<span class="mine">({figure(withMF(it.rate, mf.value))})</span>{/if}</span>
           </button>
         </li>
       {/each}
@@ -878,4 +896,38 @@
     .side { flex: none; }
     header .count { display: none; }
   }
+  /* the box that sets it, built to stand as tall as the picker beside it */
+  .mf {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 7px;
+    color: #8a7a72;
+    background: #180d13;
+    border: 1px solid var(--edge);
+    border-radius: 5px;
+    font-size: 12px;
+    white-space: nowrap;
+    cursor: text;
+  }
+  .mf:hover, .mf:focus-within { border-color: var(--hot); }
+  .mf .pc { color: #6d5f59; }
+  .mf input {
+    width: 4.2em;
+    padding: 0;
+    color: #e8c860;
+    background: none;
+    border: 0;
+    font: inherit;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+  .mf input:focus { outline: none; }
+  .mf input::placeholder { color: #5a4e49; }
+  .mf input::-webkit-outer-spin-button,
+  .mf input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .mf input { -moz-appearance: textfield; appearance: textfield; }
+
+  /* the same odds for whoever is reading; see mf.svelte.js */
+  .mine { color: #e8c860; margin-left: .45em; }
 </style>
