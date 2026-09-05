@@ -1,5 +1,6 @@
 <script>
-  import { KIND, asset, called, nameOf, odds, titleCase } from './lib/map.js';
+  import { KIND, asset, called, figure, nameOf, odds, titleCase, withMF } from './lib/map.js';
+  import { mf } from './lib/mf.svelte.js';
   import { talk } from './lib/say.js';
   import ItemIcon from './ItemIcon.svelte';
 
@@ -115,7 +116,7 @@
             <ItemIcon {item} sheet={data.sheet} />
             <span class="name {cls(item.rarity)}">{called(item, d.item, lang)}</span>
             {#if d.inferno}<span class="inferno">INF</span>{/if}
-            <span class="odds">{odds(data.items[d.item]?.rate)}</span>
+            <span class="odds">{odds(data.items[d.item]?.rate)}{#if mf.value > 0}<span class="mine">({figure(withMF(data.items[d.item]?.rate, mf.value))})</span>{/if}</span>
           </li>
         {/each}
       </ul>
@@ -170,7 +171,7 @@
               <ItemIcon {item} sheet={data.sheet} />
               <span class="name {cls(item.rarity)}">{called(item, name, lang)}</span>
               {#if item.inferno}<span class="inferno">INF</span>{/if}
-              <span class="odds">{odds(item.chase ?? item.rate)}</span>
+              <span class="odds">{odds(item.chase ?? item.rate)}{#if mf.value > 0}<span class="mine">({figure(withMF(item.chase ?? item.rate, mf.value))})</span>{/if}</span>
             </li>
           {/each}
         </ul>
@@ -212,7 +213,7 @@
         <span class="tier">{tier(item)}</span>
         <span class="name {cls(item.rarity)}">{called(item, name, lang)}</span>
         {#if item.inferno}<span class="inferno">INF</span>{/if}
-        <span class="odds">{odds(item.rate)}</span>
+        <span class="odds">{odds(item.rate)}{#if mf.value > 0}<span class="mine">({figure(withMF(item.rate, mf.value))})</span>{/if}</span>
       </li>
     {/each}
     {#if found.length === 0}<li class="note">Nothing by that name.</li>{/if}
@@ -334,7 +335,6 @@
   }
   .rows li:hover, .rows li.lit { background: #ffffff12; }
   .name { flex: 1; }
-  .odds { flex: none; color: var(--dim); font-size: 12px; font-variant-numeric: tabular-nums; }
 
   .tier {
     flex: none;
@@ -393,4 +393,13 @@
   @media (max-width: 46rem) and (prefers-reduced-motion: reduce) {
     aside { transition: none; }
   }
+  /* The reader's own odds sit inside the same span as everybody's, so the two
+     are one flex item with a single space between them rather than two columns
+     a row's gap apart. Same size, same tabular digits; only the colour differs,
+     because the brackets alone are not enough to keep them apart at a glance. */
+  .odds { flex: none; color: var(--dim); font-size: 12px; font-variant-numeric: tabular-nums; }
+  /* A margin and not a space in the markup: Svelte trims whitespace at the
+     edge of an {#if} block, so the literal one between the two figures went
+     missing and they read as a single run of digits. */
+  .mine { color: #e8c860; margin-left: .45em; }
 </style>

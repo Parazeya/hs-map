@@ -1,5 +1,6 @@
 <script>
-  import { called, nameOf, odds, titleCase } from './lib/map.js';
+  import { called, figure, nameOf, odds, titleCase, withMF } from './lib/map.js';
+  import { mf } from './lib/mf.svelte.js';
   import { places, talk } from './lib/say.js';
   import ItemIcon from './ItemIcon.svelte';
 
@@ -38,8 +39,14 @@
   </header>
 
   <dl>
-    {#if it.rate}<dt>{t('anywhere')}</dt><dd>{odds(it.rate)}</dd>{/if}
-    {#if it.chase}<dt>{t('in its own zone')}</dt><dd>{odds(it.chase)}</dd>{/if}
+    {#if it.rate}
+      <dt>{t('anywhere')}</dt>
+      <dd>{odds(it.rate)}{#if mf.value > 0}<span class="mine">({figure(withMF(it.rate, mf.value))})</span>{/if}</dd>
+    {/if}
+    {#if it.chase}
+      <dt>{t('in its own zone')}</dt>
+      <dd>{odds(it.chase)}{#if mf.value > 0}<span class="mine">({figure(withMF(it.chase, mf.value))})</span>{/if}</dd>
+    {/if}
   </dl>
 
   {#if it.places?.length}
@@ -120,4 +127,6 @@
   @media (max-width: 900px) {
     .card { display: none; }
   }
+  /* the same odds for whoever is reading; see mf.svelte.js */
+  .mine { color: #e8c860; margin-left: .45em; }
 </style>

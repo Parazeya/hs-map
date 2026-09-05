@@ -112,8 +112,18 @@ def art():
         "node": ("Mapscreen_Zone_spr", 1),
         "node-dim": ("Mapscreen_Zone_spr", 0),
         "node-ring": ("Mapscreen_Zone_spr", 4),
+        # Every marker sprite carries its own ring at its own size: 24px for a
+        # zone and a boss dungeon, 26 for the big zone and the town. One ring for
+        # all of them sat inside the rim of the wider two.
+        "node-ring-big": ("Mapscreen_Zone_Big_spr", 4),
         "town": ("Mapscreen_Zone_Town_spr", 1),
         "dungeon": ("Mapscreen_Zone_Boss_Dungeon_spr", 1),
+        # The zone at the end of an act, which the game draws bigger and in
+        # purple rather than blue — 26px against 24 — because it is the one that
+        # opens onto the act's boss dungeon. `Mapscreen_Zone_Big_Satanic_spr`
+        # sits beside it in the game, which is what says "Big" is the kind of
+        # zone and not a state it happens to be in.
+        "node-big": ("Mapscreen_Zone_Big_spr", 1),
         "satanic": ("Mapscreen_Zone_Satanic_spr", 1),
         "glow": ("Mapscreen_Zone_Light_Glow_spr", 0),
         "chosen": ("Mapscreen_Chosen_Big_spr", 0),
@@ -1000,6 +1010,19 @@ def main():
             "name": names.get(room, {}),
             "drops": drops,
         })
+
+    # The last zone of each act is the one its boss dungeon opens off, and the
+    # game marks it: bigger, and purple. Its own kind rather than a flag on the
+    # record, because both drawing paths pick a marker's art by kind and the
+    # canvas one keeps one box per kind. It is still a zone, and `KIND` says so.
+    last = {}
+    for n in nodes:
+        if n["kind"] == "zone" and n["act"]:
+            step = int(n["room"][7:9])
+            if step > last.get(n["act"], (-1, None))[0]:
+                last[n["act"]] = (step, n)
+    for _, n in last.values():
+        n["kind"] = "gate"
 
     links = route(nodes)
 

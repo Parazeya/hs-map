@@ -42,6 +42,19 @@ SAID = {
         "zh": "需要", "ja": "必要な鍵", "ko": "열쇠",
         "de": "geöffnet mit", "fr": "ouvert avec", "sp": "se abre con", "pl": "otwierane",
     },
+    # the box in the map's controls, and what the second odds figure means
+    "Your magic find, as your character sheet shows it": {
+        "fi": "Magic find, kuten hahmolomakkeessa lukee",
+        "pt": "Seu magic find, como aparece na ficha do personagem",
+        "ru": "Ваш magic find, как его показывает лист персонажа",
+        "zh": "你的魔法寻宝，以角色面板上的数值为准",
+        "ja": "キャラ画面に出ているマジックファインドの値",
+        "ko": "캐릭터 창에 표시된 매직 파인드 수치",
+        "de": "Dein Magic Find, so wie es im Heldenfenster steht",
+        "fr": "Votre magic find, tel que l'affiche la fiche du personnage",
+        "sp": "Tu magic find, tal como lo muestra la hoja de personaje",
+        "pl": "Twój magic find, tak jak pokazuje go karta postaci",
+    },
     "Show": {
         "fi": "Näytä", "pt": "Mostrar", "ru": "Показать", "zh": "显示", "ja": "表示", "ko": "보기",
         "de": "Zeigen", "fr": "Afficher", "sp": "Mostrar", "pl": "Pokaż",
