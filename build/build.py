@@ -834,69 +834,135 @@ def zone_code(room):
     return None
 
 
-#: The acts as the drop tables spell them, which is how a dungeon's own place
-#: name is keyed — "Act IV Dungeons".
-ROMAN = {1: "I", 2: "II", 3: "III", 4: "IV", 5: "V", 6: "VI", 7: "VII", 8: "VIII", 9: "IX"}
 
 
-def dungeon_nodes(nodes, per_code, t, say):
-    """One marker per act for its ordinary dungeons.
+#: The dungeon each zone opens onto, and the key that opens it.
+#:
+#: Twenty-six of the forty-six zones have one, and every one of them is locked:
+#: the door stands in the zone and asks for a key. That is why nothing in the
+#: game's own data lines up with which zones have a dungeon — the preset chunk
+#: tagged `dngSpawner` covers only nineteen of these twenty-six, and one of the
+#: nineteen (3-3) is not on this list at all.
+#:
+#: So it is written down rather than derived, from the community's own list at
+#: hero-siege-helper.vercel.app/dungeons, and checked against the game where it
+#: could be: 8-1 Gladsheim Halls, 8-2 Naga Temple and 8-3 Muspelheim were all
+#: three confirmed in play, and 1-2 was confirmed to have none.
+#:
+#: The room is the dungeon's first floor, which is what the game names — a
+#: deeper one is "Ancient City Level 2" and the same place. `dungeon_title`
+#: takes the floor number back off.
+#:
+#: The key is spelled as the game spells it, so its name can be looked up in the
+#: game's own item table and said in all eleven languages. Not as the site's item
+#: list spells it: Treasure Key and Boreal Key are in the game and not in that
+#: list, because nothing has ever recorded them dropping.
+KEY_DUNGEONS = {
+    "1-1": ("Rat_Den_01_rm", "Smelly Cheese"),
+    "1-3": ("Pumpkin_Cellar_01_rm", "Cellar Key"),
+    "1-4": ("Black_Tower_01_rm", "Tower Key"),
+    "2-1": ("Frozen_Cellar_01_rm", "Frosted Key"),
+    "2-5": ("Ancient_City_01_rm", "Ancient Key"),
+    "3-2": ("Sand_Cave_01_rm", "Shovel Key"),
+    "3-3": ("Forgotten_City_01_rm", "Mystic Key"),
+    "3-5": ("Cauflax_Tomb_01_rm", "Tomb Key"),
+    "4-1": ("Old_Copper_Mine_01_rm", "Copper Key"),
+    "4-2": ("Abandoned_Mine_01_rm", "Rusted Key"),
+    "4-5": ("Devils_Hole_01_rm", "Devil's Key"),
+    "5-1": ("Fuji_Crater_01_rm", "Pickaxe"),
+    "5-2": ("Underground_Garden_01_rm", "Garden Key"),
+    "5-3": ("Kaojin_Temple_01_rm", "Battle Key"),
+    "5-5": ("Temple_Trapdoor_01_rm", "Golden Key"),
+    "6-1": ("Unmarked_Grave_01_rm", "Axe Key"),
+    "6-4": ("Arm_Storage_01_rm", "Storage Key"),
+    "7-2": ("Distorted_Horizons_01_rm", "Warp Key"),
+    "8-1": ("Gladsheim_Halls_01_rm", "Valor Key"),
+    "8-2": ("Naga_Temple_01_rm", "Naga Scale Key"),
+    "8-3": ("Muspelheim_01_rm", "Magma Key"),
+    "8-5": ("Niflhel_01_rm", "Helflame Torch"),
+    "9-1": ("Act_09_Wasp_Nest_rm", "Hive Key"),
+    "9-2": ("Act_09_Treasure_Dungeon_rm", "Treasure Key"),
+    "9-3": ("Act_09_Monster_Dungeon_rm", "Tablet of Parasite"),
+    "9-4": ("Act_09_Boreal_Dungeon_rm", "Boreal Key"),
+}
 
-    The game marks them nowhere and could not: a zone is generated when it is
-    entered — `Act_01_01` holds nothing at all in the file, against 618 objects
-    in a town and 2,491 in a dungeon — and the entrance is placed then, so which
-    zone gets one is not a fact the file has. What the file does have is the
-    drop table, and it is written per act: `4-D`, never `4-2-D`, and no
-    individual dungeon is ever named as a source. So one marker per act says
-    exactly what is known and nothing more.
+#: What each language puts before a floor number. The game names a dungeon's
+#: floors and not the dungeon, so "Ancient City Level 1" has to lose its tail
+#: to be a label — and losing only the digit would leave "Ancient City Level".
+LEVEL_WORDS = (
+    "level", "lvl", "уровень", "ур", "nivel", "niveau", "poziom", "nível",
+    "taso", "ebene", "レベル", "레벨", "层", "等级",
+)
 
-    It stands beside the act's boss dungeon, which is the act's other dungeon
-    and already sits clear of the chain of zones. On whichever side has room.
+
+def dungeon_title(room, names):
+    """The dungeon's name, without the floor number the game hangs off it.
+
+    Per language, because word order is: German writes the level word where
+    English does not, and a language that does not number at all is left alone.
+    """
+    out = {}
+    for lang, said in (names.get(room) or {}).items():
+        text = re.sub(r"[\s:.\-–—]*\d+$", "", said).strip()
+        head = text.rsplit(" ", 1)
+        if len(head) == 2 and head[1].strip(".").lower() in LEVEL_WORDS:
+            text = head[0].strip()
+        out[lang] = text or said
+    return out
+
+
+def dungeon_nodes(nodes, per_code, t, say, names):
+    """A marker for the dungeon each zone that has one opens onto.
+
+    Which zones those are, and what they open onto, is `KEY_DUNGEONS`. There
+    used to be one marker per act instead, standing beside the act's boss
+    dungeon, because nothing here knew where a dungeon was — and one mark for a
+    whole act reads as though any zone in it might hold one.
+
+    What falls in one is still known only per act: the drop tables are written
+    `4-D` and never `4-2-D`, and no individual dungeon is ever named as a
+    source. So every dungeon of an act carries that act's list, which is the
+    whole of what the game says about it.
+
+    It stands beside its zone, on whichever side has the most room — counting
+    the markers already placed, or two neighbouring zones would put theirs in
+    the same spot. Never above: that is where the zone's name is. It carries no
+    name on the map for the same reason; the panel names it.
     """
     made = []
     for node in nodes:
-        act = node["act"]
-        if node["kind"] != "dungeon" or not act:
+        act, code = node["act"], node["code"]
+        if code not in KEY_DUNGEONS or not act:
             continue
+        room, key = KEY_DUNGEONS[code]
         drops = sorted(per_code.get(f"{act}-D", []), key=lambda name: (
             -(t["TIER_BY_NAME"].get(name) or 0), t["DROP_RATE"].get(name, 1 << 40)))
-        if not drops:
-            continue
-        # Close enough to read as the pair they are — both are dungeons of this
-        # act — and not so close that the two marks touch: 24 px of boss dungeon
-        # and 22 of this leave 7 px of daylight at 30. It carries no name on the
-        # map, so there is no label to keep clear of anything.
+        # 24px of zone marker and 22 of this leave 7px of daylight at 30.
         away = 30
-        near = lambda x, y: min(
-            (abs(o["x"] - x) + abs(o["y"] - y)) for o in nodes if o is not node)
-        x = max((node["x"] + away, node["x"] - away), key=lambda c: near(c, node["y"]))
-        y = node["y"]
+        placed = [o for o in nodes if o is not node] + made
+        near = lambda x, y: min((abs(o["x"] - x) + abs(o["y"] - y)) for o in placed)
+        x, y = max(
+            ((node["x"] + away, node["y"]), (node["x"] - away, node["y"]),
+             (node["x"], node["y"] + away)),
+            key=lambda c: near(*c))
         made.append({
-            "room": f"Act_{act:02d}_Dungeons",
+            "room": room,
             "x": x,
             "y": y,
             "kind": "dungeons",
             "code": f"{act}-D",
             "act": act,
-            "name": dungeon_name(act, say),
+            "name": dungeon_title(room, names),
             "drops": drops,
+            # The English name, with the rest of the languages put in `words`
+            # below rather than on the record: `langsplit` moves a node's `name`
+            # into the per-language files and leaves everything else in English,
+            # and `words` is already one file per language. Not an item id
+            # either — two of the twenty-six keys are in the game's item table
+            # and in no drop table, so there is no item record to point at.
+            "key": key,
         })
     return made
-
-
-def dungeon_name(act, say):
-    """"Act IV Dungeons" in the eleven languages the game ships.
-
-    Act IX is not in the game's table — it names I through VIII and stops — so
-    it borrows act VIII's wording and swaps the numeral. That keeps each
-    language's own word order, which composing the name out of "act" and
-    "dungeons" does not: German writes "Dungeons Akt VIII".
-    """
-    told = say.of(f"Act {ROMAN[act]} Dungeons")
-    if told:
-        return told
-    borrowed = say.of("Act VIII Dungeons") or {}
-    return {lang: text.replace("VIII", ROMAN[act]) for lang, text in borrowed.items()}
 
 
 def main():
@@ -1014,7 +1080,7 @@ def main():
     # After the chain of a run is drawn, so they join nothing — a dungeon is not
     # a step on the way through an act — and after the vocabulary is up, which
     # is what gives them their names.
-    nodes += dungeon_nodes(nodes, per_code, t, say)
+    nodes += dungeon_nodes(nodes, per_code, t, say, names)
 
     for name, it in items.items():
         told = say.of(name)
@@ -1057,7 +1123,10 @@ def main():
         "langs": langs,
         "tiers": t["TIER_LETTERS"],
         "sheet": {"w": sheet[0], "h": sheet[1]},
-        "words": {**said.SAID, **say.vocab()},
+        # …and the keys the dungeons ask for, which the game names in its item
+        # table whether or not anything has recorded one dropping.
+        "words": {**said.SAID, **say.vocab(),
+                  **{k: v for _, k in KEY_DUNGEONS.values() if (v := say.of(k))}},
         "places": spoken,
         "nodes": nodes,
         "links": links,

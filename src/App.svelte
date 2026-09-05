@@ -227,7 +227,11 @@
             odds: data.items[n]?.chase ?? data.items[n]?.rate,
           }))}
           boss={hovered.boss ?? null}
-          foot={hovered.drops.length ? t('the odds are for standing in this zone') : null}
+          foot={hovered.key
+            ? `${t('opened with')} ${t(hovered.key)}`
+            : hovered.drops.length
+              ? t('the odds are for standing in this zone')
+              : null}
         />
       {/if}
 
