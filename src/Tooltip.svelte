@@ -1,5 +1,6 @@
 <script>
-  import { asset, called, odds, titleCase } from './lib/map.js';
+  import { asset, called, figure, odds, titleCase, withMF } from './lib/map.js';
+  import { mf } from './lib/mf.svelte.js';
   import { talk } from './lib/say.js';
   import ItemIcon from './ItemIcon.svelte';
 
@@ -117,7 +118,9 @@
           <span class="tier">{data.tiers[(it.tier ?? 1) - 1] ?? '?'}</span>
           <span class="name r-{String(it.rarity ?? 'common').toLowerCase()}">{called(it, row.name, lang)}</span>
           {#if row.inferno}<span class="inferno">INF</span>{/if}
-          <span class="odds">{odds(row.odds)}</span>
+          <!-- and, beside it, what those odds are for whoever is reading: the
+               same figure divided by the magic find they said they carry -->
+          <span class="odds">{odds(row.odds)}{#if mf.value > 0}<span class="mine">({figure(withMF(row.odds, mf.value))})</span>{/if}</span>
         </li>
       {/each}
     </ul>
@@ -216,7 +219,6 @@
     border-radius: 3px;
     padding: 1px 4px;
   }
-  .odds { flex: none; color: var(--dim); font-size: 12px; font-variant-numeric: tabular-nums; }
 
   .r-satanic { color: var(--rar-satanic); }
   .r-heroic { color: var(--rar-heroic); }
@@ -225,4 +227,13 @@
   .r-unholy { color: var(--rar-unholy); }
   .r-runeword { color: var(--rar-runeword); }
   .r-common { color: var(--rar-common); }
+  /* The reader's own odds sit inside the same span as everybody's, so the two
+     are one flex item with a single space between them rather than two columns
+     a row's gap apart. Same size, same tabular digits; only the colour differs,
+     because the brackets alone are not enough to keep them apart at a glance. */
+  .odds { flex: none; color: var(--dim); font-size: 12px; font-variant-numeric: tabular-nums; }
+  /* A margin and not a space in the markup: Svelte trims whitespace at the
+     edge of an {#if} block, so the literal one between the two figures went
+     missing and they read as a single run of digits. */
+  .mine { color: #e8c860; margin-left: .45em; }
 </style>

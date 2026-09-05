@@ -1,5 +1,7 @@
 <script>
-  import { ART, asset, nameOf } from './lib/map.js';
+  import { ART, RING, asset, nameOf } from './lib/map.js';
+  import { talk } from './lib/say.js';
+  import { mf, setMF } from './lib/mf.svelte.js';
   import { hasWebGL2 } from './lib/gl/index.js';
   import { createScene } from './lib/gl/scene.js';
   import { untrack } from 'svelte';
@@ -91,6 +93,8 @@
   const SHOW_COUNT = import.meta.env.DEV
     || (typeof location !== 'undefined' && location.hash.includes('draws'));
   let count = $state('');
+
+  const t = $derived(talk(lang, data.words));
 
   const searching = $derived(matches !== null);
 
@@ -534,9 +538,11 @@
           <img class="pin" src={asset(`img/${ART[node.kind]}.webp`)} alt="" draggable="false">
           <!-- The ring the game draws around the marker under its own cursor —
                frame 4 of the marker sprite, cut out with the rest and then never
-               put on anything. Over the marker rather than under it: it is the
-               same 24 px across, so behind the pin it was invisible. -->
-          <img class="ring" src={asset('img/node-ring.webp')} alt="" draggable="false">
+               put on anything. Over the marker rather than under it: it is as
+               wide as the marker, so behind the pin it was invisible. -->
+          {#if RING[node.kind]}
+            <img class="ring" src={asset(`img/${RING[node.kind]}.webp`)} alt="" draggable="false">
+          {/if}
           <!-- The act boss stands at the end of its act, and the game marks that
                on its own map screen with this skull. Only the mark is here: the
                boss and what it drops are in the tooltip, where there is room to
@@ -553,6 +559,27 @@
     <canvas class="art marks" bind:this={over}></canvas>
     {#if SHOW_COUNT && count}<p class="draws">{count}</p>{/if}
   {/if}
+
+  <!-- Asked for once and kept, and it lives down here rather than in the row of
+       controls at the top: that row is four things on a narrow screen already,
+       and this is not a control of the map — it is a fact about the reader that
+       every odds figure on the page then carries a second number for. Empty or
+       zero turns those off again. -->
+  <label class="mf" title={t('Your magic find, as your character sheet shows it')}>
+    <span class="cap">MF</span>
+    <input
+      type="number"
+      min="0"
+      max="10000"
+      step="1"
+      inputmode="numeric"
+      value={mf.value || ''}
+      placeholder="0"
+      aria-label={t('Your magic find, as your character sheet shows it')}
+      oninput={(e) => setMF(e.currentTarget.value)}
+    />
+    <span class="pc">%</span>
+  </label>
 </div>
 
 <style>
@@ -883,10 +910,52 @@
   /* Only there when it was asked for, and above the bottom shelf rather than
      under it — the shelves are 84px tall and sit on a z-index the stage cannot
      reach, so at bottom: 10px this was invisible. */
-  .draws {
+  /* The reader's own magic find, in the map's corner.
+     Built to sit beside the draw counter rather than in the toolbar: same pill,
+     same corner, and it is the one thing on the page that is about the person
+     reading it rather than about the game. */
+  .mf {
     position: absolute;
     left: 10px;
     bottom: 94px;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    background: rgba(16, 10, 19, .82);
+    border: 1px solid var(--edge);
+    border-radius: 6px;
+    font: 12px/1.4 ui-monospace, monospace;
+    color: #8a7a72;
+    cursor: text;
+    user-select: none;
+    transition: border-color .12s ease-out;
+  }
+  .mf:hover, .mf:focus-within { border-color: var(--hot); }
+  .mf .cap { letter-spacing: .6px; }
+  .mf .pc { color: #6d5f59; }
+  .mf input {
+    width: 4.2em;
+    padding: 0;
+    color: #e8c860;
+    background: none;
+    border: 0;
+    font: inherit;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+  .mf input:focus { outline: none; }
+  .mf input::placeholder { color: #5a4e49; }
+  /* the spinner arrows take a third of a box this small */
+  .mf input::-webkit-outer-spin-button,
+  .mf input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .mf input { -moz-appearance: textfield; appearance: textfield; }
+
+  .draws {
+    position: absolute;
+    left: 10px;
+    bottom: 132px;
     z-index: 2;
     margin: 0;
     padding: 5px 8px;

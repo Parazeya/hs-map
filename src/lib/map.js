@@ -28,12 +28,25 @@ export async function load() {
 
 /** Which sprite a marker is drawn with. */
 export const ART = {
-  zone: 'node', dungeon: 'dungeon', dungeons: 'dungeonmark', town: 'town', cabin: 'town',
+  zone: 'node', gate: 'node-big', dungeon: 'dungeon', dungeons: 'dungeonmark', town: 'town', cabin: 'town',
+};
+
+/**
+ * The ring the game draws around the marker under the cursor.
+ *
+ * Sized to the marker, because the game's own are: frame 4 of each sprite is a
+ * ring as wide as the sprite it belongs to. The dungeon mark has none — it is
+ * the minimap's icon and the game never rings one — and hovering it still says
+ * so, through the same swell and glow every other marker gets.
+ */
+export const RING = {
+  zone: 'node-ring', dungeon: 'node-ring',
+  gate: 'node-ring-big', town: 'node-ring-big', cabin: 'node-ring-big',
 };
 
 /** What to call it in the panel's subtitle. */
 export const KIND = {
-  zone: 'zone', dungeon: 'boss dungeon', dungeons: 'dungeon', town: 'town', cabin: 'cabin',
+  zone: 'zone', gate: 'zone', dungeon: 'boss dungeon', dungeons: 'dungeon', town: 'town', cabin: 'cabin',
 };
 
 export const nameOf = (node, lang) => node.name[lang] || node.name.en || node.room;
@@ -58,11 +71,39 @@ export const called = (rec, key, lang) => rec?.names?.[lang] || titleCase(key);
 export const titleCase = (s) => s.replace(/(^|[\s([-])\p{Ll}/gu, (c) => c.toUpperCase());
 
 /** "1 in 46k" — a drop rate is a denominator, and a bare 46750 says nothing. */
+/**
+ * The same odds for a reader carrying `mf` percent of magic find.
+ *
+ * The game shows both on an item: the figure everyone sees, and that figure
+ * divided by what the reader is carrying. `1 in 166` at 829 MF is `1 in 17.87`,
+ * which is 166 / 9.29 — checked against the game's own tooltip.
+ *
+ * Rounded to whole numbers below a thousand and left alone above it, because
+ * `odds` writes those as `27k` and a decimal there says nothing.
+ */
+export function withMF(n, mf) {
+  if (!n || n <= 0 || !mf || mf <= 0) return n;
+  const cut = n / (1 + mf / 100);
+  return cut < 1000 ? Math.max(1, Math.round(cut)) : Math.round(cut);
+}
+
 export function odds(n) {
+  const said = figure(n);
+  return said && `1 in ${said}`;
+}
+
+/**
+ * The figure alone, without the "1 in".
+ *
+ * For the reader's own odds, which are printed in brackets beside the ones
+ * everybody has: "1 in 86k (39k)" says what two "1 in" phrases in a row did,
+ * in half the width and without asking anyone to read the same words twice.
+ */
+export function figure(n) {
   if (!n || n <= 0) return '';
-  if (n >= 1_000_000) return `1 in ${(n / 1_000_000).toFixed(n >= 10_000_000 ? 0 : 1)}M`;
-  if (n >= 1000) return `1 in ${Math.round(n / 1000)}k`;
-  return `1 in ${n}`;
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n >= 10_000_000 ? 0 : 1)}M`;
+  if (n >= 1000) return `${Math.round(n / 1000)}k`;
+  return String(n);
 }
 
 /**

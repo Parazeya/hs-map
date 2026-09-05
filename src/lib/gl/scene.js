@@ -32,7 +32,7 @@ import {
   buildQuads, createDynamicQuads, cellUV, stripUV,
   createTarget, freeTarget, freeObject, freeTexture, pickBox, rgb,
 } from './index.js';
-import { ART } from '../map.js';
+import { ART, RING } from '../map.js';
 
 /** half of the 34x34 .node button, in world units */
 const HIT = 17;
@@ -179,7 +179,7 @@ export function createScene({ data, base, over, stage, asset, onFail, onCount })
   let mapBatch = null, linkBatch = null, propBatch = null, markerBatch = null;
   // the second pass a faded marker needs, and the quad that puts it back
   let groupBatch = null, blitBatch = null, target = null;
-  let spots = [], PIN = {}, GLOW = null, RING = null, SKULL = null, FX = null;
+  let spots = [], PIN = {}, RINGS = {}, GLOW = null, SKULL = null, FX = null;
   let sheetSize = '…';
 
   const nodeAt = Object.fromEntries(nodes.map((n) => [n.room, n]));
@@ -234,13 +234,20 @@ export function createScene({ data, base, over, stage, asset, onFail, onCount })
   });
 
   const markUrls = {};
-  for (const n of ['glow', 'node-ring', 'skull', 'fx-zone.12x6', ...new Set(Object.values(ART))])
+  for (const n of ['glow', 'skull', 'fx-zone.12x6',
+                   ...new Set(Object.values(ART)), ...new Set(Object.values(RING))])
     markUrls[n] = asset(`img/${n}.webp`);
   loadAll(markUrls, { alive: () => !dead }).then((imgs) => {
     if (dead || !imgs.length) return;
     markSheet = packSheet(gl2, imgs);
     const uv = (name) => cellUV(markSheet.cell.get(name), markSheet.w, markSheet.h);
-    GLOW = uv('glow'); RING = uv('node-ring'); SKULL = uv('skull');
+    GLOW = uv('glow'); SKULL = uv('skull');
+    // Each ring at its own size, the way the pins are: the sprite it was cut
+    // from decides how wide it is, and 24 and 26 are both in use.
+    for (const [kind, art] of Object.entries(RING)) {
+      const c = markSheet.cell.get(art);
+      if (c) RINGS[kind] = { w: c.w, h: c.h, ...cellUV(c, markSheet.w, markSheet.h) };
+    }
     FX = markSheet.cell.get('fx-zone.12x6');
     // The four pins carry no width or height in the markup, so each draws at
     // its own intrinsic size — 24, 24, 22 and 26. One box for all four moves
@@ -335,8 +342,9 @@ export function createScene({ data, base, over, stage, asset, onFail, onCount })
       }
       const p = PIN[n.kind];
       if (p) marks.push({ x: n.x, y: n.y, w: p.w * pinK, h: p.h * pinK, u0: p.u0, v0: p.v0, u1: p.u1, v1: p.v1, a: fade });
-      if (ringA > 0.004)
-        marks.push({ x: n.x, y: n.y, w: 24 * ringK, h: 24 * ringK, ...RING, a: ringA });
+      const r = RINGS[n.kind];
+      if (r && ringA > 0.004)
+        marks.push({ x: n.x, y: n.y, w: r.w * ringK, h: r.h * ringK, u0: r.u0, v0: r.v0, u1: r.u1, v1: r.v1, a: ringA });
       // translate(-50%, var(--skull-y)%) on a 17px sprite whose box starts at
       // the marker's centre: the percentage is of its own height, so its centre
       // lands 17*(y/100) + 8.5 below it. -168 is -20.06 px, -190 is -23.8.
