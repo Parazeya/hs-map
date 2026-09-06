@@ -187,6 +187,7 @@
   <button type="button" onclick={() => { active = null; map.fit(); }}>{t('Fit')}</button>
   <a class="go" href={asset('codex.html')}>{t('Items')} ▶</a>
   <a class="go" href={asset('skills.html')}>{t('Skills')} ▶</a>
+  <a class="go" href={asset('bounty.html')}>{t('Bounties')} ▶</a>
   <button type="button" class="only-narrow" class:on={panel} onclick={() => (panel = !panel)}>
     {panel ? '✕' : '☰'}
   </button>
