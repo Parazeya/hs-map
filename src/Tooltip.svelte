@@ -120,7 +120,7 @@
           {#if row.inferno}<span class="inferno">INF</span>{/if}
           <!-- and, beside it, what those odds are for whoever is reading: the
                same figure divided by the magic find they said they carry -->
-          <span class="odds">{odds(row.odds)}{#if mf.value > 0}<span class="mine">({figure(withMF(row.odds, mf.value))})</span>{/if}</span>
+          <span class="odds">{odds(row.odds)}{#if mf.value > 0 && row.odds}<span class="mine">({figure(withMF(row.odds, mf.value))})</span>{/if}</span>
         </li>
       {/each}
     </ul>

@@ -183,11 +183,11 @@
            divided by the magic find they gave the map. See mf.svelte.js. -->
       {#if item.rate}
         <dt>{t('Drop rate')}</dt>
-        <dd>{odds(item.rate)}{#if mf.value > 0}<span class="mine">({figure(withMF(item.rate, mf.value))})</span>{/if}</dd>
+        <dd>{odds(item.rate)}{#if mf.value > 0 && item.rate}<span class="mine">({figure(withMF(item.rate, mf.value))})</span>{/if}</dd>
       {/if}
       {#if item.chase && item.chase !== item.rate}
         <dt>{t('In its zone')}</dt>
-        <dd>{odds(item.chase)}{#if mf.value > 0}<span class="mine">({figure(withMF(item.chase, mf.value))})</span>{/if}</dd>
+        <dd>{odds(item.chase)}{#if mf.value > 0 && item.chase}<span class="mine">({figure(withMF(item.chase, mf.value))})</span>{/if}</dd>
       {/if}
     </dl>
 

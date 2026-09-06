@@ -116,7 +116,7 @@
             <ItemIcon {item} sheet={data.sheet} />
             <span class="name {cls(item.rarity)}">{called(item, d.item, lang)}</span>
             {#if d.inferno}<span class="inferno">INF</span>{/if}
-            <span class="odds">{odds(data.items[d.item]?.rate)}{#if mf.value > 0}<span class="mine">({figure(withMF(data.items[d.item]?.rate, mf.value))})</span>{/if}</span>
+            <span class="odds">{odds(data.items[d.item]?.rate)}{#if mf.value > 0 && (data.items[d.item]?.rate)}<span class="mine">({figure(withMF(data.items[d.item]?.rate, mf.value))})</span>{/if}</span>
           </li>
         {/each}
       </ul>
@@ -171,7 +171,7 @@
               <ItemIcon {item} sheet={data.sheet} />
               <span class="name {cls(item.rarity)}">{called(item, name, lang)}</span>
               {#if item.inferno}<span class="inferno">INF</span>{/if}
-              <span class="odds">{odds(item.chase ?? item.rate)}{#if mf.value > 0}<span class="mine">({figure(withMF(item.chase ?? item.rate, mf.value))})</span>{/if}</span>
+              <span class="odds">{odds(item.chase ?? item.rate)}{#if mf.value > 0 && (item.chase ?? item.rate)}<span class="mine">({figure(withMF(item.chase ?? item.rate, mf.value))})</span>{/if}</span>
             </li>
           {/each}
         </ul>
@@ -213,7 +213,7 @@
         <span class="tier">{tier(item)}</span>
         <span class="name {cls(item.rarity)}">{called(item, name, lang)}</span>
         {#if item.inferno}<span class="inferno">INF</span>{/if}
-        <span class="odds">{odds(item.rate)}{#if mf.value > 0}<span class="mine">({figure(withMF(item.rate, mf.value))})</span>{/if}</span>
+        <span class="odds">{odds(item.rate)}{#if mf.value > 0 && (item.rate)}<span class="mine">({figure(withMF(item.rate, mf.value))})</span>{/if}</span>
       </li>
     {/each}
     {#if found.length === 0}<li class="note">Nothing by that name.</li>{/if}

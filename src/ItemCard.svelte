@@ -41,11 +41,11 @@
   <dl>
     {#if it.rate}
       <dt>{t('anywhere')}</dt>
-      <dd>{odds(it.rate)}{#if mf.value > 0}<span class="mine">({figure(withMF(it.rate, mf.value))})</span>{/if}</dd>
+      <dd>{odds(it.rate)}{#if mf.value > 0 && it.rate}<span class="mine">({figure(withMF(it.rate, mf.value))})</span>{/if}</dd>
     {/if}
     {#if it.chase}
       <dt>{t('in its own zone')}</dt>
-      <dd>{odds(it.chase)}{#if mf.value > 0}<span class="mine">({figure(withMF(it.chase, mf.value))})</span>{/if}</dd>
+      <dd>{odds(it.chase)}{#if mf.value > 0 && it.chase}<span class="mine">({figure(withMF(it.chase, mf.value))})</span>{/if}</dd>
     {/if}
   </dl>
 

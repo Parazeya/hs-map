@@ -47,6 +47,7 @@ export default defineConfig({
         map: resolve(import.meta.dirname, 'index.html'),
         codex: resolve(import.meta.dirname, 'codex.html'),
         skills: resolve(import.meta.dirname, 'skills.html'),
+        bounty: resolve(import.meta.dirname, 'bounty.html'),
       },
     },
   },

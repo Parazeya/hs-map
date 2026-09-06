@@ -28,6 +28,7 @@ sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 import against_game
 import bosses
+import bounty
 import encyclopedia
 import words as vocabulary
 import icons
@@ -1138,6 +1139,19 @@ def main():
         it.pop("_machinery", None)
 
     codex(dw, raw_items, langs, t)
+
+    # The Bounty Board's own page. Its quests are named and worded by the game
+    # in all eleven languages; which quests are the board's is the one thing
+    # written down, and build/bounty.py says on what evidence.
+    board_langs, quests = bounty.collect(GAME)
+    board = {
+        "langs": board_langs,
+        "words": {**said.SAID, **say.vocab()},
+        "quests": quests,
+    }
+    report(langsplit.write(board, board_langs, DATA / "bounty.json"))
+    goals = sum(len(q["goals"]) for q in quests)
+    print(f"bounty   {len(quests)} quests off the board, {goals} objectives")
 
     out = {
         "map": {"w": w, "h": h},
