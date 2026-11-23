@@ -103,7 +103,7 @@ VOCAB = {
 }
 
 
-def read(folder):
+def read(folder=None, paths=None):
     """Every translations file in the game folder, as one index.
 
     Returns `(by_key, by_english)`. A key is unique; an English word is not, so
@@ -111,7 +111,7 @@ def read(folder):
     that is at least the same answer every time.
     """
     by_key, by_english = {}, {}
-    for path in sorted(folder.glob("translations*.csv")):
+    for path in sorted(paths if paths is not None else folder.glob("translations*.csv")):
         with open(path, encoding="utf-8", errors="replace") as fh:
             for line in fh:
                 parts = line.rstrip("\n").split("|")
@@ -130,8 +130,8 @@ def read(folder):
 class Words:
     """A lookup from English to the eleven, with a tally of what it could not do."""
 
-    def __init__(self, folder):
-        self.by_key, self.by_english = read(folder)
+    def __init__(self, folder=None, paths=None):
+        self.by_key, self.by_english = read(folder, paths)
         self.missed = set()
 
     def of(self, english):

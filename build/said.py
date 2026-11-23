@@ -18,6 +18,68 @@ game itself prints. That was the order inside `talk` and it is the order here.
 """
 
 SAID = {
+    "All variants": {"ru": "Все варианты"},
+    "Socketed item": {"ru": "Вставленный камень"},
+    "Damage type": {"ru": "Тип урона"},
+    "With": {"ru": "Камень:"},
+    "Bonuses per matching socket": {"ru": "Бонусы за каждый подходящий камень"},
+    "Effects": {"ru": "Эффекты"},
+    "Possible effects": {"ru": "Возможные эффекты"},
+    "Class only": {"ru": "Только для класса"},
+    "Sub Skills": {"ru": "Поднавыки"},
+    "Random modifiers": {"ru": "Случайные свойства"},
+    "Triggered effects": {"ru": "Срабатывающие эффекты"},
+    "chance to cast": {"ru": "шанс применить"},
+    "Auras": {"ru": "Ауры"},
+    "Random skill": {"ru": "Случайное умение"},
+    "Holder Only": {"ru": "Только для владельца"},
+    "No drops listed.": {"ru": "Добыча не указана."},
+    "Reference skills": {"ru": "Умения из справочника"},
+    "Reference drop sources": {"ru": "Источники добычи из справочника"},
+    "These skills come from a reference catalogue and are not verified for this game build.": {
+        "ru": "Эти умения указаны в справочнике и пока не подтверждены для этой версии игры.",
+    },
+    "These drops are listed in the published reference version and are not verified for this game build.": {
+        "ru": "Эта добыча указана в опубликованной справочной версии и пока не подтверждена для текущей версии игры.",
+    },
+    "Variant": {"ru": "Вариант"},
+    "Unidentified effect": {"ru": "Неопознанный эффект"},
+    "Zone references": {"ru": "Связанные зоны"},
+    "Unidentified rune": {"ru": "Неопределённая руна"},
+    "runeword base modifiers": {"ru": "базовые модификаторы рунного слова"},
+    "socket condition": {"ru": "условие сокета"},
+    "damage type condition": {"ru": "условие типа урона"},
+    "Condition has not been identified.": {"ru": "Условие пока не расшифровано."},
+    "Some details come from a reference catalogue and may be outdated.": {
+        "ru": "Часть сведений взята из справочника и может быть устаревшей.",
+    },
+    "The granted skill is matched by item names or numbering and is not verified.": {
+        "ru": "Даруемое умение определено по названию или нумерации; связь не подтверждена.",
+    },
+    "Some item details have not been verified for this game build.": {
+        "ru": "Часть сведений о предмете не подтверждена для этой версии игры.",
+    },
+    "Drop lists may be incomplete for this game build.": {
+        "ru": "Списки добычи для этой версии игры могут быть неполными.",
+    },
+    "Verified drop sources are not available for this location.": {
+        "ru": "Подтверждённые сведения о добыче в этом месте пока отсутствуют.",
+    },
+    "Dungeon association is from a reference catalogue; its marker position is schematic and may be outdated.": {
+        "ru": "Связь подземелья с зоной взята из справочника. Положение значка условное; сведения могут быть устаревшими.",
+    },
+    "An additional exclusive drop source is known; its location and conditions are not verified.": {
+        "ru": "Найден дополнительный источник особой добычи; место и условия пока не подтверждены.",
+    },
+    "Growth per level is unknown.": {"ru": "Прирост за уровень неизвестен."},
+    "Unit is unknown.": {"ru": "Единица измерения неизвестна."},
+    "Some skill details have not been verified for this game build.": {"ru": "Некоторые сведения о навыке ещё не подтверждены для этой версии игры."},
+    "Pool details are not available for this build.": {
+        "ru": "Состав случайных свойств для этой версии пока неизвестен.",
+    },
+    "Set bonuses come from a reference catalogue and may be outdated.": {
+        "ru": "Бонусы комплекта взяты из справочника и могут быть устаревшими.",
+    },
     # ── what an Unholy slot is ────────────────────────────────────────────────
     "rolled when the item drops": {
         "fi": "arvotaan esineen pudotessa", "pt": "sorteado quando o item cai",

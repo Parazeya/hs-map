@@ -237,15 +237,32 @@ def tag_word(name, said):
 
 def scaling(tags):
     """What the skill's rate follows — the tooltip says so with a tag."""
-    if "Cast" in tags:
+    if "Cast" in tags or "Spell" in tags:
         return "cast"
     if "Attack" in tags:
         return "attack"
     return None
 
 
-def build(talents, rows, said, langs, planner_dir):
+def current_or_reference(current, key, reference, other=None):
+    """Zero and empty lists stated by the current game are real values."""
+    value = current.get(key)
+    return value if value is not None else reference.get(other or key)
+
+
+def game_tags(tags):
+    reverse = {value: key for key, value in TAG_KEY.items()}
+    return list(dict.fromkeys(reverse.get(tag.removeprefix("abilityTag"),
+                                         tag.removeprefix("abilityTag")) for tag in tags))
+
+
+def build(talents, rows, said, langs, planner_dir, *, talent_type_contract=None, talent_type_source_sha256=None,
+          talent_type_inheritance_contract=None, talent_defaults_contract=None, talent_type_inventory=None,
+          talent_id_contract=None):
     """The document the skills page reads."""
+    import talent_activation
+    activation = talent_activation.context(talents, talent_type_contract, talent_type_source_sha256,
+                                          talent_type_inheritance_contract, talent_defaults_contract, talent_type_inventory, talent_id_contract)
     planner = read(planner_dir)
     known, loose = pair(planner, talents)
 
@@ -272,10 +289,11 @@ def build(talents, rows, said, langs, planner_dir):
     for cls, ts in by_class.items():
         for t in ts:
             key = t["key"]
+            current_activation = activation.get((key, cls))
             p = known.get(key, {})
-            tags = p.get("tags") or t.get("tags") or []
-            element = ([ELEMENT.get(p["damageType"], p["damageType"])]
-                       if p.get("damageType") else t.get("element") or [])
+            tags = (game_tags(t["tags"]) if t.get("tags") is not None else p.get("tags") or [])
+            element = (t["element"] if t.get("element") is not None else
+                       [ELEMENT.get(p["damageType"], p["damageType"])] if p.get("damageType") else [])
             said_sub = words_of.get(key, {})
 
             subs = []
@@ -298,11 +316,13 @@ def build(talents, rows, said, langs, planner_dir):
                 "names": said(f"talent_name_{key}"),
                 "lore": said(f"talent_desc_{key}"),
                 "lvl": t.get("level_req"),
-                "cooldown": t.get("cooldown") or p.get("baseCooldown"),
-                "lasts": t.get("duration") or p.get("effectDuration"),
+                "cooldown": current_or_reference(t, "cooldown", p, "baseCooldown"),
+                "lasts": current_or_reference(t, "duration", p, "effectDuration"),
                 "element": element,
                 "tags": tags,
                 "kind": p.get("kind"),
+                "activation_type": current_activation["label"] if current_activation else None,
+                "activation_type_source": current_activation["source"] if current_activation else None,
                 "rank": p.get("maxRank"),
                 "tree": p.get("tree"),
                 "pos": [p["position"]["row"], p["position"]["col"]] if p.get("position") else None,
@@ -321,13 +341,43 @@ def build(talents, rows, said, langs, planner_dir):
                 # `mark` is a symbol on most lines and a translation key on
                 # the rest — `tal_seconds` and its kin — so the key is asked of
                 # the game rather than printed as it stands.
-                "lines": [{"start": e["start"], "per": e["per_level"],
-                           "mark": "" if e["mark"].startswith("tal_") else e["mark"],
+                "lines": [{"index": e.get("index"), "start": e["start"], "per": e["per_level"],
+                           "mark_known": e.get("mark_known"),
+                           "mark": "" if e["mark"].startswith("tal_") and said(e["mark"]) else e["mark"],
                            "unit": said(e["mark"]) if e["mark"].startswith("tal_") else None,
                            "of": said(e["desc"]) or {"en": e["desc"]}}
                           for e in t.get("effects") or []],
                 "subs": subs,
+                "raw_fields": t.get("raw_fields"),
+                "interpretation_sources": t.get("interpretation_sources"),
+                "constructor_inheritance": t.get("constructor_inheritance"),
+                "inheritance_application": t.get("inheritance_application"),
+                "field_write_sources": t.get("field_write_sources"),
+                "field_write_expressions": t.get("field_write_expressions"),
+                "field_value_interpretations": t.get("field_value_interpretations"),
+                "unresolved_fields": t.get("unresolved_fields"),
+                "notes": t.get("notes"),
+                "interpretation_notes": t.get("interpretation_notes"),
+                "control_flow_complete": t.get("control_flow_complete"),
+                "provenance": {
+                    "game": [field for field, value in {
+                        "lvl": t.get("level_req"), "cooldown": t.get("cooldown"),
+                        "lasts": t.get("duration"), "tags": t.get("tags"),
+                        "activation_type": current_activation,
+                        "element": t.get("element"), "lines": t.get("effects")}.items() if value is not None],
+                    "reference": [field for field, value in {
+                        "kind": p.get("kind"), "rank": p.get("maxRank"), "tree": p.get("tree"),
+                        "move": p.get("movementDuringUse"), "range": p.get("range"),
+                        "rate": p.get("baseCastRate"), "mana": p.get("manaCostFormula"),
+                        "dmg": p.get("damageFormula"), "hits": p.get("hitModel"),
+                        "holds": p.get("passiveStats"), "bonus": p.get("bonusSources"),
+                        "subs": p.get("subskills")}.items() if value is not None],
+                },
             }
+            for field, value in (("cooldown", t.get("cooldown")), ("lasts", t.get("duration")),
+                                 ("tags", t.get("tags")), ("element", t.get("element"))):
+                if value is None and skills[key].get(field) is not None:
+                    skills[key]["provenance"]["reference"].append(field)
 
     classes = [{"id": c, "names": said(c.lower()) or {"en": c}} for c in sorted(by_class)]
     elements = sorted({e for s in skills.values() for e in s["element"]})

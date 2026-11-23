@@ -43,9 +43,10 @@ export function hasWebGL2() {
 }
 
 /**
- * Match the drawing buffer to the element, at a capped device-pixel ratio —
- * cheap phones report 2.5–3x and would allocate a huge backing store for no
- * visible gain, and fill cost scales with its area.
+ * Pixel-art canvases use one sample per CSS pixel. A2x backing store would
+ * quadruple both full-screen buffers on every pan; labels remain DOM and keep
+ * the display's native text resolution. CSS nearest-neighbour presentation
+ * preserves the art when the display has a higher device-pixel ratio.
  *
  * The canvas is sized in CSS pixels by stylesheet and in device pixels here;
  * everything else in the renderer works in CSS pixels, so `dpr` only ever
@@ -53,7 +54,7 @@ export function hasWebGL2() {
  *
  * @returns {{ w: number, h: number, dpr: number }} size in CSS pixels
  */
-export function sizeCanvas(canvas, container, maxDpr = 2) {
+export function sizeCanvas(canvas, container, maxDpr = 1) {
   const dpr = Math.min(window.devicePixelRatio || 1, maxDpr);
   const w = container.clientWidth, h = container.clientHeight;
   const bw = Math.round(w * dpr), bh = Math.round(h * dpr);

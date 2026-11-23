@@ -222,7 +222,7 @@ def contact(cut, chosen, path):
     """One labelled cell per entry, to be read by a person before it is believed."""
     CELL, PADX = 150, 8
     cols = 6
-    rows = (len(cut) + cols - 1) // cols
+    rows = max(1, (len(cut) + cols - 1) // cols)
     im = Image.new("RGBA", (cols * (CELL + PADX), rows * (CELL + 26)), (20, 14, 22, 255))
     d = ImageDraw.Draw(im)
     for i, (boss, art) in enumerate(sorted(cut.items())):

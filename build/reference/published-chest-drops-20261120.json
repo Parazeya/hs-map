@@ -1,0 +1,136 @@
+{
+  "schema_version": 1,
+  "reference": {
+    "url": "https://parazeya.github.io/hs-map/",
+    "data_url": "https://parazeya.github.io/hs-map/data/map.json",
+    "captured_date": "2026-11-20",
+    "snapshot_sha256": "ce57efed86153c4aecc1ae8b5c24aff75da99e3a7541f151de026b371857dc3f",
+    "verified_for_game_build": false
+  },
+  "sources": [
+    {
+      "name": "Boss Dungeons",
+      "kind": "source",
+      "drops": [
+        {
+          "item": "pagan god's blasphemy",
+          "inferno": false
+        },
+        {
+          "item": "quickening zephyr",
+          "inferno": false
+        },
+        {
+          "item": "eden's harvester",
+          "inferno": false
+        },
+        {
+          "item": "shishkebab",
+          "inferno": false
+        },
+        {
+          "item": "sähköpuimuri",
+          "inferno": false
+        }
+      ]
+    },
+    {
+      "name": "Chaos Pillar",
+      "kind": "source",
+      "drops": [
+        {
+          "item": "azazel's despair",
+          "inferno": false
+        },
+        {
+          "item": "soul collector",
+          "inferno": false
+        }
+      ]
+    },
+    {
+      "name": "Crystal Chest",
+      "kind": "source",
+      "drops": [
+        {
+          "item": "belt of infinite wealth",
+          "inferno": false
+        },
+        {
+          "item": "leprechauns greed",
+          "inferno": false
+        },
+        {
+          "item": "death's mirror",
+          "inferno": false
+        },
+        {
+          "item": "midas' hands",
+          "inferno": false
+        },
+        {
+          "item": "mystique allure",
+          "inferno": false
+        },
+        {
+          "item": "the bucket",
+          "inferno": false
+        },
+        {
+          "item": "compass of wealth",
+          "inferno": false
+        }
+      ]
+    },
+    {
+      "name": "Dungeon Chest",
+      "kind": "source",
+      "drops": [
+        {
+          "item": "signet of kadosh",
+          "inferno": true
+        }
+      ]
+    },
+    {
+      "name": "Dungeons",
+      "kind": "source",
+      "drops": [
+        {
+          "item": "eden's harvester",
+          "inferno": false
+        },
+        {
+          "item": "fighter magi's grips",
+          "inferno": false
+        },
+        {
+          "item": "arrow of zamjo",
+          "inferno": false
+        },
+        {
+          "item": "suomi finland perkele",
+          "inferno": false
+        }
+      ]
+    },
+    {
+      "name": "Mimic",
+      "kind": "source",
+      "drops": [
+        {
+          "item": "voodoo doll",
+          "inferno": false
+        },
+        {
+          "item": "overloaded dice",
+          "inferno": false
+        },
+        {
+          "item": "soul collector",
+          "inferno": false
+        }
+      ]
+    }
+  ]
+}

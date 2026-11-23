@@ -8,6 +8,11 @@
   import ItemCard from './ItemCard.svelte';
   import ItemSheet from './ItemSheet.svelte';
   import BossBar from './BossBar.svelte';
+  import { bridgeConfig, createMapBridge } from './lib/map-bridge.js';
+
+  const mapConfig = bridgeConfig(location.search);
+  const mirror = mapConfig?.mode === 'mirror';
+  let mapBridge = null;
 
   let data = $state(null);
   let failed = $state(null);
@@ -39,6 +44,26 @@
   let panel = $state(false);
   let map = $state(null);
   let boss = $state(null);      // the boss under the pointer on the shelf
+
+  $effect(() => {
+    if (!data || !map) return;
+    const bridge = createMapBridge({ window, config: mapConfig,
+      rooms: new Set(data.nodes.map(n => n.room)),
+      languages: new Set(data.langs), sources: new Set(Object.keys(data.bosses)),
+      read: () => ({ camera: map.readCamera(), viewport: { width: innerWidth, height: innerHeight }, selection: { roomId: active?.room ?? null }, presentation: { query: query.slice(0, 256), lang, source } }),
+      apply: async state => {
+        map.applyCamera(state.camera);
+        active = data.nodes.find(n => n.room === state.selection.roomId) ?? null;
+        query = state.presentation.query;
+        source = state.presentation.source;
+        await pickLang(state.presentation.lang);
+      },
+    });
+    mapBridge = bridge;
+    return () => { bridge.destroy(); if (mapBridge === bridge) mapBridge = null; };
+  });
+  $effect(() => { active?.room; query; lang; source; mapBridge?.changed(); });
+  $effect(() => { if (mapConfig && query.length > 256) query = query.slice(0, 256); });
 
   /**
    * Everything that drops the item under the pointer in the menu.
@@ -152,6 +177,7 @@
   });
 
   function onkeydown(e) {
+    if (mirror) return;
     if (e.key !== 'Escape') return;
     if (active) active = null;
     else query = '';
@@ -168,7 +194,7 @@
   }
 </script>
 
-<svelte:window onkeydown={onkeydown} onpointermove={track} />
+<svelte:window onkeydown={onkeydown} onpointermove={track} onresize={() => mapBridge?.changed()} />
 
 <!-- The title bar was a strip of chrome across a map that is only 800px tall to
      begin with. Its two controls earn their place; the words did not. -->
@@ -196,9 +222,9 @@
 {#if failed}
   <p class="broke">The map data would not load.<br><code>{failed.message}</code></p>
 {:else if data}
-  <div class="app">
+  <div class="app" inert={mirror}>
     <main>
-      <WorldMap bind:this={map} {data} {lang} bind:active bind:hovered {matches} />
+      <WorldMap bind:this={map} {data} {lang} bind:active bind:hovered {matches} onview={() => mapBridge?.changed()} />
 
 
       <!-- hover shows it by the cursor; clicking puts the same list in the
@@ -281,6 +307,7 @@
     min-width: 0;
     overflow: hidden;
   }
+
 
   /* The link is given a class of its own rather than being reached through its
      parent: `.controls` belongs to BossBar, which renders this snippet, and a

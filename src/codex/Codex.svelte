@@ -1,7 +1,7 @@
 <script>
   import { asset, figure, odds, titleCase, withMF, recall, remember } from '../lib/map.js';
   import { mf, setMF } from '../lib/mf.svelte.js';
-  import { hydrate } from '../lib/book.js';
+  import { hydrate, recordsOf, statsOf, grantsOf } from '../lib/book.js';
   import { speak } from '../lib/lang.js';
   import { places, talk } from '../lib/say.js';
   import ItemIcon from '../ItemIcon.svelte';
@@ -122,10 +122,10 @@
 
   /** Only the grades and types something is actually on. */
   const grades = $derived(
-    ORDER.filter((r) => rows.some(([, it]) => it.rarity === r)),
+    ORDER.filter((r) => rows.some(([, it]) => recordsOf(it).some((record) => record.rarity === r))),
   );
   const kinds = $derived(
-    [...new Set(rows.map(([, it]) => it.type).filter(Boolean))].sort(),
+    [...new Set(rows.flatMap(([, it]) => recordsOf(it).map((record) => record.type)).filter(Boolean))].sort(),
   );
   const kindHits = $derived.by(() => {
     const q = kindQuery.trim().toLowerCase();
@@ -175,13 +175,14 @@
       s = [
         it.name,
         ...Object.values(it.names ?? {}),
-        it.type, it.rarity, it.tier,
+        ...recordsOf(it).flatMap((record) => [record.type, record.rarity, record.tier]),
         it.set, ...Object.values(data.sets[it.set]?.names ?? {}),
         ...(it.weapons ?? []),
         // the runes a runeword asks for, so "Vex" finds the six that want one
         ...(it.sockets ?? []).flatMap((k) => [k.name, k.key]),
-        ...[...(it.stats ?? []), ...(it.more ?? []).flatMap((m) => m.stats)]
+        ...statsOf(it)
           .map((v) => `${v.text} ${v.spell ?? ''} ${v.cls ?? ''}`),
+        ...grantsOf(it).flatMap(grant => [...Object.values(grant.names ?? {}), grant.talent_key ?? '']),
         ...(it.places ?? []),
         Object.values(it.lore ?? {}).join(' '),
       ].join(' ').toLowerCase();
@@ -206,12 +207,12 @@
     if (!data) return [];
     const q = query.trim().toLowerCase();
     let out = rows;
-    if (rarity) out = out.filter(([, it]) => it.rarity === rarity);
+    if (rarity) out = out.filter(([, it]) => recordsOf(it).some((record) => record.rarity === rarity));
     if (kit) out = out.filter(([key]) => data.sets[kit]?.of?.includes(key));
-    if (kind) out = out.filter(([, it]) => it.type === kind);
+    if (kind) out = out.filter(([, it]) => recordsOf(it).some((record) => record.type === kind));
     // a stat counts wherever it is written: fifty-six runewords keep theirs
     // under "in armour" and nowhere else
-    const anyStat = (it) => [...(it.stats ?? []), ...(it.more ?? []).flatMap((m) => m.stats)];
+    const anyStat = statsOf;
     if (stat) out = out.filter(([, it]) => anyStat(it).some((s) => s.sid === stat));
     if (q) out = out.filter(([k, it]) => findable(k, it).includes(q));
 
@@ -292,7 +293,7 @@
 
   const filtered = $derived(Boolean(query.trim() || rarity || kind || kit || stat));
 
-  let box;                          // the search field, for the shortcut below
+  let box = $state(null);           // the search field, for the shortcut below
 
   function onkeydown(e) {
     // Ctrl+F is what anyone presses to look for a thing on a page, and the
@@ -444,7 +445,7 @@
       <div class="stats">
         {#each statList as v (v.sid)}
           <button class:on={stat === v.sid} onclick={() => (stat = stat === v.sid ? null : v.sid)}>
-            <span class="t">{v.names?.[lang] || v.text}{v.unit ?? ''}</span>
+            <span class="t">{v.names?.[lang] || t(v.text)}{v.unit ?? ''}</span>
             <span class="n">{v.n}</span>
           </button>
         {/each}

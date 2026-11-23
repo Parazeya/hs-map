@@ -108,7 +108,7 @@
   {/if}
 
   {#if rows.length === 0}
-    <p class="empty">{t(boss ? 'Nothing else drops here.' : 'Nothing is tied to this.')}</p>
+    <p class="empty">{t('No drops listed.')}</p>
   {:else}
     <ul>
       {#each shown as row (row.name)}

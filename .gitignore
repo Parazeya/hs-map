@@ -4,3 +4,15 @@ node_modules/
 # the build writes these beside its own sources
 __pycache__/
 *.pyc
+.hs-map-stage-*/
+.hs-map-backup-*/
+.hs-map-data.lock
+.hs-map-data-update.json*
+.hs-map-lock-*
+.hs-map-lock-recovery
+
+# Local test captures and generation reports
+/.playwright-cli/
+/tools/perf/
+/public/diagnostics/
+/docs/diagnostics/

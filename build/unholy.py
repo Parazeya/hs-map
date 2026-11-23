@@ -1,38 +1,8 @@
-"""The Unholy modifier pools, read out of the compiled game.
+"""Label random modifier pools from the same verified Extractor generation.
 
-An Unholy item does not carry its extra modifiers; it carries a *slot* and a
-number, and the game rolls the modifier when the item drops. The snapshot the
-site is otherwise built from records only the number, so the codex showed three
-lines reading "Unholy 4" on Chaos Gemstone and nothing about what those three
-lines could become.
-
-The number is a pool selector. `LoadRandomSatanicStat` (compiled body
-0x428d370) switches on it against the case table at 0x10c90760 and sends each
-to its own `irandom` switch; `GenerateItemRandomStats` (0x6f9560) calls it once
-per slot, and turns a stored 4 into `irandom(2)+1`, so a 4 means "pool 1, 2 or
-3". There is no case 4 in the table at all.
-
-  selector 1  offence and attributes    23 arms
-  selector 2  casting and elements      17 arms
-  selector 3  defence and resistance    17 arms
-  selector 5  never appears on an item
-
-Selector 5 is worth its own line: its eighteen ids are `buff_loot_slots`,
-`buff_heroic_chance`, `buff_ancient_goblin` and their kin — the modifiers a
-Satanic Zone carries, not an item. That is why no item in the table selects it,
-and why the loot filter never names those ids: the filter names what can be on
-an item.
-
-Six of the seventy-five arms hold five ids instead of one. Argument 2 of the
-call, `irandom(4)+1`, picks which of the five is written, and all five share one
-[min, max] pair — so it moves the element and never the magnitude. The order is
-the same at all six sites: 1 Arcane, 2 Cold, 3 Fire, 4 Lightning, 5 Poison.
-This is what the planner site splits into five and six separate items; the game
-holds one item and rolls the element.
-
-Regenerate the input with the extractor, whose reading this is:
-
-    hse-extractor.exe --unholy > unholy.txt
+Item slots and candidate stats are different structures. Pool routing is taken
+from the current bundle; an unknown selector remains unknown. The legacy text
+parser below is a diagnostic utility and is never an input to the site build.
 """
 
 import json
@@ -97,16 +67,14 @@ def build(dump: Path) -> dict:
             raise SystemExit(f"selector {n}: {got} rolls read, {pools[n]['arms']} arms claimed, {want} expected")
     return {
         "note": "read out of Hero_Siege.exe; see build/unholy.py",
-        # A slot's stored number, and the pools it can draw from. 4 is not a
-        # pool: the caller turns it into irandom(2)+1 before the call.
-        "selects": {"1": [1], "2": [2], "3": [3], "4": [1, 2, 3]},
+        "selects": {str(n): [n] for n in (1, 2, 3)},
         "elements": [ELEMENTS[i] for i in sorted(ELEMENTS)],
         "pools": {str(n): pools[n] for n in (1, 2, 3)},
         "zone": pools[5],
     }
 
 
-def labelled(say):
+def labelled(say, data=None):
     """The pools, with each modifier named in the eleven languages.
 
     Every one of the eighty-one names is a key in the game's own
@@ -115,14 +83,57 @@ def labelled(say):
     none of them. So the label is the game's word, not ours, in every language
     the site speaks.
     """
-    data = json.loads((HERE / "unholy.json").read_text(encoding="utf-8"))
+    if data is None:
+        # Do not reintroduce an independent dump from another game build.
+        return None
+    data = json.loads(json.dumps(data))
+    if isinstance(data.get("pools"), list):
+        pools, selects, zone = {}, {}, None
+        for pool in data["pools"]:
+            rolls = []
+            for arm in pool.get("arms", []):
+                sites = arm.get("sites", [])
+                if not sites:
+                    continue
+                by_site = {site.get("source_rva"): site for site in sites}
+                ordered = [by_site[at] for _, at in sorted(arm.get("arg2", [])) if at in by_site]
+                entries = ordered or sites
+                roll = dict(entries[0])
+                if len(entries) > 1:
+                    roll["elements"] = entries
+                    if len({(entry.get("min"), entry.get("max")) for entry in entries}) != 1:
+                        roll.pop("min", None)
+                        roll.pop("max", None)
+                rolls.append(roll)
+            record = {"rolls": rolls, "source": pool.get("source_rva")}
+            selector = str(pool["selector"])
+            if selector == "5":
+                zone = record
+            else:
+                pools[selector] = record
+                selects[selector] = [pool["selector"]]
+        rules = data.get("selection_rules") or {}
+        if rules.get("status") == "verified_instruction_pattern":
+            remap = rules.get("selector_remap") or {}
+            selector = remap.get("when_selector")
+            values = (remap.get("roll") or {}).get("values")
+            if (type(selector) is int and isinstance(values, list) and values
+                    and all(type(value) is int and str(value) in pools for value in values)):
+                selects[str(selector)] = values
+        data = {"pools": pools, "selects": selects, "selection_rules": rules,
+                "zone": zone or {"rolls": []}, "coverage": data.get("coverage")}
+    if not isinstance(data.get("pools"), dict) or "selects" not in data:
+        print("unholy   current export preserved as raw data; display mapping is incomplete")
+        return None
     missed = []
 
     def name(entry):
-        said = say.by_key.get(entry["name"])
+        key = entry.get("name")
+        said = say.by_key.get(key)
         if said:
             entry["said"] = said
         else:
+            entry["name"] = key or "Unidentified effect"
             missed.append(entry["name"])
         return entry
 

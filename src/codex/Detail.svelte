@@ -2,9 +2,29 @@
   import { asset, figure, odds, titleCase, withMF } from '../lib/map.js';
   import { mf } from '../lib/mf.svelte.js';
   import { places } from '../lib/say.js';
+  import { formatStatRange as statSpan, formatStatValue } from '../lib/stat-value.js';
+  import { visibleItemStats, itemGrantGroups } from '../lib/grant-stats.js';
+  import { conditionModeKey, conditionRecordKey, isPreviewCondition, conditionChoices, selectedConditionModes, conditionName } from '../lib/item-conditions.js';
   import ItemIcon from '../ItemIcon.svelte';
 
-  let { data, item, lang, sheet, t = (s) => s, pick = null } = $props();
+  let { data, item: selection, lang, sheet, t = (s) => s, pick = null } = $props();
+  let variant = $state(0);
+  const records = $derived(selection ? [selection, ...(selection.variants ?? [])] : []);
+  const item = $derived(records[variant] ?? selection);
+  let conditionSelections = $state({});
+  const conditionScope = $derived(conditionRecordKey(item, variant));
+  const choices = $derived(conditionChoices(item?.more ?? []));
+  const modes = $derived(selectedConditionModes(item?.more ?? [], conditionSelections));
+  const plainModes = $derived(modes.filter(mode => !isPreviewCondition(mode)));
+  const conditionalModes = $derived(modes.filter(isPreviewCondition));
+  $effect(() => {
+    conditionScope;
+    conditionSelections = {};
+  });
+  $effect(() => {
+    selection?.key;
+    variant = 0;
+  });
 
   /** A runeword's recipe, each socket resolved to the thing that goes in it. */
   const recipe = $derived(
@@ -58,24 +78,27 @@
 
   /** One of the game's phrases, in the reader's language. */
   const word = (o) => o?.[lang] || o?.en || '';
+  const statValue = s => s.value_names ? word(s.value_names)
+    : formatStatValue(s.unit_names ? { ...s, unit: ' ' + word(s.unit_names) } : s);
 
   /**
    * What a potion grants, which is a talent and not a stat.
    *
-   * The item states the talent as a number and the levels it grants it at as a
-   * range, and neither means anything on a page: the number is the talent's
-   * place in the order the game defines them. The talent behind it carries the
-   * lines a player actually reads, so those two stats are dropped from the list
-   * and the talent is drawn in their place. A list because Shadow Carver and
-   * the Witch's Wand grant two.
+   * Native talent references use source-bound map insertion keys. The backend
+   * consumes only statements represented by a proved grant. Unpaired level
+   * operands and unresolved talent references remain in the stat list, even
+   * when another grant supplies a description on the same card.
    */
-  const gives = $derived(item?.grants ?? []);
-  const HELD_BY_TALENT = ['singular_skill', 'stat_random_skill'];
-  const shown = $derived(
-    (item?.stats ?? []).filter(
-      (v) => v.sid !== 'unholy_none' && !(gives.length && HELD_BY_TALENT.includes(v.sid)),
-    ),
-  );
+  const grantGroups = $derived([
+    ...itemGrantGroups(item),
+    ...plainModes.flatMap(mode => itemGrantGroups(mode).map(group => ({ ...group, mode }))),
+  ]);
+  const modeLabel = mode => conditionName(mode, lang, t);
+  const dropPlaces = $derived([...new Set([
+    ...(item?.places ?? []).map(titleCase),
+    ...(item?.reference_places ?? []).map(source => source.name),
+  ])]);
+  const shown = $derived(visibleItemStats(item));
   const cls = (r) => 'r-' + String(r ?? 'common').toLowerCase().replace(/\s+/g, '-');
 
   /**
@@ -98,20 +121,24 @@
   // does not leave the next item's already open.
   let openFor = $state(null);
   const showPool = $derived(openFor != null && openFor === item?.key);
-  const unholy = $derived.by(() => {
-    const slots = (item?.stats ?? []).filter((v) => v.sid === 'unholy_none');
-    if (!slots.length || !data?.unholy) return [];
+  const unholy = $derived([
+    ...rollGroups(item),
+    ...plainModes.flatMap(mode => rollGroups(mode, mode)),
+  ]);
+  function rollGroups(record, mode = null) {
+    const slots = (record?.stats ?? []).filter(s => s.sid === 'unholy_none' && s.active !== false);
+    if (!slots.length) return [];
     const by = new Map();
-    for (const v of slots) {
-      const sel = String(v.pool ?? '');
+    for (const s of slots) {
+      const sel = String(s.pool ?? '');
       by.set(sel, (by.get(sel) ?? 0) + 1);
     }
     return [...by].map(([sel, n]) => {
-      const from = data.unholy.selects[sel] ?? [];
-      const rolls = from.flatMap((k) => data.unholy.pools[String(k)]?.rolls ?? []);
-      return { sel, n, rolls };
+      const from = data?.unholy?.selects?.[sel] ?? [];
+      const rolls = from.flatMap((k) => data?.unholy?.pools?.[String(k)]?.rolls ?? []);
+      return { id: `${mode ? conditionModeKey(mode) : 'base'}:${sel}`, sel, mode, n, rolls };
     });
-  });
+  }
   /**
    * A modifier's name, or the five an elemental roll chooses between.
    *
@@ -142,21 +169,104 @@
     return names.length > 1 ? middle(names) : names[0];
   });
   const byStat = $derived(Object.fromEntries((data?.stats ?? []).map((v) => [v.sid, v])));
-  const said = $derived((s) => byStat[s.sid]?.names?.[lang] || s.text);
+  const said = $derived((s) => byStat[s.sid]?.names?.[lang] || t(s.text));
 
-  /**
-   * One stat as a line: its range, then what it is.
-   *
-   * A range with the same number at both ends is not a range, it is a number,
-   * and writing "20 to 20" of it makes a reader stop and check.
-   */
-  function span(lo, hi, unit = '') {
-    if (lo == null && hi == null) return '';
-    if (hi == null || hi === lo) return `${lo}${unit}`;
-    if (lo == null) return `${hi}${unit}`;
-    return `${lo}–${hi}${unit}`;
-  }
 </script>
+
+{#snippet statList(rows, owner)}
+  <ul class="stats">
+    {#each rows as s, i (s.sid + i)}
+      <li>
+        <span class="v">{statValue(s)}</span>
+        <span class="t">
+          {said(s)}{#if s.spell}: {s.spell}{/if}{#if s.cls && s.cls !== 'Any'}{' (' + s.cls + ')'}{/if}
+          {#if word(s.class_names)}<span class="second"> ({t('Class only')}: {word(s.class_names)})</span>{/if}
+          {#if word(s.effect_note)}<span class="second"> {word(s.effect_note)}</span>{/if}
+          {#if s.min2 != null || s.max2 != null}<span class="second">at {statSpan(s.min2, s.max2)}</span>{/if}
+          {#if s.outer_selector && owner?.condition?.resolved !== true}<span class="second">{t('Condition has not been identified.')}</span>{/if}
+          {#if s.range}<span class="second">range {s.range}</span>{/if}
+          {#if s.rank}<span class="second">{t('by relic level')}</span>{/if}
+          {#if s.resource_references?.length}
+            <details class="resource-references">
+              <summary>{t('Zone references')} ({s.resource_references.length})</summary>
+              <ul>
+                {#each s.resource_references as reference, n (`${reference.payload_hex}:${n}`)}
+                  <li>{reference.room?.name ?? reference.payload_hex}</li>
+                {/each}
+              </ul>
+            </details>
+          {/if}
+        </span>
+      </li>
+    {/each}
+  </ul>
+{/snippet}
+
+{#snippet grantBlocks(groups, owner, nested)}
+  {#each groups as group, index (`${conditionModeKey(owner ?? group.mode, index)}:${group.title}`)}
+    {@const mode = owner ?? group.mode}
+    {#if nested}<h3>{t(group.title)}</h3>{:else}<h2>{t(group.title)}{#if mode}, {modeLabel(mode)}{/if}</h2>{/if}
+    {#each group.grants as g, n (n)}
+      <p class="grant">
+        {#if g.kind === 'trigger'}
+          <span class="chance">{g.chance_values?.length ? g.chance_values.map(v => v == null ? '?' : v).join(' / ') : g.chance ? statSpan(g.chance[0], g.chance[1]) : '?'}% {t('chance to cast')}</span>
+        {/if}
+        {#if g.level_values?.length}
+          <span class="lvl">{#if g.kind === 'trigger'}{t('Level') + ' '}{/if}{g.level_values.map(value => value == null ? '?' : `${g.kind === 'trigger' ? '' : '+'}${value}`).join(' / ')} <span class="second">({t('by relic level')})</span></span>
+        {:else if g.levels?.[0] != null || g.levels?.[1] != null}
+          <span class="lvl">{['aura', 'trigger'].includes(g.kind) ? t('Level') + ' ' : '+'}{statSpan(g.levels[0], g.levels[1])}</span>
+        {/if}
+        <strong>{g.random_skill ? t('Random skill') : word(g.names)}</strong>
+        {#if g.kind === 'subskills'}<span class="second"> · {t('Sub Skills')}</span>{/if}
+        {#if word(g.class_names)}<span class="second"> ({t('Class only')}: {word(g.class_names)})</span>{/if}
+        {#if g.kind === 'trigger'}<span class="second">{word(g.trigger)}</span>{/if}
+        {#if g.outer_selector && mode?.condition?.resolved !== true}<span class="second">{t('Condition has not been identified.')}</span>{/if}
+        {#if g.holder_only}<span class="second">({t('Holder Only')})</span>{/if}
+        {#if g.lasts}<span class="second">{g.lasts} {t('seconds')}</span>{/if}
+      </p>
+      {#if g.options?.length}
+        <details class="effect-options">
+          <summary>{t('Possible effects')} ({g.options.length})</summary>
+          <ul class="places">{#each g.options as option (option.native_id)}<li>{word(option.names)}</li>{/each}</ul>
+        </details>
+      {/if}
+      <ul class="stats">
+        {#each g.lines ?? [] as l, i (i)}
+          <li>
+            <span class="v">{l.start ?? '?'}{l.mark}{#if l.unit}{word(l.unit)}{/if}</span>
+            <span class="t">
+              {word(l.of)}
+              {#if l.per != null && l.per !== 0}<span class="second">+{l.per}{l.mark}{#if l.unit}{word(l.unit)}{/if} {t('per level')}</span>{/if}
+            </span>
+          </li>
+        {/each}
+      </ul>
+      {#if word(g.lore)}<p class="lore">{word(g.lore)}</p>{/if}
+    {/each}
+  {/each}
+{/snippet}
+
+{#snippet unholyBlocks(groups, nested)}
+  {#each groups as g (g.id)}
+    {#if nested}<h3>{t('Unholy')}</h3>{:else}<h2>{t('Unholy')}{#if g.mode}, {modeLabel(g.mode)}{/if}</h2>{/if}
+    {#if !g.rolls.length}
+      <p class="rolls">{g.n} × {t('Random modifiers')}</p>
+    {:else}
+      <p class="rolls">{g.n} × {t('Random modifiers')} — {t('one of')} {g.rolls.length}</p>
+      <button class="more" onclick={() => (openFor = showPool ? null : item.key)}>{showPool ? t('Hide') : t('Show')}</button>
+      {#if showPool}
+        <ul class="stats pool">
+          {#each g.rolls as r, i (i)}
+            <li>
+              <span class="v">{statSpan(r.min, r.max)}</span>
+              <span class="t">{rolled(r)}{#if r.elements}<span class="second">{t('one element of the five')}</span>{/if}</span>
+            </li>
+          {/each}
+        </ul>
+      {/if}
+    {/if}
+  {/each}
+{/snippet}
 
 <section class="panel">
   {#if !item}
@@ -171,6 +281,17 @@
         </p>
       </div>
     </header>
+
+    {#if records.length > 1}
+      <label class="variant">
+        {t('Variant')}
+        <select bind:value={variant}>
+          {#each records as record, i (record.record_id ?? i)}
+            <option value={i}>{`${t('Variant')} ${i + 1}`}{#if record.rarity || record.type || record.tier || record.lvl != null} · {[record.rarity ? t(record.rarity) : null, record.type ? t(record.type) : null, record.tier, record.lvl != null ? `${t('Level')} ${record.lvl}` : null].filter(Boolean).join(' · ')}{/if}</option>
+          {/each}
+        </select>
+      </label>
+    {/if}
 
     <dl class="facts">
       {#if item.base}<dt>{t('Made in')}</dt><dd>{t(item.base)}</dd>{/if}
@@ -199,104 +320,60 @@
             <button
               class="rune"
               disabled={!s.key}
-              aria-label={s.of ? (s.of.names?.[lang] || s.of.name) : s.name}
+              aria-label={s.of ? (s.of.names?.[lang] || s.of.name) : (s.name || `${t('Unidentified rune')} ${s.id}`)}
               onclick={() => s.key && pick?.(s.key)}
             >
               <ItemIcon item={s.of} sheet={data.sheet} from={sheet} box={34} />
-              <span class="n">{s.name}</span>
+              <span class="n">{s.of ? (s.of.names?.[lang] || s.of.name) : (s.name || `${t('Unidentified rune')} ${s.id}`)}</span>
             </button>
           </li>
         {/each}
       </ol>
     {/if}
 
+    {#if choices.length}
+      <div class="condition-controls">
+        {#each choices as group (group.kind)}
+          {@const selected = group.options.some(option => option.id === conditionSelections[group.kind]) ? conditionSelections[group.kind] : '*'}
+          <label>
+            <span>{t(group.label)}</span>
+            <select aria-label={t(group.label)} value={selected}
+              onchange={event => (conditionSelections = { ...conditionSelections, [group.kind]: event.currentTarget.value })}>
+              <option value="*">{t('All variants')}</option>
+              {#each group.options as option (option.id)}
+                <option value={option.id}>{option.mode.condition?.names?.[lang] || option.mode.condition?.names?.en || modeLabel(option.mode)}</option>
+              {/each}
+            </select>
+            {#if group.kind === 'socket' && group.options.some(option => option.mode.condition?.per_socket)}
+              <small>{t('Bonuses per matching socket')}</small>
+            {/if}
+          </label>
+        {/each}
+      </div>
+    {/if}
+
     {#if shown.length}
       <h2>{t(item.more?.length ? 'Stats, as it comes' : 'Stats')}</h2>
-      <ul class="stats">
-        {#each shown as s, i (s.sid + i)}
-          <li>
-            <span class="v">{span(s.min, s.max, s.unit ?? '')}</span>
-            <span class="t">
-              {said(s)}{#if s.spell}: {s.spell}{/if}{#if s.cls && s.cls !== 'Any'}{' (' + s.cls + ')'}{/if}
-              {#if s.min2 != null || s.max2 != null}
-                <span class="second">at {span(s.min2, s.max2)}</span>
-              {/if}
-              {#if s.range}<span class="second">range {s.range}</span>{/if}
-              {#if s.rank}<span class="second">{t('by relic level')}</span>{/if}
-            </span>
-          </li>
-        {/each}
-      </ul>
+      {@render statList(shown, item)}
     {/if}
 
-    {#if gives.length}
-      <h2>{t('Grants')}</h2>
-      {#each gives as g, n (n)}
-        <p class="grant">
-          {#if g.levels?.[0] != null}
-            <span class="lvl">+[{g.levels[0]}{g.levels[1] != null && g.levels[1] !== g.levels[0] ? `-${g.levels[1]}` : ''}]</span>
-          {/if}
-          <strong>{word(g.names)}</strong>
-          {#if g.lasts}<span class="second">{g.lasts} {t('seconds')}</span>{/if}
-        </p>
-        <ul class="stats">
-          {#each g.lines ?? [] as l, i (i)}
-            <li>
-              <span class="v">{l.start}{l.mark}{#if l.unit}{word(l.unit)}{/if}</span>
-              <span class="t">
-                {word(l.of)}
-                {#if l.per}<span class="second"
-                  >+{l.per}{l.mark}{#if l.unit}{word(l.unit)}{/if} {t('per level')}</span
-                >{/if}
-              </span>
-            </li>
-          {/each}
-        </ul>
-        {#if word(g.lore)}
-          <p class="lore">{word(g.lore)}</p>
-        {/if}
-      {/each}
-    {/if}
+    {@render grantBlocks(grantGroups, null, false)}
+    {@render unholyBlocks(unholy, false)}
 
-    {#each unholy as g (g.sel)}
-      <h2>{t('Unholy')}</h2>
-      <p class="rolls">
-        {g.n} × {t('rolled when the item drops')} — {t('one of')} {g.rolls.length}
-      </p>
-      <button class="more" onclick={() => (openFor = showPool ? null : item.key)}>
-        {showPool ? t('Hide') : t('Show')}
-      </button>
-      {#if showPool}
-        <ul class="stats pool">
-          {#each g.rolls as r, i (i)}
-            <li>
-              <span class="v">{span(r.min, r.max)}</span>
-              <span class="t">
-                {rolled(r)}
-                {#if r.elements}<span class="second">{t('one element of the five')}</span>{/if}
-              </span>
-            </li>
-          {/each}
-        </ul>
-      {/if}
+    {#each conditionalModes as mode, index (conditionModeKey(mode, index))}
+      <section class="condition-outcome" data-condition-id={conditionModeKey(mode, index)}>
+        <h2>{modeLabel(mode)}</h2>
+        {@render statList(visibleItemStats(mode), mode)}
+        {@render grantBlocks(itemGrantGroups(mode), mode, true)}
+        {@render unholyBlocks(rollGroups(mode, mode), true)}
+      </section>
     {/each}
 
-    {#each item.more ?? [] as v (v.when)}
-      <h2>{t('Stats')}, {v.when.startsWith('with a ')
-        ? `${t('with a')} ${v.when.slice(7)}` : t(v.when)}</h2>
-      <ul class="stats">
-        {#each v.stats as s, i (s.sid + i)}
-          <li>
-            <span class="v">{span(s.min, s.max, s.unit ?? '')}</span>
-            <span class="t">
-              {said(s)}{#if s.spell}: {s.spell}{/if}{#if s.cls && s.cls !== 'Any'}{' (' + s.cls + ')'}{/if}
-              {#if s.min2 != null || s.max2 != null}
-                <span class="second">at {span(s.min2, s.max2)}</span>
-              {/if}
-            </span>
-          </li>
-        {/each}
-      </ul>
+    {#each plainModes as mode, index (conditionModeKey(mode, index))}
+      {#if visibleItemStats(mode).length}
+        <h2>{t('Stats')}, {modeLabel(mode)}</h2>
+        {@render statList(visibleItemStats(mode), mode)}
+      {/if}
     {/each}
 
     {#if kit?.bonuses?.length}
@@ -365,10 +442,10 @@
       </ul>
     {/if}
 
-    {#if item.places?.length}
+    {#if dropPlaces.length}
       <h2>{t('Drop location')}</h2>
       <ul class="places">
-        {#each item.places as p (p)}<li>{place(titleCase(p))}</li>{/each}
+        {#each dropPlaces as p (p)}<li>{place(p)}</li>{/each}
       </ul>
     {/if}
 
@@ -384,7 +461,6 @@
       <p class="lore">{lore}</p>
     {/if}
 
-    <p class="key">{item.key}</p>
   {/if}
 </section>
 
@@ -401,6 +477,15 @@
   .who { min-width: 0; }
   h1 { margin: 0; font-size: 19px; line-height: 1.2; }
   .sub { margin: 3px 0 0; color: var(--dim); font-size: 12px; }
+  .variant { display: flex; gap: 8px; align-items: center; margin: 12px 0; color: var(--dim); font-size: 12px; }
+  .variant select { color: var(--ink); background: var(--ground, #180d13); border: 1px solid var(--edge); padding: 4px 7px; font: inherit; }
+  .condition-controls { display: grid; gap: 9px; margin: 14px 0; }
+  .condition-controls label { display: flex; flex-direction: column; gap: 4px; color: var(--dim); font-size: 12px; }
+  .condition-controls select { width: 100%; min-width: 0; max-width: 100%; color: var(--ink); background: var(--ground, #180d13); border: 1px solid var(--edge); border-radius: 5px; padding: 6px 7px; font: inherit; }
+  .condition-controls small { font-size: 11px; line-height: 1.35; }
+  .condition-outcome { border-top: 1px solid var(--edge); margin-top: 16px; }
+  .condition-outcome > h2 { margin-top: 12px; color: var(--hot); }
+  h3 { margin: 12px 0 6px; color: var(--dim); font-size: 10px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; }
 
   h2 {
     margin: 18px 0 6px;
@@ -434,11 +519,17 @@
   .stats .v {
     flex: none;
     min-width: 4.2rem;
+    max-width: 55%;
+    overflow-wrap: anywhere;
     color: var(--hot);
     text-align: right;
     font-variant-numeric: tabular-nums;
   }
   .stats .t { flex: 1; min-width: 0; }
+  .resource-references { margin-top: 4px; color: var(--dim); }
+  .resource-references summary { cursor: pointer; }
+  .resource-references ul { margin: 4px 0 0; max-height: 15rem; overflow-y: auto; }
+  .resource-references ul li { display: block; border: 0; font-size: 12px; overflow-wrap: anywhere; }
   .second { color: var(--dim); }
 
   /* What an Unholy slot can roll. Folded away by default because a slot that
@@ -539,15 +630,11 @@
   .lore { margin: 0; color: var(--dim); font-size: 13px; line-height: 1.45; font-style: italic; }
   .grant { margin: 6px 0 2px; font-size: 13px; }
   .grant .lvl { color: var(--dim); }
+  .grant .chance { color: var(--hot); }
+  .effect-options { margin: 4px 0 8px; font-size: 12px; }
+  .effect-options summary { cursor: pointer; color: var(--dim); }
   .grant strong { color: var(--gold, #d8b45a); font-weight: 600; }
   .grant .second { margin-left: 6px; }
-  .key {
-    margin: 22px 0 0;
-    color: var(--dim);
-    opacity: .5;
-    font-size: 11px;
-    font-family: ui-monospace, monospace;
-  }
   /* the same odds for whoever is reading; a margin and not a space, which
      Svelte trims at the edge of an {#if} */
   .mine { color: #e8c860; margin-left: .45em; }

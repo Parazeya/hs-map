@@ -5,6 +5,7 @@
   import { hasWebGL2 } from './lib/gl/index.js';
   import { createScene } from './lib/gl/scene.js';
   import { untrack } from 'svelte';
+  import { cameraState, cameraView } from './lib/map-bridge.js';
 
   let {
     data,
@@ -12,6 +13,7 @@
     active = $bindable(null),    // clicked, and stays without the pointer
     hovered = $bindable(null),   // under the pointer
     matches = null,
+    onview = null,
   } = $props();
 
   /**
@@ -24,7 +26,8 @@
    * 14,510-wide one to no purpose.
    */
   const MAX = 3;
-  const floor = () => (stage ? stage.clientHeight / data.map.h : 0.4);
+  let viewport = { w: 0, h: 0 };
+  const floor = () => viewport.h ? viewport.h / data.map.h : 0.4;
   /** How far past an edge the map may be dragged, so the rim is not glued shut. */
   const SLACK = 60;
   /**
@@ -141,7 +144,7 @@
   /** Keep the map over the window: it may overhang, but not sail away. */
   function clamped(v) {
     if (!stage) return v;
-    const vw = stage.clientWidth, vh = stage.clientHeight;
+    const vw = viewport.w, vh = viewport.h;
     const w = data.map.w * v.k, h = data.map.h * v.k;
 
     const x = w <= vw
@@ -168,11 +171,17 @@
    * every step of the wheel. The canvas underneath is the same view as a
    * uniform, so a drag is one style write and one uniform and nothing else.
    */
-  function setView(v) {
-    view = clamped(v);
+  function setView(v, constrain = true) {
+    const next = constrain ? clamped(v) : v;
+    if (next.x === view.x && next.y === view.y && next.k === view.k) return;
+    view = next;
     if (world) world.style.transform = `translate(${view.x}px, ${view.y}px) scale(${view.k})`;
     scene?.setView(view.x, view.y, view.k);
+    onview?.();
   }
+
+  export function readCamera() { return cameraState(view, viewport, data.map); }
+  export function applyCamera(camera) { setView(cameraView(camera, viewport, data.map), false); }
 
   /**
    * Fill the window's height.
@@ -184,16 +193,21 @@
   export function fit() {
     if (!stage) return;
     const k = Math.min(MAX, floor());
-    setView({ k, x: (stage.clientWidth - data.map.w * k) / 2, y: 0 });
+    setView({ k, x: (viewport.w - data.map.w * k) / 2, y: 0 });
   }
 
   $effect(() => {
+    if (!stage) return;
+    viewport = { w: stage.clientWidth, h: stage.clientHeight };
     fit();
     // Re-clamp, and NOT re-fit: a reader who has zoomed in keeps their zoom.
     // The drawing buffers are the ResizeObserver's job, below.
-    const onResize = () => setView(view);
-    addEventListener('resize', onResize);
-    return () => removeEventListener('resize', onResize);
+    const ro = new ResizeObserver(() => {
+      viewport = { w: stage.clientWidth, h: stage.clientHeight };
+      setView({ ...view, k: Math.max(floor(), view.k) });
+    });
+    ro.observe(stage);
+    return () => ro.disconnect();
   });
 
   /** Bring a marker to the middle, for when the panel points at one. */
@@ -202,8 +216,8 @@
     const k = Math.min(MAX, Math.max(view.k, 1.4));
     setView({
       k,
-      x: stage.clientWidth / 2 - node.x * k,
-      y: stage.clientHeight / 2 - node.y * k,
+      x: viewport.w / 2 - node.x * k,
+      y: viewport.h / 2 - node.y * k,
     });
   }
 
@@ -311,6 +325,8 @@
     if (scene) pressed = scene.pick(e);
     drag = { id: e.pointerId, x: e.clientX, y: e.clientY, ox: view.x, oy: view.y, moved: 0 };
     stage.setPointerCapture(e.pointerId);
+    hovered = null;
+    overMarker = false;
     dragging = true;
   }
 
@@ -319,6 +335,7 @@
       const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
       drag.moved = Math.max(drag.moved, Math.abs(dx) + Math.abs(dy));
       setView({ ...view, x: drag.ox + dx, y: drag.oy + dy });
+      return;
     }
     if (!scene) return;
     // After the pan, not before: the markers move under a still pointer during
@@ -333,6 +350,15 @@
     if (drag || !scene) return;
     overMarker = false;
     hovered = null;
+  }
+
+  function cancel(e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    drag = null;
+    pressed = null;
+    dragging = false;
+    hovered = null;
+    overMarker = false;
   }
 
   function up(e) {
@@ -364,7 +390,7 @@
     // the press's default action and it undoes anything done earlier in the
     // same event, microtask or not. `preventScroll` because `main` scrolls, and
     // a focus that scrolled it would move the map out from under the pointer.
-    if (scene && pressed) {
+    if (scene && pressed && drag.moved < 4) {
       world?.querySelector(`.node[data-room="${pressed.room}"]`)?.focus({ preventScroll: true });
       // AFTER the focus, not before: focusing one button blurs another, and
       // that blur clears this on its way past.
@@ -373,6 +399,11 @@
     pressed = null;
     drag = null;
     dragging = false;
+    if (scene) {
+      const hit = scene.pick(e);
+      overMarker = !!hit;
+      hovered = hit;
+    }
   }
 
   /**
@@ -402,7 +433,8 @@
   onpointermove={move}
   onpointerleave={leave}
   onpointerup={up}
-  onpointercancel={up}
+  onpointercancel={cancel}
+  onlostpointercapture={cancel}
 >
   {#if drawn === 'gl'}
     <!-- Two of them, because the names have to sit between the links and the
@@ -604,6 +636,7 @@
     inset: 0;
     display: block;
     pointer-events: none;
+    image-rendering: pixelated;
   }
   /* the see-through one, over the names */
   .marks { z-index: 1; }

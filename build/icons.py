@@ -272,14 +272,12 @@ def nearest(dw, by_words, item_words, kind):
 #: `Shields_Storm_Gladiators_Wall_spr` exists and nothing draws it, while the
 #: item's record names the base shield's round red art. So where the game has
 #: said, that is taken; where it has not, the name is still matched as before.
-TOLD = json.loads((Path(__file__).parent / "item_icons.json").read_text("utf-8"))     if (Path(__file__).parent / "item_icons.json").exists() else {}
-
-
-def build(dw, items, wanted, out_png):
+def build(dw, items, wanted, out_png, told=None):
     """Pack the icons of `wanted` (lower-case names) into one sheet.
 
     Returns `{name: [x, y, w, h]}` and the list of names with no sprite.
     """
+    told = told or {}
     by_core = index(dw)
     by_words = [(n, words(n[:-4])) for n in dw.sprites if n.endswith("_spr")]
     # the second pass has only a name to go on, and a match with nothing holding
@@ -324,7 +322,7 @@ def build(dw, items, wanted, out_png):
                     continue
                 except Exception:
                     pass
-        named = TOLD.get(tk) or NAMED.get(low)
+        named = m.get("sprite") or told.get(tk)
         if named and named in dw.sprites:
             try:
                 cut[low] = dw.sprite_frames(named)[0]
@@ -409,6 +407,26 @@ def build(dw, items, wanted, out_png):
                 cut[EMBLEM] = art
                 missing = [m for m in missing if tidy(m) not in emblem_for]
 
+    # Proven record-specific sprites remain separate even when two records
+    # share the same display name or translation key.
+    record_art = {}
+    for row in items:
+        metadata = row.get("metadata") or {}
+        record_id = metadata.get("record_id") or row.get("record_id")
+        sprite = metadata.get("sprite")
+        if not record_id or not isinstance(sprite, str) or sprite not in dw.sprites:
+            continue
+        if tidy(metadata.get("name")) not in wanted:
+            continue
+        shared = "sprite:" + sprite
+        try:
+            if shared not in cut:
+                cut[shared] = dw.sprite_frames(sprite)[0]
+            record_art["record:" + record_id] = shared
+            chosen["record:" + record_id] = sprite
+        except Exception as error:
+            guessed.append(f"{record_id}: proved sprite could not be decoded ({error})")
+
     # shelf-packed by height, which for a few hundred small icons is as good as
     # anything cleverer and fits in a dozen lines
     order = sorted(cut.items(), key=lambda kv: -kv[1].height)
@@ -433,6 +451,10 @@ def build(dw, items, wanted, out_png):
     for low in emblem_for:
         place[low] = place[EMBLEM]
     place.pop(EMBLEM, None)
+    for record_id, sprite in record_art.items():
+        place[record_id] = place[sprite]
+    for sprite in set(record_art.values()):
+        place.pop(sprite, None)
     # lossless WebP: see build.py's `picture` for why
     sheet.save(out_png.with_suffix(".webp"), lossless=True, quality=100, method=6)
 

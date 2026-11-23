@@ -1,24 +1,21 @@
-"""Build the map site's data and art out of the game.
+"""Build the site's data and art from one verified Extractor generation.
 
-Everything the page needs comes from two places and nothing is hand-typed:
-
-  the game        the map background, the node sprites, and the zone names in
-                  eleven languages (translationsZone.csv)
-  the tracker     which items drop where, at what rate, and how the game grades
-                  them — e:\\Workspace\\HeroSiege\\src\\items.js, itself built
-                  from the game by that project's own extractor
-
-The node positions come from tools/map/map_nodes.csv in the tracker, recovered
-from the compiled code; see that file's header.
+Items, marker positions, talents and source text are read from HS_DATA_BUNDLE.
+Textures are read from the installed game only after its file hashes match the
+manifest. External reference additions are recorded separately in provenance.
 
     python build/build.py
 """
 
-import csv
 import json
+import os
+import hashlib
+import math
 import re
+import shutil
 import struct
 import sys
+import tempfile
 from pathlib import Path
 
 # Item names carry characters a Windows console's default code page cannot
@@ -26,7 +23,6 @@ from pathlib import Path
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
-import against_game
 import bosses
 import bounty
 import encyclopedia
@@ -34,24 +30,67 @@ import words as vocabulary
 import icons
 import langsplit
 import said
-import merge_game
 import gear
+import item_grant_slots
+import item_effects
+import item_conditions
+import reference_sources
+import reference_sets
 import skills as skilltree
 import suits
 import portraits
 import unholy
+from data_bundle import Bundle, BundleError, attach_exclusive_sources, configured_game, item_records, tables_from_items, verify_item_coverage, verify_map_marker_sources
+from publication import BuildLock, publish, recover
 
 HERE = Path(__file__).resolve().parent.parent
-TRACKER = Path(r"e:\Workspace\HeroSiege")
-GAME = Path(r"F:\Games\Steam\steamapps\common\HeroSiege\bin")
+TRACKER = Path(os.environ.get("HS_TRACKER", HERE.parent / "HeroSiege")).resolve()
+# Restore interrupted active data even when the next requested bundle is
+# absent or stale. Input validation must not strand a half-installed site.
+if __name__ == "__main__" and not os.environ.get("HS_MAP_OUTPUT"):
+    with BuildLock(HERE):
+        recover(HERE / "public")
+GAME = configured_game()
+BUNDLE = Bundle(Path(os.environ.get("HS_DATA_BUNDLE", HERE.parent / "HeroSiege Extractor/out/bundle")), GAME)
+SOURCE = BUNDLE.source()
+reference_hash = hashlib.sha256()
+for reference_file in sorted((HERE / "build" / "planner").rglob("*.json")):
+    reference_hash.update(reference_file.relative_to(HERE / "build" / "planner").as_posix().encode())
+    reference_hash.update(reference_file.read_bytes())
+SOURCE["reference"] = {"name": "HSPlanner", "sha256": reference_hash.hexdigest(), "verified_for_game_build": False}
+CHEST_REFERENCE = reference_sources.catalogue()
+SOURCE["reference_chest_drops"] = CHEST_REFERENCE["reference"]
+SET_REFERENCE = reference_sets.catalogue()
+SOURCE['reference_item_sets'] = SET_REFERENCE['reference']
+AURA_SLOTS = item_grant_slots.discover(GAME / "Hero_Siege.exe", next(
+    (row["sha256"] for row in BUNDLE.game["files"] if row["path"] == "Hero_Siege.exe"), None))
+SOURCE["item_aura_slots"] = {key: AURA_SLOTS[key] for key in
+    ("profile", "source_sha256", "certificate_sha256")} if AURA_SLOTS else {"status": "unsupported"}
+ITEM_EFFECTS = item_effects.discover(GAME / 'Hero_Siege.exe', next(
+    (row['sha256'] for row in BUNDLE.game['files'] if row['path']=='Hero_Siege.exe'),None), next(
+    (row['sha256'] for row in BUNDLE.game['files'] if row['path']=='data.win'),None))
+SOURCE['item_effects'] = {key: ITEM_EFFECTS[key] for key in
+    ('profile','source_sha256','data_win_sha256','certificate_sha256')} if ITEM_EFFECTS else {'status':'unsupported'}
+ITEM_CONDITIONS=item_conditions.discover(GAME/'Hero_Siege.exe', next(
+    (row['sha256'] for row in BUNDLE.game['files'] if row['path']=='Hero_Siege.exe'),None),next(
+    (row['sha256'] for row in BUNDLE.game['files'] if row['path']=='data.win'),None))
+SOURCE['item_conditions']={key:ITEM_CONDITIONS[key] for key in
+    ('profile','source_sha256','data_win_sha256','certificate_sha256')} if ITEM_CONDITIONS else {'status':'unsupported'}
+RAW_ITEMS = BUNDLE.read("items")
+TALENT_ROWS = BUNDLE.read("talents")
+ASSETS = BUNDLE.read("assets", {})
+ITEM_ICONS = ASSETS.get("item_icons", {}) if isinstance(ASSETS, dict) else {}
+os.environ["HERO_SIEGE_BIN"] = str(GAME)
 
 sys.path.insert(0, str(TRACKER / "tools"))
 from datawin import DataWin           # noqa: E402
-import yytex                          # noqa: E402
 import numpy as np
 from PIL import Image                 # noqa: E402
 
-IMG = HERE / "public" / "img"
+STAGING_ONLY = bool(os.environ.get("HS_MAP_OUTPUT"))
+OUTPUT = (Path(os.environ["HS_MAP_OUTPUT"]).resolve() if STAGING_ONLY else
+          Path(tempfile.mkdtemp(prefix=".hs-map-stage-", dir=HERE)))
+IMG = OUTPUT / "img"
 
 #: How every picture the pages load is written.
 #:
@@ -63,25 +102,23 @@ IMG = HERE / "public" / "img"
 #: bytes on. A settled map page went from 2.62 MB over the wire to under one.
 def picture(im, path):
     im.save(path.with_suffix(".webp"), lossless=True, quality=100, method=6)
-DATA = HERE / "public" / "data"
+DATA = OUTPUT / "data"
+DIAGNOSTICS = OUTPUT / "diagnostics"
 IMG.mkdir(parents=True, exist_ok=True)
 DATA.mkdir(parents=True, exist_ok=True)
+DIAGNOSTICS.mkdir(parents=True, exist_ok=True)
+if STAGING_ONLY:
+    favicon = HERE / "public" / "favicon.png"
+    target = OUTPUT / favicon.name
+    if favicon.is_file() and favicon.resolve() != target.resolve():
+        shutil.copy2(favicon, target)
 
 
 # ── the art ──────────────────────────────────────────────────────────────────
 def art():
-    dw = DataWin()
-    # The map screen has its own texture page, and naming the file outright is
-    # the shortest way to it. Everything else — the boss portraits — goes the
-    # long way round, through TGIN and whichever page the sprite landed on.
-    page = yytex.decode_file(GAME / "gui_mapscreen_tex_0.yytex")
-
+    dw = DataWin(GAME / "data.win")
     def cut(name, idx=0):
-        t = dw.tpag[dw.sprites[name]["frames"][idx]]
-        x, y, w, h = t["src"]
-        im = Image.new("RGBA", t["bound"])
-        im.paste(page.crop((x, y, x + w, y + h)), t["render"])
-        return im
+        return dw.frame_image(dw.sprites[name]["frames"][idx])
 
     bg = cut("Map_Screen_spr")
     picture(bg, IMG / "map.png")
@@ -190,107 +227,29 @@ def patches(moves, cell=16):
 #: where the sheet is built for what they are for.
 GUTTER = 2
 
-#: Where the game's own code lives. The map screen is a UI object built in
-#: code, not a room, so its props' places are constants in here and nowhere in
-#: the data file.
-EXE = GAME / "Hero_Siege.exe"
-
-#: A double read out of .rdata: `movsd xmmN,[rip+rel32]`, with or without the
-#: REX byte the upper eight registers need.
-RIPLOAD = re.compile(rb"\xf2[\x40-\x4f]?\x0f\x10[\x05\x0d\x15\x1d\x25\x2d\x35\x3d](....)", re.S)
-
-#: How far in front of a draw its two coordinates are written. Measured over
-#: all thirteen: the y between 365 and 396 bytes back, the x between 182 and
-#: 201, so half a kilobyte reaches both and nothing older.
-REACH = 512
-
-
-def sprite_table(dw):
-    """Every sprite's index, size and origin, straight out of SPRT.
-
-    `datawin` hands over the frames and the speed; the origin has to come from
-    the record itself, because `draw_sprite_ext` places a sprite by its origin
-    and this page places it by its corner. It is fields 12 and 13, after the six
-    margins and the four flags: 21,67 for Map_Prop_01_spr, which is what
-    `hse-extractor --mapprops` reads for the same sprite.
-    """
-    off, _ = dw.chunks["SPRT"]
-    b = dw.raw
-    n = struct.unpack_from("<I", b, off)[0]
-    out = {}
-    for i, p in enumerate(struct.unpack_from(f"<{n}I", b, off + 4)):
-        name = dw.string(struct.unpack_from("<I", b, p)[0])
-        w, h = struct.unpack_from("<ii", b, p + 4)
-        ox, oy = struct.unpack_from("<ii", b, p + 48)
-        out[name] = (i, w, h, ox, oy)
-    return out
-
-
 def drawn_at(dw, names):
-    """Where the map screen's code draws each of these sprites: corners, in map pixels.
-
-    The sprite names are not in the executable at all — searched as strings, all
-    eleven come back zero. What is in it is the asset the compiler wrote in
-    their place: `draw_sprite_ext` is handed an RValue whose low dword is the
-    sprite's SPRT index and whose top half marks it an asset, so Map_Prop_01_spr
-    at index 12552 is the eight bytes of 0100000100003108h, and that is unique
-    enough to find every draw of it in 282 MB. Nine props come back as thirteen
-    draws — Map_Prop_03_spr five times, the five torches.
-
-    Each draw's place is two doubles in .rdata, loaded a few hundred bytes in
-    front of the sprite: the y first, then the x, both added to the map's own
-    scroll before the call. The pair is read in that order because the other
-    order puts Map_Prop_08_spr at y=1277 on a map 800 tall.
-
-    The same thirteen corners come out of `hse-extractor --mapprops`, which
-    disassembles the event and reads the call's arguments properly rather than
-    scanning for the loads in front of it. Two readers, one answer, to the pixel.
-    """
-    exe = EXE.read_bytes()
-    pe = struct.unpack_from("<I", exe, 0x3c)[0]
-    count = struct.unpack_from("<H", exe, pe + 6)[0]
-    optional = struct.unpack_from("<H", exe, pe + 20)[0]
-    secs = []
-    for i in range(count):
-        o = pe + 24 + optional + i * 40
-        vsz, va, rsz, ra = struct.unpack_from("<IIII", exe, o + 8)
-        secs.append((va, max(vsz, rsz), ra, rsz))
-
-    def in_file(rva):
-        for va, size, ra, rsz in secs:
-            if va <= rva < va + size and rva - va < rsz:
-                return ra + rva - va
-        return None
-
-    def rva_of(pos):
-        for va, size, ra, rsz in secs:
-            if ra <= pos < ra + rsz:
-                return va + pos - ra
-        return None
-
-    table = sprite_table(dw)
-    found = {}
-    for name in names:
-        i, w, h, ox, oy = table[name]
-        asset = (0x0100000100000000 | i).to_bytes(8, "little")
-        spots = []
-        for site in re.finditer(re.escape(asset), exe):
-            head = exe[site.start() - REACH:site.start()]
-            reads = []
-            for load in RIPLOAD.finditer(head):
-                end = rva_of(site.start() - REACH + load.end())
-                at = in_file(end + struct.unpack_from("<i", load.group(1))[0])
-                if at is not None:
-                    reads.append(struct.unpack_from("<d", exe, at)[0])
-            if len(reads) < 2:
-                raise SystemExit(f"{name}: a draw at {rva_of(site.start()):#x} with no place")
-            y, x = reads[-2:]
-            # A misread would put a prop somewhere it cannot be, and a prop in
-            # the wrong place is worse than a prop missing, so say so and stop.
-            if not (0 <= x - ox and x - ox + w <= 2902 and 0 <= y - oy and y - oy + h <= 800):
-                raise SystemExit(f"{name}: read a place off the map, {x},{y}")
-            spots.append((int(x) - ox, int(y) - oy))
-        found[name] = spots
+    """Verified prop corners from the same generation as the item data."""
+    current = BUNDLE.read("map", {})
+    found = {name: [] for name in names}
+    width, height = current.get("width"), current.get("height")
+    if not isinstance(width, (int, float)) or not isinstance(height, (int, float)):
+        raise BundleError("Map dataset has no dimensions for its prop coordinates")
+    for row in current.get("props", []):
+        name = row.get("sprite")
+        if name not in found:
+            continue
+        if (row.get("source") or {}).get("kind") != "decoded":
+            raise BundleError(f"Map prop {name} has no current code evidence")
+        x, y = row.get("left"), row.get("top")
+        if not all(type(value) in (int, float) and math.isfinite(value) for value in (x, y)):
+            raise BundleError(f"Map prop {name} has incomplete coordinates")
+        if name not in dw.sprites:
+            raise BundleError(f"Map prop {name} is absent from the verified game's sprites")
+        frame = dw.tpag[dw.sprites[name]["frames"][0]]
+        w, h = frame["bound"]
+        if not (0 <= x and x + w <= width and 0 <= y and y + h <= height):
+            raise BundleError(f"Map prop {name} lies outside the current map")
+        found[name].append((int(x), int(y)))
     return found
 
 
@@ -401,8 +360,7 @@ def props(dw, cut, bg):
         return (bx, by) if most >= ANCHOR else (x, y)
 
     out = []
-    every = [f"Map_Prop_0{i}_spr" for i in range(1, 10)]
-    every += ["Map_Screen_Act_8_Expansion_spr", "Map_Screen_Act_9_Expansion_spr"]
+    every = sorted({row["sprite"] for row in BUNDLE.read("map", {}).get("props", [])})
     places = drawn_at(dw, every)
     for spr in every:
         if not places[spr]:
@@ -550,7 +508,7 @@ def strips(dw, cut, unlit):
 # ── the names, in every language the game ships ──────────────────────────────
 def zone_names():
     rows = {}
-    with open(GAME / "translationsZone.csv", encoding="utf-8") as fh:
+    with open(source_csv("translationsZone"), encoding="utf-8") as fh:
         head = fh.readline().rstrip("\n").split("|")
         langs = head[1:]
         for line in fh:
@@ -562,27 +520,23 @@ def zone_names():
 
 
 # ── what the tracker knows about items ───────────────────────────────────────
+def source_csv(name):
+    """Source text included in the same verified export as the numeric data."""
+    if name not in BUNDLE.datasets:
+        raise BundleError(f"Extractor bundle is missing required source table {name}")
+    return BUNDLE.path(name)
+
+
+def current_words():
+    return vocabulary.Words(paths=[BUNDLE.path(name) for name in BUNDLE.datasets
+                                   if name.startswith("translations") and BUNDLE.path(name).suffix.lower() == ".csv"])
+
+
 def tracker_tables():
-    text = (TRACKER / "src" / "items.js").read_text(encoding="utf-8")
-
-    def grab(name):
-        head = f"export const {name} = "
-        s = text.index(head) + len(head)
-        while text[s].isspace():
-            s += 1
-        close = "}" if text[s] == "{" else "]"
-        j = text.index(close + ";", s)
-        body = text[s:j + 1]
-        try:
-            return json.loads(body)
-        except json.JSONDecodeError:
-            # the small hand-written tables are ordinary JS, single quotes and
-            # all; the big generated ones are already JSON
-            return json.loads(re.sub(r"'([^']*)'", r'"\1"', body))
-
-    return {n: grab(n) for n in
-            ("DROP_ZONES", "DROP_PLACES", "DROP_RATE", "DROP_CHASE",
-             "RARITY_BY_NAME", "TIER_BY_NAME", "TIER_LETTERS")}
+    # Keep the historical call site name while removing the second generated
+    # copy of the numbers from the input chain.
+    _, rooms = zone_names()
+    return tables_from_items(RAW_ITEMS, rooms)
 
 
 def route(nodes):
@@ -651,19 +605,13 @@ def codex(dw, raw_items, langs, tables):
              for it in raw_items if (it.get("metadata") or {}).get("name")}
     every.discard("")
     place, missing, sheet, guessed, chosen = icons.build(
-        dw, raw_items, every, IMG / "codex.png")
+        dw, raw_items, every, IMG / "codex.png", told=ITEM_ICONS)
 
-    say = vocabulary.Words(GAME)
+    say = current_words()
     # What a potion grants, read out of the game beside the items themselves
-    talent_file = TRACKER / "tools" / "data" / "helper" / "talents.json"
-    talent_rows = []
-    if talent_file.exists():
-        talent_rows = json.loads(talent_file.read_text("utf-8"))
-    # Read before the codex is built: an item that grants a talent names it by
-    # a number, and how far our count of the talents runs from the game's can
-    # only be told where something else names the same talent outright. The
-    # planner does, for two hundred and more of them, spread across the whole
-    # list — the potions alone pin two short stretches at the end of it.
+    talent_rows = TALENT_ROWS
+    # Current numeric grants require the native map-key contract. Reference
+    # names remain separate evidence and cannot repair a missing native key.
     kit_data = gear.read(HERE / "build" / "planner" / "gear")
     said_by = {}
     for t in talent_rows:
@@ -671,16 +619,26 @@ def codex(dw, raw_items, langs, tables):
         if told.get("en"):
             said_by.setdefault(gear.flat(told["en"]), t)
     named_talent = {}
-    for key, (skill, _) in gear.grants(kit_data, {
+    for key, bonuses in gear.grants(kit_data, {
             (r["metadata"] or {}).get("tkey"): {"names": {"en": (r["metadata"] or {}).get("name")}}
             for r in raw_items if (r.get("metadata") or {}).get("tkey")}).items():
-        got = said_by.get(gear.flat(skill))
+        if len(bonuses) != 1:
+            continue
+        got = said_by.get(gear.flat(bonuses[0][0]))
         if got:
             named_talent[key] = got
 
+    talent_id_contract = (BUNDLE.read("coverage", {}) or {}).get("native_talent_id_contract")
+    talent_id_source_sha256 = next((row["sha256"] for row in BUNDLE.game["files"]
+                                   if row["path"] == "Hero_Siege.exe"), None)
     items, vocab, kits = encyclopedia.build(
-        raw_items, GAME / "translationsItem.csv", langs, place, icons.tidy, tables, say,
-        talent_rows, named_talent)
+        raw_items, source_csv("translationsItem"), langs, place, icons.tidy, tables, say,
+        talent_rows, named_talent, BUNDLE.read("stats", {}),
+        talent_id_contract=talent_id_contract, talent_id_source_sha256=talent_id_source_sha256,
+        item_aura_slot_contract=AURA_SLOTS, item_effect_contract=ITEM_EFFECTS,item_condition_contract=ITEM_CONDITIONS)
+    (DIAGNOSTICS / "item-record-coverage.json").write_text(
+        json.dumps(verify_item_coverage(raw_items, items), indent=2), encoding="utf-8")
+    attach_exclusive_sources(raw_items, items, BUNDLE.read("drop_sources"))
 
     # What the game calls each stat, joined on meaning — see words.Words.stats
     told = say.stats([v["sid"] for v in vocab])
@@ -697,39 +655,60 @@ def codex(dw, raw_items, langs, tables):
     # gives for wearing more of it
     told_unit = gear.units(kit_data, vocab, items, lambda k: say.by_key.get(k))
     for v in vocab:
-        if told_unit.get(v["sid"]) == "percent" and not v.get("unit"):
+        if told_unit.get(v["sid"]) == "percent" and not v.get("unit") and v.get('unitSource')!='native_item_effect':
             v["unit"] = "%"
+            v["unitSource"] = "reference"
     fitted = gear.sets(kit_data, kits, lambda k: say.by_key.get(k), told_unit)
+    set_names = {names['en']: names for key, names in say.by_key.items()
+                 if key.endswith('setname') and names.get('en')}
+    set_coverage = reference_sets.merge(items, kits, SET_REFERENCE, set_names)
+    (DIAGNOSTICS / 'reference-set-coverage.json').write_text(
+        json.dumps(set_coverage, ensure_ascii=False, indent=2), encoding='utf-8')
+    fitted = sum(bool(kit.get('bonuses')) for kit in kits.values())
+    for kit in kits.values():
+        if kit.get("bonuses"):
+            kit.setdefault('provenance', {}).setdefault('bonuses', 'reference')
+    reference_units = {v["sid"] for v in vocab if v.get("unitSource") == "reference"}
+    for item in item_records(items):
+        all_stats = item.get("stats", []) + [row for group in item.get("more", []) for row in group["stats"]]
+        if any(row["sid"] in reference_units for row in all_stats):
+            item.setdefault("reference", []).append("stat units")
 
-    # An item names the talent it grants by a number, which is read where the
-    # count can be vouched for; see `encyclopedia.at_number`. The planner names
-    # it outright, and that fills the rest — but only the rest. Where both
-    # answer they disagree sixty times over, and the third witness, the order
-    # the planner draws its own trees in, sides with the number on fifty-nine
-    # of them: the planner's item file is a written-down list and has drifted
-    # from the game, while the number is in the game.
+    # Preserve external suggestions as reference evidence. They never become
+    # a current native grant or replace an unresolved numeric reference.
     by_said = {}
     for t in talent_rows:
         told = say.by_key.get(f"talent_name_{t['key']}") or {}
         if told.get("en"):
             by_said.setdefault(gear.flat(told["en"]), t)
     named_skill = 0
-    for key, (skill, level) in gear.grants(kit_data, items).items():
-        got = by_said.get(gear.flat(skill))
-        if not got or items[key].get("grants"):
-            continue
-        span = level if len(level) == 2 else [level[0], None]
-        items[key]["grants"] = [encyclopedia.spoken(got, span, lambda k: say.by_key.get(k))]
-        named_skill += 1
+    aura_names = {gear.flat(row['name']) for row in kit_data['granted'] if row.get('aura')}
+    for key, bonuses in gear.grants(kit_data, items).items():
+        current = {gear.flat((grant.get("names") or {}).get("en") or "")
+                   for grant in items[key].get("grants") or []}
+        suggestions = []
+        for skill, level in bonuses:
+            got = by_said.get(gear.flat(skill))
+            if not got or gear.flat(skill) in current:
+                continue
+            span = level if len(level) == 2 else [level[0], None]
+            suggestion = encyclopedia.spoken(got, span, lambda k: say.by_key.get(k))
+            suggestion['kind'] = 'aura' if gear.flat(skill) in aura_names else 'skill'
+            suggestions.append(suggestion)
+        if suggestions:
+            items[key]["reference_grants"] = suggestions
+            items[key].setdefault("reference", []).append("granted skill")
+            named_skill += 1
     print(f"grants   {sum(1 for r in items.values() if r.get('grants'))} items name the talent "
-          f"they grant, {named_skill} of them off the planner rather than the number")
+          f"they grant; {named_skill} other records keep separate planner suggestions")
+    reference_sources.merge_records(items, CHEST_REFERENCE)
     print(f"gear     {sum(1 for v in vocab if v.get('unit') == '%')} of {len(vocab)} stats are "
           f"percentages, {fitted} of {len(kits)} sets say what they give")
 
-    out = {"langs": langs, "sheet": {"w": sheet[0], "h": sheet[1]},
+    out = {"source": SOURCE, "langs": langs, "sheet": {"w": sheet[0], "h": sheet[1]},
            "words": {**said.SAID, **say.vocab()}, "types": types_said(say, items),
            "stats": vocab, "sets": kits, "items": items,
-           "unholy": unholy.labelled(say)}
+           "unholy": unholy.labelled(say, BUNDLE.read("unholy"))}
     with_stats = sum(1 for r in items.values() if r.get("stats") or r.get("more"))
     with_lore = sum(1 for r in items.values() if r.get("lore"))
     print(f"codex    {len(items)} items, {with_stats} with stats, {with_lore} with lore, "
@@ -753,12 +732,18 @@ def codex(dw, raw_items, langs, tables):
 
     # The class trees, out of the same table the potions' talents come from
     subs = [l.split("|")[0] for l in
-            (GAME / "translationsSubTalent.csv").read_text("utf-8", "replace").splitlines() if l.strip()]
+            source_csv("translationsSubTalent").read_text("utf-8", "replace").splitlines() if l.strip()]
     tree, bound, wanted, known, loose = skilltree.build(
-        talent_rows, subs, lambda k: say.by_key.get(k), langs, HERE / "build" / "planner")
+        talent_rows, subs, lambda k: say.by_key.get(k), langs, HERE / "build" / "planner",
+        talent_type_contract=(BUNDLE.read("coverage", {}) or {}).get("native_talent_type_contract"),
+        talent_type_source_sha256=talent_id_source_sha256,
+        talent_type_inheritance_contract=(BUNDLE.read("coverage", {}) or {}).get("native_talent_type_inheritance_contract"),
+        talent_defaults_contract=(BUNDLE.read("coverage", {}) or {}).get("talent_constructor_defaults_contract"),
+        talent_type_inventory=BUNDLE.game["files"], talent_id_contract=talent_id_contract)
     for c in tree["classes"]:
         c["names"] = class_said(say, c["id"])
     tree["words"] = {**said.SAID, **say.vocab()}
+    tree["source"] = SOURCE
     boxes, nodes, sheet_size, iconless, faces, blank = skilltree.art(
         dw, talent_rows, IMG / "skills.png", HERE / "build" / "planner")
     tree["nodes"] = nodes
@@ -806,7 +791,7 @@ def squeeze(out):
     """
     at = {v["sid"]: i for i, v in enumerate(out["stats"])}
     lines = 0
-    for it in out["items"].values():
+    for it in item_records(out["items"]):
         it.pop("key", None)
         if it.get("name") == (it.get("names") or {}).get("en"):
             it.pop("name", None)
@@ -965,6 +950,10 @@ def dungeon_nodes(nodes, per_code, t, say, names):
             "act": act,
             "name": dungeon_title(room, names),
             "drops": drops,
+            "source": {"kind": "inferred", "method": "display_offset_from_native_zone_marker",
+                       "anchor_room": node["room"], "offset": {"x": x - node["x"], "y": y - node["y"]},
+                       "reference": {"kind": "reference", "name": "Hero Siege Helper dungeon catalogue",
+                                     "url": "https://hero-siege-helper.vercel.app/dungeons", "verified_for_game_build": False}},
             # The English name, with the rest of the languages put in `words`
             # below rather than on the record: `langsplit` moves a node's `name`
             # into the per-language files and leaves everything else in English,
@@ -977,6 +966,13 @@ def dungeon_nodes(nodes, per_code, t, say, names):
 
 
 def main():
+    (DIAGNOSTICS / "extraction-coverage.json").write_text(json.dumps({
+        "source": SOURCE,
+        "coverage": BUNDLE.read("coverage"),
+        "drop_sources": BUNDLE.read("drop_sources"),
+        "map": (BUNDLE.read("map", {}) or {}).get("coverage"),
+        "missing_datasets": [name for name in ("map", "drop_sources", "unholy", "stats", "assets") if name not in BUNDLE.datasets],
+    }, ensure_ascii=False, indent=2), encoding="utf-8")
     dw, w, h, tile, decor = art()
     langs, names = zone_names()
     t = tracker_tables()
@@ -988,13 +984,13 @@ def main():
             per_code.setdefault(c, []).append(item)
 
     nodes = []
-    for r in csv.DictReader(open(TRACKER / "tools" / "map" / "map_nodes.csv", encoding="utf-8")):
+    map_data = BUNDLE.read("map", {})
+    if not map_data.get("nodes"):
+        raise BundleError("Extractor bundle has no verified map nodes; rebuild the map dataset")
+    if (map_data.get("width"), map_data.get("height")) != (w, h):
+        raise BundleError("Extractor map coordinates and current background dimensions do not match")
+    for r in map_data["nodes"]:
         room = r["room"]
-        # The cabin is where the game teaches you to play. It is a marker on the
-        # map and nothing falls in it, so it is only a thing to click on and be
-        # told nothing.
-        if "Cabin" in room:
-            continue
         code = zone_code(room)
         kind = ("town" if room.startswith("Town")
                 else "dungeon" if "Boss" in room
@@ -1010,6 +1006,7 @@ def main():
             "act": int(room[4:6]) if room.startswith("Act_") else None,
             "name": names.get(room, {}),
             "drops": drops,
+            "source": r.get("source"),
         })
 
     # The last zone of each act is the one its boss dungeon opens off, and the
@@ -1047,19 +1044,21 @@ def main():
         }
 
     # the icons, cut from the game and packed into one sheet
-    raw_items = json.load(open(TRACKER / "tools" / "data" / "helper" / "items.json", encoding="utf-8"))
+    raw_items = RAW_ITEMS
     place, missing, sheet, guessed, from_sprite = icons.build(
-        dw, raw_items, set(items), IMG / "items.png")
+        dw, raw_items, set(items), IMG / "items.png", told=ITEM_ICONS)
     for name, box in place.items():
-        items[name]["icon"] = box
+        if name in items:
+            items[name]["icon"] = box
     # written out for the same reason the bosses' choices are: a name-matched
     # icon is an argument, and an argument should be readable
-    (HERE / "build" / "icons-chosen.json").write_text(
+    (DIAGNOSTICS / "icons-chosen.json").write_text(
         json.dumps(dict(sorted(from_sprite.items())), ensure_ascii=False, indent=1),
         encoding="utf-8")
 
     # what the game itself says, folded in before anything is grouped
-    merge_game.fold(items, HERE / "build" / "game_drops.json")
+    # Item dropPlaces is part of the verified export. Independent historical
+    # game_drops.json files are not input to a current-build publication.
 
     # Before the bosses are gathered: a boss's own list says whether each thing
     # it drops is Inferno-only, and for a name the game gave us by mechanism
@@ -1068,7 +1067,9 @@ def main():
     split_minded = bosses.disagrees_about_inferno(items)
 
     who = bosses.collect(items)
-    listed = bosses.game_list(GAME / "translationsEnemy.csv")
+    reference_chest_edges = reference_sources.merge_map(items, who, CHEST_REFERENCE)
+    print(f"sources  {reference_chest_edges} published chest entries retained as unverified reference data")
+    listed = bosses.game_list(source_csv("translationsEnemy"))
     for name, row in who.items():
         row["kind"] = bosses.classify(name, listed, row["kind"])
 
@@ -1090,21 +1091,25 @@ def main():
     # well — to be looked at, not trusted. Everything gets one: the act bosses
     # need a face on the map for the same reason the others need one on a shelf.
     faces, faceless, face_sheet, chosen = portraits.build(
-        dw, list(who), IMG / "bosses.png", contact_png=HERE / "build" / "bosses-contact.png")
+        dw, list(who), IMG / "bosses.png", contact_png=DIAGNOSTICS / "bosses-contact.png")
     for boss, box in faces.items():
         who[boss]["icon"] = box
     # written out so the choice can be argued with rather than taken on trust
-    (HERE / "build" / "chosen.json").write_text(
+    (DIAGNOSTICS / "chosen.json").write_text(
         json.dumps(chosen, ensure_ascii=False, indent=2), encoding="utf-8")
 
     # What the game calls each of these, in the eleven it ships. Only what it
     # actually carries — a name it has none for stays in English, and the count
     # below says how many that is.
-    say = vocabulary.Words(GAME)
+    say = current_words()
     # After the chain of a run is drawn, so they join nothing — a dungeon is not
     # a step on the way through an act — and after the vocabulary is up, which
     # is what gives them their names.
     nodes += dungeon_nodes(nodes, per_code, t, say, names)
+    marker_coverage = verify_map_marker_sources(map_data["nodes"], nodes)
+    SOURCE["map_markers"] = {key: value for key, value in marker_coverage.items() if key != "references"}
+    (DIAGNOSTICS / "map-marker-coverage.json").write_text(
+        json.dumps(marker_coverage, ensure_ascii=False, indent=2), encoding="utf-8")
 
     for name, it in items.items():
         told = say.of(name)
@@ -1143,8 +1148,9 @@ def main():
     # The Bounty Board's own page. Its quests are named and worded by the game
     # in all eleven languages; which quests are the board's is the one thing
     # written down, and build/bounty.py says on what evidence.
-    board_langs, quests = bounty.collect(GAME)
+    board_langs, quests = bounty.collect(GAME, source_csv("translationsQuest"))
     board = {
+        "source": SOURCE,
         "langs": board_langs,
         "words": {**said.SAID, **say.vocab()},
         "quests": quests,
@@ -1154,6 +1160,7 @@ def main():
     print(f"bounty   {len(quests)} quests off the board, {goals} objectives")
 
     out = {
+        "source": SOURCE,
         "map": {"w": w, "h": h},
         "bosses": who,
         "bossSheet": {"w": face_sheet[0], "h": face_sheet[1]},
@@ -1185,7 +1192,8 @@ def main():
     print(f"bosses   {len(who)} that drop something; "
           f"{sum(1 for b in who.values() if b['inferno_only'])} only on Inferno")
     print(f"faces    {len(faces)} bosses drawn, {len(faceless)} without: {chr(44).join(faceless) or chr(45)}")
-    against_game.report(HERE / "build" / "game_drops.json", who, items)
+    (DATA / "source.json").write_text(json.dumps(SOURCE, ensure_ascii=False, indent=2), encoding="utf-8")
+    BUNDLE.validate_game(GAME)
     print(f"inferno  {inferno} items fall nowhere but on Inferno")
     for name, places in split_minded:
         print(f"         {name} is stated both ways: {places}")
@@ -1198,4 +1206,13 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    if STAGING_ONLY:
+        main()
+    else:
+        with BuildLock(HERE):
+            recover(HERE / "public")
+            main()
+            publish(OUTPUT, HERE / "public")
+            # All generated directories were moved. This is only the empty
+            # staging directory created above, never a recursive deletion.
+            OUTPUT.rmdir()

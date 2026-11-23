@@ -32,8 +32,11 @@ function stamp(dir) {
   return h.digest('hex').slice(0, 8);
 }
 
+const publicDirectory = resolve(process.env.HS_MAP_PUBLIC_DIR ?? process.env.HS_MAP_OUTPUT ?? resolve(import.meta.dirname, 'public'));
+
 export default defineConfig({
-  define: { __STAMP__: JSON.stringify(stamp(resolve(import.meta.dirname, 'public'))) },
+  publicDir: publicDirectory,
+  define: { __STAMP__: JSON.stringify(stamp(publicDirectory)) },
   base: process.env.BASE_PATH ?? '/hs-map/',
   plugins: [svelte()],
   // Two pages, one build: the map and the codex are read separately and carry
@@ -51,5 +54,14 @@ export default defineConfig({
       },
     },
   },
-  server: { port: 5180, strictPort: true },
+  server: {
+    port: 5180,
+    strictPort: true,
+    watch: {
+      ignored: [
+        /(^|[/\\])(?:docs|\.hs-map-(?:stage|backup)[^/]*)(?:[/\\]|$)/,
+        /(^|[/\\])tools[/\\]perf(?:[/\\]|$)/,
+      ],
+    },
+  },
 });

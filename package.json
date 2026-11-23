@@ -8,7 +8,10 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "data": "python build/build.py"
+    "package:tracker": "node scripts/package-tracker.mjs",
+    "data": "node build/run-python.mjs build/build.py",
+    "test": "node --test build/tests/*.test.mjs",
+    "test:data": "node build/run-python.mjs -m unittest discover -s build/tests -p test_*.py"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^4.0.0",

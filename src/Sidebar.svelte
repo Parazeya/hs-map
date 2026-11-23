@@ -155,13 +155,12 @@
           .filter(Boolean).join(' · ')}
       </p>
 
+
       {#if boss}{@render whoever(active.boss, boss, true)}{/if}
 
       {#if active.drops.length === 0}
         <p class="note">
-          {t(boss
-            ? 'Nothing else drops here.'
-            : active.kind === 'town' ? 'Nothing drops in a town.' : 'The tables tie nothing to this zone.')}
+          {t('No drops listed.')}
         </p>
       {:else}
         <ul class="rows">

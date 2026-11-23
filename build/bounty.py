@@ -80,11 +80,11 @@ def clean(text):
     return MARKUP.sub("", text or "").replace("  ", " ").strip()
 
 
-def read(game):
+def read(game, csv=None):
     """Every row of the quest table, keyed, with each language beside it, and
     the bracketed heading each row was filed under."""
     rows, under, heading = {}, {}, None
-    with io.open(game / "translationsQuest.csv", encoding="utf-8", errors="replace") as fh:
+    with io.open(csv if csv is not None else game / "translationsQuest.csv", encoding="utf-8", errors="replace") as fh:
         langs = fh.readline().rstrip("\n").split("|")[1:]
         for line in fh:
             p = line.rstrip("\n").split("|")
@@ -120,7 +120,7 @@ def board(under):
     return found
 
 
-def collect(game):
+def collect(game, csv=None):
     """The board's quests, in the order the file lists them.
 
     A quest's brief comes in up to three wordings — keyboard, controller and
@@ -128,7 +128,7 @@ def collect(game):
     The first is the one taken; the others say the same thing to a different
     hand.
     """
-    langs, rows, under = read(game)
+    langs, rows, under = read(game, csv)
     out = []
     for qid in board(under):
         name = rows.get(f"quest_name_{qid}")

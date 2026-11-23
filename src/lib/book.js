@@ -9,6 +9,15 @@
 import { speak } from './lang.js';
 import { asset } from './map.js';
 
+export const recordsOf = (item) => item ? [item, ...(item.variants ?? [])] : [];
+export const grantsOf = (item) => recordsOf(item).flatMap(record => [
+  ...(record.grants ?? []), ...(record.reference_grants ?? []),
+  ...(record.more ?? []).flatMap(mode => mode.grants ?? []),
+]);
+export const statsOf = (item) => recordsOf(item).flatMap((record) => [
+  ...(record.stats ?? []), ...(record.more ?? []).flatMap((mode) => mode.stats),
+]);
+
 /**
  * Put back what the file leaves out, so nothing below has to know it was gone.
  *
@@ -20,13 +29,16 @@ import { asset } from './map.js';
  */
 export function hydrate(d) {
   for (const [key, it] of Object.entries(d.items)) {
-    it.key = key;
-    it.name ??= it.names?.en;
-    for (const row of [...(it.stats ?? []), ...(it.more ?? []).flatMap((m) => m.stats)]) {
-      const said = d.stats[row.sid];
-      row.sid = said.sid;
-      row.text = said.text;
-      if (said.unit !== undefined) row.unit = said.unit;
+    for (const record of recordsOf(it)) {
+      record.key = key;
+      record.name ??= record.names?.en ?? it.name ?? it.names?.en;
+      for (const row of [...(record.stats ?? []), ...(record.more ?? []).flatMap((m) => m.stats)]) {
+        const said = d.stats[row.sid];
+        if (!said) throw new Error(`Missing stat vocabulary entry ${row.sid}`);
+        row.sid = said.sid;
+        row.text = said.text;
+        if (said.unit !== undefined) row.unit = said.unit;
+      }
     }
   }
   return d;

@@ -354,15 +354,18 @@
         </p>
         {#if word(open.lore)}<p class="lore">{word(open.lore)}</p>{/if}
 
+
         {#if open.lines.length}
           <h3>{t('Effect')}</h3>
           <ul class="lines">
             {#each open.lines as l, i (i)}
               <li>
-                <span class="v">{l.start}{l.mark}{#if l.unit} {word(l.unit)}{/if}</span>
+                <span class="v">{l.start ?? '?'}{l.mark}{#if l.unit} {word(l.unit)}{/if}</span>
                 <span class="w">
                   {word(l.of)}
-                  {#if l.per}<span class="per">+{l.per}{l.mark} {t('per level')}</span>{/if}
+                  {#if l.mark_known === false}<span class="per">{t('Unit is unknown.')}</span>{/if}
+                  {#if l.per == null}<span class="per">{t('Growth per level is unknown.')}</span>
+                  {:else if l.per !== 0}<span class="per">+{l.per}{l.mark} {t('per level')}</span>{/if}
                 </span>
               </li>
             {/each}
@@ -393,8 +396,8 @@
             <dt>{t('Movement')}</dt>
             <dd>{open.move}% <span class="per">{t('of speed while it runs')}</span></dd>
           {/if}
-          {#if open.cooldown}<dt>{t('Cooldown')}</dt><dd>{open.cooldown}</dd>{/if}
-          {#if open.lasts}<dt>{t('Lasts')}</dt><dd>{open.lasts}</dd>{/if}
+          {#if open.cooldown != null}<dt>{t('Cooldown')}</dt><dd>{open.cooldown}</dd>{/if}
+          {#if open.lasts != null}<dt>{t('Lasts')}</dt><dd>{open.lasts}</dd>{/if}
           {#if open.rank}<dt>{t('Ranks')}</dt><dd>{open.rank}</dd>{/if}
         </dl>
 

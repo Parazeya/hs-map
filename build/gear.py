@@ -198,7 +198,7 @@ def sockets(gear, items):
 
 
 def grants(gear, items):
-    """The skill an item grants, by name.
+    """Every reference skill bonus, in the catalogue's order.
 
     The item tables name it by a number whose count runs behind the game's, and
     only where that difference is pinned can the number be read. The planner
@@ -209,7 +209,7 @@ def grants(gear, items):
     for key, record in items.items():
         got = theirs.get(flat((record.get('names') or {}).get('en')))
         for name, level in ((got or {}).get('skillBonuses') or {}).items():
-            out[key] = (name, level if isinstance(level, list) else [level])
+            out.setdefault(key, []).append((name, level if isinstance(level, list) else [level]))
     return out
 
 
@@ -235,7 +235,8 @@ def auras(gear, items, vocab):
                       else s.get('sid') in AURA
                       for s in record.get('stats') or [])
         gives = [(g.get('names') or {}).get('en') for g in record.get('grants') or []]
-        if by_stat or any(g and flat(g) in named for g in gives):
+        has_aura = any(g.get('kind') == 'aura' for g in record.get('grants') or [])
+        if by_stat or has_aura or any(g and flat(g) in named for g in gives):
             record.pop('suits', None)
             record['aura'] = 1
             n += 1

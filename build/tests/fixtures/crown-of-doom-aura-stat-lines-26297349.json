@@ -1,0 +1,370 @@
+[
+  {
+    "sid": 346,
+    "id": 319,
+    "min": 584,
+    "unresolved": true,
+    "raw": {
+      "id": 319,
+      "min1": 584,
+      "raw": {
+        "args": [
+          {
+            "kind": "value",
+            "value": {
+              "kind": "int",
+              "value": 319
+            }
+          },
+          {
+            "kind": "value",
+            "value": {
+              "kind": "int",
+              "value": 584
+            }
+          }
+        ],
+        "rva": 15867557
+      },
+      "source": {
+        "file": "Hero_Siege.exe",
+        "rva": 15867557
+      },
+      "status": "decoded",
+      "sid": "unresolved_319"
+    },
+    "source": {
+      "file": "Hero_Siege.exe",
+      "rva": 15867557
+    },
+    "status": "decoded"
+  },
+  {
+    "sid": 347,
+    "id": 320,
+    "min": 5,
+    "max": 15,
+    "unresolved": true,
+    "raw": {
+      "id": 320,
+      "max1": 15,
+      "min1": 5,
+      "raw": {
+        "args": [
+          {
+            "kind": "value",
+            "value": {
+              "kind": "int",
+              "value": 320
+            }
+          },
+          {
+            "kind": "list",
+            "value": [
+              {
+                "kind": "real",
+                "value": 5.0
+              },
+              {
+                "kind": "real",
+                "value": 15.0
+              }
+            ]
+          }
+        ],
+        "rva": 15868038
+      },
+      "source": {
+        "file": "Hero_Siege.exe",
+        "rva": 15868038
+      },
+      "status": "decoded",
+      "sid": "unresolved_320"
+    },
+    "value_shape": {
+      "kind": "list",
+      "length": 2
+    },
+    "source": {
+      "file": "Hero_Siege.exe",
+      "rva": 15868038
+    },
+    "status": "decoded"
+  },
+  {
+    "sid": 348,
+    "id": 321,
+    "min": 585,
+    "unresolved": true,
+    "raw": {
+      "id": 321,
+      "min1": 585,
+      "raw": {
+        "args": [
+          {
+            "kind": "value",
+            "value": {
+              "kind": "int",
+              "value": 321
+            }
+          },
+          {
+            "kind": "value",
+            "value": {
+              "kind": "int",
+              "value": 585
+            }
+          }
+        ],
+        "rva": 15868480
+      },
+      "source": {
+        "file": "Hero_Siege.exe",
+        "rva": 15868480
+      },
+      "status": "decoded",
+      "sid": "unresolved_321"
+    },
+    "source": {
+      "file": "Hero_Siege.exe",
+      "rva": 15868480
+    },
+    "status": "decoded"
+  },
+  {
+    "sid": 349,
+    "id": 322,
+    "min": 5,
+    "max": 15,
+    "unresolved": true,
+    "raw": {
+      "id": 322,
+      "max1": 15,
+      "min1": 5,
+      "raw": {
+        "args": [
+          {
+            "kind": "value",
+            "value": {
+              "kind": "int",
+              "value": 322
+            }
+          },
+          {
+            "kind": "list",
+            "value": [
+              {
+                "kind": "real",
+                "value": 5.0
+              },
+              {
+                "kind": "real",
+                "value": 15.0
+              }
+            ]
+          }
+        ],
+        "rva": 15868961
+      },
+      "source": {
+        "file": "Hero_Siege.exe",
+        "rva": 15868961
+      },
+      "status": "decoded",
+      "sid": "unresolved_322"
+    },
+    "value_shape": {
+      "kind": "list",
+      "length": 2
+    },
+    "source": {
+      "file": "Hero_Siege.exe",
+      "rva": 15868961
+    },
+    "status": "decoded"
+  },
+  {
+    "sid": 350,
+    "id": 323,
+    "min": 586,
+    "unresolved": true,
+    "raw": {
+      "id": 323,
+      "min1": 586,
+      "raw": {
+        "args": [
+          {
+            "kind": "value",
+            "value": {
+              "kind": "int",
+              "value": 323
+            }
+          },
+          {
+            "kind": "value",
+            "value": {
+              "kind": "int",
+              "value": 586
+            }
+          }
+        ],
+        "rva": 15869403
+      },
+      "source": {
+        "file": "Hero_Siege.exe",
+        "rva": 15869403
+      },
+      "status": "decoded",
+      "sid": "unresolved_323"
+    },
+    "source": {
+      "file": "Hero_Siege.exe",
+      "rva": 15869403
+    },
+    "status": "decoded"
+  },
+  {
+    "sid": 351,
+    "id": 324,
+    "min": 5,
+    "max": 15,
+    "unresolved": true,
+    "raw": {
+      "id": 324,
+      "max1": 15,
+      "min1": 5,
+      "raw": {
+        "args": [
+          {
+            "kind": "value",
+            "value": {
+              "kind": "int",
+              "value": 324
+            }
+          },
+          {
+            "kind": "list",
+            "value": [
+              {
+                "kind": "real",
+                "value": 5.0
+              },
+              {
+                "kind": "real",
+                "value": 15.0
+              }
+            ]
+          }
+        ],
+        "rva": 15869884
+      },
+      "source": {
+        "file": "Hero_Siege.exe",
+        "rva": 15869884
+      },
+      "status": "decoded",
+      "sid": "unresolved_324"
+    },
+    "value_shape": {
+      "kind": "list",
+      "length": 2
+    },
+    "source": {
+      "file": "Hero_Siege.exe",
+      "rva": 15869884
+    },
+    "status": "decoded"
+  },
+  {
+    "sid": 352,
+    "id": 325,
+    "min": 587,
+    "unresolved": true,
+    "raw": {
+      "id": 325,
+      "min1": 587,
+      "raw": {
+        "args": [
+          {
+            "kind": "value",
+            "value": {
+              "kind": "int",
+              "value": 325
+            }
+          },
+          {
+            "kind": "value",
+            "value": {
+              "kind": "int",
+              "value": 587
+            }
+          }
+        ],
+        "rva": 15870326
+      },
+      "source": {
+        "file": "Hero_Siege.exe",
+        "rva": 15870326
+      },
+      "status": "decoded",
+      "sid": "unresolved_325"
+    },
+    "source": {
+      "file": "Hero_Siege.exe",
+      "rva": 15870326
+    },
+    "status": "decoded"
+  },
+  {
+    "sid": 353,
+    "id": 326,
+    "min": 5,
+    "max": 15,
+    "unresolved": true,
+    "raw": {
+      "id": 326,
+      "max1": 15,
+      "min1": 5,
+      "raw": {
+        "args": [
+          {
+            "kind": "value",
+            "value": {
+              "kind": "int",
+              "value": 326
+            }
+          },
+          {
+            "kind": "list",
+            "value": [
+              {
+                "kind": "real",
+                "value": 5.0
+              },
+              {
+                "kind": "real",
+                "value": 15.0
+              }
+            ]
+          }
+        ],
+        "rva": 15870807
+      },
+      "source": {
+        "file": "Hero_Siege.exe",
+        "rva": 15870807
+      },
+      "status": "decoded",
+      "sid": "unresolved_326"
+    },
+    "value_shape": {
+      "kind": "list",
+      "length": 2
+    },
+    "source": {
+      "file": "Hero_Siege.exe",
+      "rva": 15870807
+    },
+    "status": "decoded"
+  }
+]

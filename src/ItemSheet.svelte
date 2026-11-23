@@ -57,7 +57,7 @@
   <div class="over" onclick={onclose}>
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div class="sheet" role="dialog" aria-modal="true" onclick={(e) => e.stopPropagation()}>
+    <div class="sheet" role="dialog" aria-modal="true" tabindex="-1" onclick={(e) => e.stopPropagation()}>
       <button class="x" aria-label={t('Let it go')} onclick={onclose}>×</button>
       {#if item && Card}
         <Card data={book} {item} {lang} sheet={SHEET} {t} pick={(k) => (picked = k)} />

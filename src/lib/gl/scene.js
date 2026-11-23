@@ -390,7 +390,8 @@ export function createScene({ data, base, over, stage, asset, onFail, onCount })
   // a layout property straight after writing .world's transform forces the
   // layout that write invalidated, and a drag does it 150 times.
   let rect = { left: 0, top: 0, z: 1 };
-  let raf = 0, needBase = true, needOver = true, propTick = -2, lastFx = 0, shown = '';
+  let raf = 0, timer = 0, needBase = true, needOver = true, geometryDirty = true, stateDirty = true;
+  let propTick = -2, lastFx = 0, shown = '';
   // What the picture on screen cost, kept per canvas rather than per frame. A
   // resting frame steps the props and touches the base alone, and the marker
   // canvas keeps showing its last commit until something on it moves — so the
@@ -398,7 +399,10 @@ export function createScene({ data, base, over, stage, asset, onFail, onCount })
   // these two added up and not whichever of them ran last.
   let dBase = 0, dOver = 0, sprites = 0;
 
-  const schedule = () => { if (!raf && !dead) raf = requestAnimationFrame(frame); };
+  const schedule = () => {
+    if (timer) { clearTimeout(timer); timer = 0; }
+    if (!raf && !dead && !document.hidden) raf = requestAnimationFrame(frame);
+  };
   const redraw = () => { needBase = needOver = true; schedule(); };
 
   /**
@@ -463,7 +467,7 @@ export function createScene({ data, base, over, stage, asset, onFail, onCount })
   function frame(now) {
     raf = 0;
     if (dead) return;
-    retarget(now);
+    if (stateDirty) { retarget(now); stateDirty = false; }
 
     // one clock for everything that moves: the props and the flourish are both
     // six frames a second, the rate the game plays them at
@@ -482,12 +486,13 @@ export function createScene({ data, base, over, stage, asset, onFail, onCount })
     // markers metric read 396 changed pixels a frame instead of 271.
     let busy = false, anyFx = false, fxKey = 0;
     for (const s of st) {
-      if (s.fxT0 >= 0) { anyFx = true; fxKey = fxKey * 13 + Math.floor((now - s.fxT0) * FPS / 1000); }
+      if (s.fxT0 >= 0 && !dragging && !STILL.matches) { anyFx = true; fxKey = fxKey * 13 + Math.floor((now - s.fxT0) * FPS / 1000); }
       if (s.pinK.busy || s.skullY.busy || s.glowA.busy || s.glowK.busy ||
           s.ringA.busy || s.ringK.busy || s.fade.busy) busy = true;
     }
-    if (markerBatch && (busy || needOver || fxKey !== lastFx)) {
+    if (markerBatch && (busy || geometryDirty || fxKey !== lastFx)) {
       markerBatch.write(markerQuads(now));
+      geometryDirty = false;
       lastFx = fxKey;
       needOver = true;
     }
@@ -521,24 +526,42 @@ export function createScene({ data, base, over, stage, asset, onFail, onCount })
 
     // keep the clock while anything is moving: the props always are, unless a
     // drag or the reader's own setting has taken their animation away
-    if (busy || (!STILL.matches && (anyFx || !dragging))) schedule();
+    if (busy) schedule();
+    else if (!STILL.matches && !dragging && (anyFx || propBatch && spots.length)) {
+      const step = 1000 / FPS;
+      let delay = step - now % step;
+      for (const s of st) if (s.fxT0 >= 0) delay = Math.min(delay, step - (now - s.fxT0) % step);
+      timer = setTimeout(() => { timer = 0; schedule(); }, Math.max(1, delay));
+    }
   }
 
   // the setting can be changed with the page open, and a frozen frame 0 has to
   // give way to a moving one when it is
-  STILL.onchange = redraw;
+  const motionChanged = () => { stateDirty = geometryDirty = true; redraw(); };
+  STILL.addEventListener('change', motionChanged);
+  const visible = () => {
+    if (document.hidden) {
+      if (raf) cancelAnimationFrame(raf);
+      if (timer) clearTimeout(timer);
+      raf = timer = 0;
+    } else redraw();
+  };
+  document.addEventListener('visibilitychange', visible);
 
   // ── what the component asks of it ─────────────────────────────────────────
   return {
     /** the pan and zoom the component decided, as one uniform and a redraw */
     setView(x, y, k) {
+      if (css.x === x && css.y === y && css.k === k) return;
       css = { x, y, k };
       view.setCss(x, y, k);
       redraw();
     },
     /** hover, click, search and drag — everything the picture is drawn from */
     setState(s) {
+      if (hovered === s.hovered && active === s.active && matches === s.matches && dragging === s.dragging) return;
       hovered = s.hovered; active = s.active; matches = s.matches; dragging = s.dragging;
+      stateDirty = geometryDirty = true;
       redraw();
     },
     resize() {
@@ -593,7 +616,9 @@ export function createScene({ data, base, over, stage, asset, onFail, onCount })
     destroy() {
       dead = true;
       if (raf) cancelAnimationFrame(raf);
-      STILL.onchange = null;
+      if (timer) clearTimeout(timer);
+      STILL.removeEventListener('change', motionChanged);
+      document.removeEventListener('visibilitychange', visible);
       mapBatch = freeObject(gl, mapBatch);
       linkBatch = freeObject(gl, linkBatch);
       propBatch = freeObject(gl, propBatch);

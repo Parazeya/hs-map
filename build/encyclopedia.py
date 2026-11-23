@@ -1,23 +1,19 @@
-"""Every item the game defines, with what it does, written for a reader.
+"""Render every item record from one verified Extractor generation.
 
-The map answers "what falls here". This answers "what is this thing", which is a
-different question and needs different parts of the same two sources:
-
-  the snapshot   e:\\Workspace\\HeroSiege\\tools\\data\\helper\\items.json — the
-                 stats, their ranges, the level it wants, the space it takes in
-                 a bag, its rarity and tier
-  the game       translationsItem.csv — the name and the lore, in the eleven
-                 languages it ships
-
-The stat lines are worded here rather than looked up, because there is nothing to
-look up: `sid` is the snapshot's own naming and appears nowhere in the game's
-files. It is regular enough to read mechanically — 295 of the 305 in use come out
-as plain English by splitting on the underscores and reading the last word as a
-unit — and the handful that do not are named below.
+The bundle supplies numeric effects, translation tables, variants and evidence.
+Unresolved values and references survive until their meanings can be decoded;
+external catalogue enrichments carry explicit provenance in the generated data.
 """
 
+import copy
+import hashlib
 import json
+import math
 import re
+import item_grant_slots
+import item_effects
+import item_conditions
+from data_bundle import drop_denominator, field_is_current, item_records
 
 #: The last word of a `sid` is how the number is meant, not part of its name.
 UNIT = {
@@ -66,14 +62,9 @@ SAID = {
     "double_jump": ("Double jump", ""),
 }
 
-#: A stat the snapshot numbers but does not name.
-#:
-#: Stat 20 sits on 399 items and no item carries both it and `socketed_flat`,
-#: which is the same thing coming from the snapshot's named half. Its values
-#: are pairs like 2-4, 0-3 and 4-6 — nothing else on an item is bounded that
-#: way — and the game draws it as `Sockets (4) [2-4]` on the very item whose
-#: reading raised the question. So the two are one stat under two names, and
-#: this gives the numbered half the name the other half already has.
+#: Compatibility names for reference snapshots without a current vocabulary.
+#: Current-game stat 20 is named by the Extractor's source-bound GetItemStat /
+#: localized `sockets` display-use certificate; it does not use this fallback.
 BY_ID = {20: "socketed_flat"}
 
 #: An unread stat: the snapshot gives a number for a name it does not explain.
@@ -141,37 +132,88 @@ def phrase(sid):
     return (" ".join(words).capitalize(), unit)
 
 
-def stat_line(s):
+def source_value_shape(stat):
+    """Keep the source array's arity separate from its known numeric bounds."""
+    for source in (stat.get("argument_interpretation"), stat.get("raw")):
+        if not isinstance(source, dict):
+            continue
+        args = source.get("args")
+        if not isinstance(args, list) or len(args) < 2:
+            continue
+        value = args[1]
+        if isinstance(value, dict) and value.get("kind") == "list" and isinstance(value.get("value"), list):
+            return {"kind": "list", "length": len(value["value"])}
+    return None
+
+
+def stat_line(s, stat_names=None):
     """One stat as `{sid, text, unit, min, max, of}`.
 
     `min2`/`max2` are the second number a two-part stat carries — "5% chance to
     cast Shadowflames at level 1 to 3" is one stat with two ranges — and the
     named fields beside them say which spell, class or range it is about.
     """
-    # An Unholy slot is not a stat with a value. The number the snapshot
-    # records against it is the pool the game rolls from — `LoadRandomSatanicStat`
-    # switches on it, and a stored 4 means "pool 1, 2 or 3" — so it is written
-    # as a pool and never as a magnitude. See build/unholy.py.
-    if s.get("sid") == "unholy_none":
-        return {"sid": "unholy_none", "pool": s.get("min1"), "text": "Unholy"}
-    if s.get("sid") is None and s.get("id") in BY_ID:
+    # The current export identifies random slots separately from candidate
+    # stats. Only the bundle's verified selector mapping determines their pool.
+    if s.get("kind") == "random_stat_slot" or s.get("sid") == "unholy_none":
+        selector = s.get("selector", s.get("min1"))
+        active = s.get("active", type(selector) in (int, float) and selector > 0)
+        return {"sid": "unholy_none", "pool": selector, "active": active,
+                "slot": s.get("slot"), "text": "Unholy", "raw": dict(s)}
+    name_contract = (stat_names or {}).get("name_contract")
+    vocabulary_supported = name_contract is None or (
+        name_contract.get("status") != "unsupported"
+        and any(name_contract.get(field) is True for field in
+                ("source_supported", "filter_supported", "tooltip_supported")))
+    if not s.get("sid") and stat_names and vocabulary_supported:
+        vocabulary = (stat_names.get("by_id") or {}).get(str(s.get("id")), {})
+        label = vocabulary.get("tooltip_key") or vocabulary.get("filter_key")
+        if label:
+            s = dict(s, sid=label)
+    # A supplied game vocabulary is authoritative even when it cannot name an
+    # id. The reference lookup must not recreate an old label after a decoder
+    # explicitly withholds it for the current source.
+    if s.get("sid") is None and stat_names is None and s.get("id") in BY_ID:
         s = dict(s, sid=BY_ID[s["id"]])
+    if not s.get("sid"):
+        # Keep numeric values and effect references even before their meaning
+        # has been decoded. The raw entry is evidence, not an invented stat.
+        s = dict(s, sid=f"unresolved_{s.get('id', 'value')}")
     out = {
         "sid": s.get("sid"),
+        "id": s.get("id"),
         "min": s.get("min1"),
         "max": s.get("max1"),
     }
     text, unit = phrase(s.get("sid"))
+    if s["sid"].startswith("unresolved_"):
+        text = "Unidentified effect"
+        out["unresolved"] = True
+        out["raw"] = dict(s)
     out["text"] = text
     if unit:
         out["unit"] = unit
+    shape = source_value_shape(s)
+    if shape is not None:
+        out["value_shape"] = shape
     # A relic's stat is not rolled but climbed: the item carries the ten values
     # the stat takes at the relic's ten levels, and no min or max at all, so
     # without this those lines printed their name and no number.
-    if out["min"] is None and s.get("values"):
-        ladder = [v for v in s["values"] if v is not None]
-        if ladder:
-            out["min"], out["max"], out["rank"] = ladder[0], ladder[-1], 1
+    if isinstance(s.get("values"), list) and s["values"]:
+        ladder = list(s["values"])
+        out["values"] = ladder
+        out["rank"] = 1
+        # Positions are levels. An unknown first level must not inherit the
+        # first known value later in the vector.
+        if out["min"] is None:
+            out["min"] = ladder[0]
+        if out["max"] is None:
+            out["max"] = ladder[-1]
+    for field in ("expression", "reference", "unknown", "source", "raw", "status", "kind",
+                  "argument_interpretation", "value_expression", "value_kind", "resource_references",
+                  "native_observation", "outer_selector", "inner_stat_key", "scope", "runtime_condition"):
+        if field in s:
+            out.setdefault(field, s[field])
     if s.get("min2") is not None or s.get("max2") is not None:
         out["min2"] = s.get("min2")
         out["max2"] = s.get("max2")
@@ -193,22 +235,6 @@ def text_rows(path):
     return rows
 
 
-#: What the engine leaves in a record that never states a drop rate. It is not
-#: a chance of one in fifty million; it is the game's way of saying it does not
-#: fall out of the world at all — from a boss, a chest or a tower instead. The
-#: tracker's own tables already refuse it; this file was reading the snapshot's
-#: raw number as a fallback and printing it, on 701 of 1,728 items.
-#:
-#: Exactly this number, not everything above it: three items are written rarer
-#: than the default and mean it — 50,696,969, 111,111,111 and 999,999,999.
-NO_DROP = 50_000_000
-
-
-def plain(rate):
-    """A drop rate, or None where the number is the engine's shrug."""
-    return None if rate == NO_DROP else rate
-
-
 def out_of_key(tkey, kind):
     """`w_throwing_darkmoon_deck` read as "Darkmoon Deck"."""
     parts = [p for p in (tkey or "").split("_") if p]
@@ -219,13 +245,16 @@ def out_of_key(tkey, kind):
 
 def weapons(row):
     """The weapons a runeword may be made in, named."""
+    native = (row.get("runeword") or {}).get("eligibility", {}).get("weapon_type")
+    if native is not None:
+        return [value.get("name") or value.get("native_label") or str(value["id"]) for value in native]
     got = row.get("runewordWeaponType")
     if not isinstance(got, list):
         return []
     return [WEAPON[n - 1] if 1 <= n <= len(WEAPON) else str(n) for n in got]
 
 
-def variants(it):
+def variants(it, stat_names=None, conditions=None, socket_items=None, said=None):
     """The stat lists that are not the plain one, each with what it depends on.
 
     Two shapes. Most are a flat list under a name that says which base it is
@@ -238,24 +267,44 @@ def variants(it):
     the Pristine Ruby. Four items are written that way.
     """
     out = []
+    native = it.get("stats_channels") or {}
+    labels = {"runeword_base": "runeword base modifiers",
+              "runeword_two_handed": "two-handed", "runeword_armor": "in armour",
+              "socket": "socket condition", "damage_type": "damage type condition"}
+    for channel, group in native.items():
+        rows = group.get("stats") or []
+        if rows:
+            lines=[stat_line(s,stat_names) for s in rows if isinstance(s,dict)]
+            if channel in item_conditions.DOMAINS:
+                for separate in item_conditions.partition(lines,channel):
+                    condition=item_conditions.describe(separate,channel,(it.get('metadata') or {}).get('tkey'),
+                                                       socket_items or {},said or (lambda _:None),conditions)
+                    label=(condition.get('names') or {}).get('en')
+                    when=(('With '+label if channel=='socket' else 'Damage type: '+label) if label else labels[channel])
+                    out.append(dict(id=separate['id'],when=when,channel=channel,scope=group.get('scope'),
+                                    condition=condition,outer_selector=separate['outer_selector'],stats=separate['stats']))
+            else:
+                out.append({"id":'storage:'+channel,"when": labels.get(channel, channel), "channel": channel,
+                            "scope": group.get("scope"),"stats":lines})
     for field, when in VARIANT.items():
         rows = it.get(field) or []
         if not rows:
             continue
         if all(isinstance(r, dict) and r.get("stats") for r in rows):
-            for r in rows:
+            for index,r in enumerate(rows):
                 named = r.get("ID")
                 out.append({
+                    "id":f'legacy:{field}:{index}',
                     "when": f"with a {named}" if named else when,
-                    "stats": [stat_line(s) for s in r["stats"] if s.get("sid") or s.get("id") in BY_ID],
+                    "stats": [stat_line(s, stat_names) for s in r["stats"] if isinstance(s, dict)],
                 })
         else:
-            out.append({"when": when,
-                        "stats": [stat_line(s) for s in rows if s.get("sid") or s.get("id") in BY_ID]})
+            out.append({"id":f'legacy:{field}',"when": when,
+                        "stats": [stat_line(s, stat_names) for s in rows if isinstance(s, dict)]})
     return [v for v in out if v["stats"]]
 
 
-def sockets(row, by_name, tidy):
+def sockets(row, by_name, tidy, by_rune_id=None):
     """A runeword's recipe: what goes in it, in order, as item keys.
 
     `runewordSockets` names them the way the game does — its runes are renamed
@@ -264,6 +313,25 @@ def sockets(row, by_name, tidy):
     with pages and icons of their own, so the recipe is stored as keys and the
     page looks the rest up.
     """
+    native = row.get("runeword_recipe")
+    if isinstance(native, dict) and isinstance(native.get("value"), list):
+        # Native IDs are ordered, may repeat, and are a separate domain until
+        # the runtime's socketable-ID join has been independently certified.
+        out = []
+        word = row.get("runeword") or {}
+        bound = word.get("recipe_items") or []
+        domain = word.get("recipe_item_domain") or {}
+        for index, rune_id in enumerate(native["value"]):
+            binding = bound[index] if index < len(bound) else {}
+            item = None
+            if (domain.get("status") == "native_runtime_binding" and domain.get("packet_field") == "b"
+                    and domain.get("item_type") == 15 and binding.get("rune_id") == rune_id
+                    and binding.get("status") == "source_bound_item_identity" and binding.get("key")):
+                item = {"key": binding["key"], "name": binding.get("name")}
+            if item is None:
+                item = (by_rune_id or {}).get(rune_id)
+            out.append(dict(item, id=rune_id) if item else {"id": rune_id, "unresolved": True})
+        return out
     out = []
     for name in row.get("runewordSockets") or []:
         key = by_name.get(tidy(name))
@@ -271,10 +339,30 @@ def sockets(row, by_name, tidy):
     return out
 
 
+def made_in(row, current_type_names):
+    native = (row.get("runeword") or {}).get("eligibility", {}).get("item_type")
+    if native is not None:
+        labels = []
+        for value in native:
+            names = current_type_names.get(value.get("id"), set())
+            labels.append(next(iter(names)) if len(names) == 1 else
+                          value.get("name") or value.get("native_label") or str(value["id"]))
+        return " or ".join(labels) or None
+    legacy = row.get("runewordItemType")
+    return (BASE.get(legacy) if isinstance(legacy, int) else
+            " or ".join(BASE.get(n, str(n)) for n in legacy or [])) or None
+
+
 #: The stat a potion states its talent in, and the one that states the range
 #: of levels it grants it at. The game writes "+[1-5] to Drunken Kung Fu" out
 #: of the pair.
 GRANTS, GRANT_LEVELS = "singular_skill", "stat_random_skill"
+NATIVE_TALENT_PROFILE = "hero-siege-26297349-native-talent-map-keys-v1"
+NATIVE_GRANT_DOMAIN_PROFILE = "hero-siege-26297349-stat202-talent-map-key-v1"
+NATIVE_TALENT_SOURCE_SHA256 = "2c248a580810fbe389d2f15fcf809f2dac51d5815c60e888353071fe7dfc57fe"
+NATIVE_TALENT_WITNESS_SHA256 = "26668afafd26aa2596d8c66c8549aaa1ff54e20b5c6f2396a67b6fc6266ec911"
+NATIVE_TALENT_CONTRACT_ID = "e5ab15dcb1d906145c0613d0739a8551c44abd46a86056ba83b24ef67053223a"
+NATIVE_GRANT_DOMAIN_REFERENCE_SHA256 = "21cbd237cc2d2c3d12ca028afef46b0c7e8dba6f5802d20b47714798ee52de58"
 #: The other way an item says what it grants: the spell by name, in a field
 #: beside the stat. Runewords are written this way and a few uniques with them,
 #: and Torment names three this way in one go.
@@ -338,19 +426,11 @@ def called(key):
 
 
 def fits(number, got, pins):
-    """Whether the talent an item's key names can be the one its number means.
+    """Legacy reference-only numbering inference; never a native ID proof.
 
-    A key can name a talent by coincidence rather than by grant: the ring
-    Absolute Zero is spelled like the Jotunn ultimate and does not give it. The
-    item states a number as well, and the two together settle it — the
-    difference between the number and where that talent sits has to lie between
-    what the anchors either side of it measure, and for the ring it is two
-    hundred and fifty-one where they allow one to three.
-
-    Relics are not asked. Their numbers and the order the talents are defined in
-    have come apart — whole runs of relics are numbered twenty-six places from
-    where they are made — while their keys still name their talents exactly,
-    agreeing with the planner on seventy-three of the seventy-four it also names.
+    Older reference snapshots inferred a relationship between item-key names
+    and table positions. This preserves that heuristic only for those inputs;
+    the positions are not the sparse keys used by GetTalentInfo.
     """
     if number is None or not got.get("id"):
         return True
@@ -361,24 +441,10 @@ def fits(number, got, pins):
 
 
 def pinned(raw_items, talents):
-    """How far the talents' numbering runs from ours, where an item says so.
+    """Legacy reference-only drift anchors, excluded from native lookups.
 
-    An item names the talent it grants by a number, and the number is its place
-    in the order the game defines them. The extractor numbers them the same way
-    and the two agree for the first five hundred and fifty — but past that it
-    makes three fewer records than the game, and each one missed puts every
-    number after it out by one more.
-
-    An item whose own key spells the talent out says both things at once, so it
-    measures the difference at its own number. Measured rather than written
-    down because it moves: every repair to the populator reader changes how
-    many records it makes.
-
-    The relics are left out of it although their keys name their talents too.
-    What they show is not a count running behind but an order running
-    differently: whole runs of them sit twenty-six places later than the game
-    puts them and others twenty earlier, so past where the potions reach there
-    is no single difference to measure and the number is not read at all.
+    These differences measure a historical reference-table assumption, not
+    native insertion IDs. They must never repair a current native lookup.
     """
     seen = []
     for row in raw_items:
@@ -404,7 +470,7 @@ def pinned(raw_items, talents):
 
 
 def at_number(n, by_number, pins):
-    """The talent an item's number names, where the numbering can be trusted.
+    """An explicitly inferred legacy reference match, never a native ID join.
 
     Trusted means bracketed: an anchor at or below the number and another at or
     above it, both saying the same thing. Below the first anchor there is
@@ -422,7 +488,489 @@ def at_number(n, by_number, pins):
     return by_number.get(n - drift)
 
 
-def granted(tkey, stats, talents, told, by_number, by_spoken, pins, said):
+def _digest(value):
+    return hashlib.sha256(json.dumps(value, sort_keys=True, ensure_ascii=False,
+                                    separators=(",", ":"), allow_nan=False).encode("utf-8")).hexdigest()
+
+
+def native_talent_context(rows, contract, source_sha256):
+    """Validate the producer's native insertion-key catalog and row bindings.
+
+    Returning an empty native context is deliberate: unsupported current data
+    cannot fall through to item keys, planner suggestions or ordinal offsets.
+    """
+    context = {"by_id": {}, "status": "unsupported"}
+    if not isinstance(contract, dict) or not isinstance(source_sha256, str):
+        return context
+    source_sha256 = source_sha256.lower()
+    if source_sha256 != NATIVE_TALENT_SOURCE_SHA256:
+        return context
+    domain = contract.get("grant_domain")
+    if not isinstance(domain, dict) or any((
+            domain.get("status") != "complete_source_bound_grant_lookup",
+            domain.get("profile") != NATIVE_GRANT_DOMAIN_PROFILE,
+            domain.get("source_sha256") != source_sha256,
+            type(domain.get("stat_id")) is not int or domain["stat_id"] != 202,
+            domain.get("lookup") != "GetTalentInfo",
+            type(domain.get("lookup_argument_index")) is not int or domain["lookup_argument_index"] != 0,
+            domain.get("map_variable") != "talentStructMap",
+            domain.get("same_key_transport_certified") is not True,
+            domain.get("native_consumer_bound") is not True,
+            domain.get("value_transform") != "identity",
+            domain.get("runtime_value_inferred") is not False)):
+        return context
+    domain_proof = domain.get("proof")
+    if (not isinstance(domain_proof, dict) or domain_proof.get("sha256") != NATIVE_GRANT_DOMAIN_REFERENCE_SHA256
+            or domain_proof.get("reference") != "reference/native-evidence/item-talent-id-domain-26297349.json"):
+        return context
+    catalog = contract.get("record_sources")
+    witness = contract.get("witness") or {}
+    consumer = contract.get("consumer") or {}
+    if not isinstance(catalog, list) or not catalog or not isinstance(witness, dict) or not isinstance(consumer, dict):
+        return context
+    if any((type(contract.get("schema_version")) is not int or contract["schema_version"] != 1,
+            contract.get("status") != "complete_source_bound_native_insertion_keys",
+            contract.get("profile") != NATIVE_TALENT_PROFILE,
+            contract.get("source") != "Hero_Siege.exe",
+            contract.get("source_sha256") != source_sha256,
+            contract.get("native_numeric_map_keys_certified") is not True,
+            contract.get("ordinal_fallback") is not False,
+            consumer.get("script") != "GetTalentInfo",
+            consumer.get("map_variable") != "talentStructMap",
+            consumer.get("lookup_key") != "unrenumbered_first_script_argument",
+            type(contract.get("records")) is not int or contract["records"] != len(catalog),
+            witness.get("sha256") != NATIVE_TALENT_WITNESS_SHA256,
+            contract.get("native_contract_id") != NATIVE_TALENT_CONTRACT_ID)):
+        return context
+    bindings, owners = {}, set()
+    try:
+        for binding in catalog:
+            if not isinstance(binding, dict):
+                return context
+            number, key, cls = binding.get("native_id"), binding.get("key"), binding.get("class")
+            if (type(number) is not int or number <= 0 or number in bindings
+                    or not isinstance(key, str) or not key or not isinstance(cls, str)
+                    or (key, cls) in owners or binding.get("source") != "Hero_Siege.exe"
+                    or binding.get("source_sha256") != source_sha256
+                    or binding.get("scope") != "static_native_numeric_map_insertion_key"
+                    or binding.get("receiver") != "reviewed_same_fresh_talent_instance"
+                    or any(type(binding.get(field)) is not int or binding[field] <= 0
+                           for field in ("case_entry_rva", "key_anchor_rva", "map_set_call_rva"))):
+                return context
+            unsigned = {key: value for key, value in binding.items() if key != "binding_sha256"}
+            if binding.get("binding_sha256") != _digest(unsigned):
+                return context
+            bindings[number] = binding
+            owners.add((key, cls))
+        payload = {"profile": contract["profile"], "source_sha256": source_sha256,
+                   "witness_sha256": witness["sha256"],
+                   "record_sources": [bindings[number] for number in sorted(bindings)]}
+        if contract.get("native_contract_id") != _digest(payload):
+            return context
+    except (TypeError, ValueError):
+        return context
+    grouped = {}
+    for row in rows:
+        if isinstance(row, dict) and type(row.get("id")) is int:
+            grouped.setdefault(row["id"], []).append(row)
+    for number, candidates in grouped.items():
+        if len(candidates) != 1:
+            continue
+        row, binding = candidates[0], bindings.get(number)
+        if (binding is not None and row.get("key") == binding["key"]
+                and row.get("class") == binding["class"] and row.get("id_source") == binding):
+            context["by_id"][number] = row
+    context.update(status="supported", source_sha256=source_sha256,
+                   native_contract_id=contract["native_contract_id"], grant_domain=domain)
+    return context
+
+
+def _native_grant_number(line, stat_id=202):
+    source = line.get("source")
+    if line.get("status") != "decoded" or not isinstance(source, dict) or source.get("file") != "Hero_Siege.exe":
+        return None
+    value = line.get("min")
+    if (type(value) not in (int, float) or value <= 0 or value > 2 ** 53
+            or not math.isfinite(value) or value != int(value)):
+        return None
+    if line.get("max") is not None and (type(line["max"]) not in (int, float) or line["max"] != value):
+        return None
+    if "values" in line or "value_shape" in line:
+        return None
+    observed = item_grant_slots.native_call(line)
+    if not isinstance(observed, dict) or not isinstance(observed.get("args"), list) or len(observed["args"]) != 2:
+        return None
+
+    def scalar(argument):
+        if not isinstance(argument, dict) or argument.get("kind") != "value":
+            return None
+        constant = argument.get("value")
+        if not isinstance(constant, dict) or constant.get("kind") not in ("int", "real"):
+            return None
+        number = constant.get("value")
+        return number if type(number) in (int, float) else None
+
+    if scalar(observed["args"][0]) != stat_id or scalar(observed["args"][1]) != value:
+        return None
+    return int(value)
+
+
+def native_aura_granted(stats, said, native):
+    domain = native.get("aura_slots")
+    if not item_grant_slots.valid_domain(domain, native.get("source_sha256")):
+        return []
+    result = []
+    for slot in domain["slots"]:
+        selectors = [s for s in stats if type(s.get("id")) is int and s["id"] == slot["selector_stat_id"]]
+        if len(selectors) != 1:
+            continue
+        selector = selectors[0]
+        number = _native_grant_number(selector, slot["selector_stat_id"])
+        talent = native["by_id"].get(number)
+        if talent is None:
+            continue
+        operands = [s for s in stats if type(s.get("id")) is int and s["id"] == slot["level_stat_id"]]
+        levels = item_grant_slots.level_range(operands[0], slot["level_stat_id"]) if len(operands) == 1 else None
+        represented = [selector] + ([operands[0]] if levels is not None else [])
+        grant = spoken(talent, levels, said)
+        grant.update(kind="aura", holder_only=slot.get("holder_only", False),
+                     talent_id=number, talent_key=talent["key"], talent_class=talent["class"],
+                     source_stats=copy.deepcopy(represented),
+                     provenance={"kind": "decoded", "basis": "source-bound item talent slot",
+                                 "source": "Hero_Siege.exe", "source_sha256": native["source_sha256"],
+                                 "native_contract_id": native["native_contract_id"],
+                                 "slot_contract_sha256": domain["certificate_sha256"],
+                                 "selector_stat_id": slot["selector_stat_id"], "level_stat_id": slot["level_stat_id"],
+                                 "levels_scope": "base_item_definition", "runtime_value_inferred": False})
+        stats[:] = [s for s in stats if all(s is not used for used in represented)]
+        result.append(grant)
+    return result
+
+
+def native_skill_granted(stats, said, native):
+    domain = native.get("aura_slots")
+    if not item_grant_slots.valid_domain(domain, native.get("source_sha256")):
+        return []
+    result = []
+    for slot in domain["skill_slots"]:
+        selectors = [s for s in stats if type(s.get("id")) is int and s["id"] == slot["selector_stat_id"]]
+        if len(selectors) != 1:
+            continue
+        selector = selectors[0]
+        number = _native_grant_number(selector, slot["selector_stat_id"])
+        talent = native["by_id"].get(number)
+        selected_range = item_grant_slots.level_range(selector, slot["selector_stat_id"]) if number is None else None
+        # A random skill keeps its selection range; no particular talent is invented.
+        random = (selected_range is not None and selected_range[0] > 0
+                  and selected_range[0] < selected_range[1]
+                  and all(n in native["by_id"] for n in selected_range))
+        if talent is None and not random:
+            continue
+        operands = [s for s in stats if type(s.get("id")) is int and s["id"] == slot["level_stat_id"]]
+        level = item_grant_slots.skill_levels(operands[0], slot["level_stat_id"]) if len(operands) == 1 else None
+        represented = [selector] + ([operands[0]] if level is not None else [])
+        grant = spoken(talent, None, said) if talent else {"random_skill": True, "skill_selector_range": selected_range,
+                                                         "levels": None, "lines": []}
+        if talent:
+            grant.update(talent_id=number, talent_key=talent["key"], talent_class=talent["class"])
+        if level:
+            grant.update(level)
+        grant.update(kind="skill", source_stats=copy.deepcopy(represented),
+                     provenance={"kind": "decoded", "basis": "source-bound item skill slot",
+                                 "source": "Hero_Siege.exe", "source_sha256": native["source_sha256"],
+                                 "native_contract_id": native["native_contract_id"],
+                                 "slot_contract_sha256": domain["certificate_sha256"],
+                                 "selector_stat_id": slot["selector_stat_id"], "level_stat_id": slot["level_stat_id"],
+                                 "levels_scope": "base_item_definition", "runtime_value_inferred": False})
+        stats[:] = [s for s in stats if all(s is not used for used in represented)]
+        result.append(grant)
+    return result
+
+
+def native_triggered(stats, said, native):
+    domain = native.get('item_effects')
+    if not item_effects.valid_domain(domain, native.get('source_sha256')):
+        return []
+    result=[]
+    for slot in domain['settings']['trigger_slots']:
+        selectors=[s for s in stats if s.get('id')==slot['selector_stat_id']]
+        if len(selectors)!=1:
+            continue
+        number=_native_grant_number(selectors[0],slot['selector_stat_id'])
+        talent=native['by_id'].get(number)
+        if talent is None:
+            continue
+        levels=[s for s in stats if s.get('id')==slot['level_stat_id']]
+        chances=[s for s in stats if s.get('id')==slot['chance_stat_id']]
+        level=item_effects.quantity(levels[0],slot['level_stat_id'],integral=True) if len(levels)==1 else None
+        chance=item_effects.quantity(chances[0],slot['chance_stat_id'],ceiling=100) if len(chances)==1 else None
+        grant=spoken(talent,level.get('range') if level else None,said)
+        represented=[selectors[0]]
+        if level:
+            represented+=levels
+            if 'values' in level:
+                grant['level_values']=level['values']
+        if chance:
+            represented+=chances
+            grant['chance_values' if 'values' in chance else 'chance']=chance.get('values',chance.get('range'))
+        grant.update(kind='trigger',talent_id=number,talent_key=talent['key'],talent_class=talent['class'],
+                     trigger=said(slot['event_key']),trigger_key=slot['event_key'],
+                     source_stats=copy.deepcopy(represented),
+                     provenance=dict(kind='decoded',basis='source-bound item trigger slot',source='Hero_Siege.exe',
+                                     source_sha256=native['source_sha256'],slot_contract_sha256=domain['certificate_sha256'],
+                                     selector_stat_id=slot['selector_stat_id'],level_stat_id=slot['level_stat_id'],
+                                     chance_stat_id=slot['chance_stat_id'],levels_scope='base_item_definition',runtime_value_inferred=False))
+        stats[:]=[s for s in stats if all(s is not used for used in represented)]
+        result.append(grant)
+    return result
+
+
+def native_presentation(stats, grants, said, native):
+    """Render UI controls as their actual roles, retaining every original statement."""
+    domain=native.get('item_effects')
+    if not item_effects.valid_domain(domain,native.get('source_sha256')):
+        return []
+    settings=domain['settings']
+    mechanics=[]
+    def take(lines):
+        stats[:]=[s for s in stats if all(s is not used for used in lines)]
+    def one(number):
+        rows=[s for s in stats if s.get('id')==number]
+        return rows[0] if len(rows)==1 else None
+    def number(row):
+        q=item_effects.quantity(row,row['id'],integral=True) if row and type(row.get('id')) is int else None
+        return q['range'][0] if q and q.get('range') and q['range'][0]==q['range'][1] else None
+    def names(en,ru):
+        return {'en':en,'ru':ru}
+    def effect(title,ru,lines,**extra):
+        grant=dict(kind='effect',names=names(title,ru),lines=[],source_stats=copy.deepcopy(lines),
+                   provenance=dict(kind='decoded',basis='source-bound item display role',source='Hero_Siege.exe',
+                                   source_sha256=native['source_sha256'],slot_contract_sha256=domain['certificate_sha256'],
+                                   runtime_value_inferred=False))
+        grant.update(extra)
+        grants.append(grant)
+        take(lines)
+        return grant
+    def render(q):
+        values=q.get('values') or q.get('range')
+        return ' / '.join(map(str,values)) if 'values' in q else str(values[0]) if values[0]==values[1] else f'{values[0]}–{values[1]}'
+    for role in settings.get('weapon_parameters',[]):
+        for row in [s for s in stats if s.get('id')==role['stat_id']]:
+            if item_effects.quantity(row,row['id']) is not None:
+                mechanics.append(dict(role=role['meaning'],source_stats=[copy.deepcopy(row)]))
+                take([row])
+    classes={r['class_id']:r['class_key'] for r in settings.get('classes',[])}
+    for selector,class_stat in settings.get('class_restrictions',{}).items():
+        row=one(class_stat)
+        cls=number(row)
+        label=said(classes[cls]) if cls in classes else None
+        if not label:
+            continue
+        if selector=='all_skills':
+            skill=one(201)
+            if skill:
+                original=copy.deepcopy(skill)
+                skill['class_names']=label
+                skill['source_stats']=[original,copy.deepcopy(row)]
+                take([row])
+            else:
+                original=copy.deepcopy(row)
+                row.update(sid='item_all_skills_class',text='Class for All Skill Bonuses',
+                           names=names('Class for All Skill Bonuses','Класс бонусов ко всем умениям'),
+                           value_names=label,source_stats=[original],unit='',unitSource='native_item_effect')
+                row.pop('unresolved',None)
+        else:
+            candidates=[g for g in grants if g.get('provenance',{}).get('selector_stat_id')==int(selector)]
+            if len(candidates)==1:
+                candidates[0]['class_names']=label
+                candidates[0]['class_id']=cls
+                candidates[0]['source_stats'].append(copy.deepcopy(row))
+                take([row])
+    simple={384:('Mana Recovery','Восстановление маны'),387:('Life Recovery','Восстановление здоровья'),
+            390:('Effect Duration','Длительность эффекта'),413:('Extra Projectiles','Дополнительные снаряды'),
+            414:('Projectile Chains','Отскоки снарядов')}
+    for row in list(stats):
+        sid=row.get('id')
+        if str(sid) not in settings.get('simple_fields',{}) and sid not in settings.get('unit_overrides',[]):
+            continue
+        if item_effects.quantity(row,sid) is None:
+            continue
+        original=copy.deepcopy(row)
+        if sid in simple:
+            en,ru=simple[sid]
+            row.update(sid='item_display_'+str(sid),text=en,names=names(en,ru))
+            row.pop('unresolved',None)
+        row.update(unit='',unitSource='native_item_effect',source_stats=[original])
+        if sid==390:
+            row['unit_names']=said('stat_seconds')
+        if sid==413:
+            row['effect_note']=said('stat_extra_projectile_03')
+    for row in list(stats):
+        if row.get('id') in settings.get('zone_reference_stats',[]) and row.get('resource_references'):
+            original=copy.deepcopy(row)
+            row.update(sid='item_zone_references',text='Zones',names=names('Zones','Зоны'),source_stats=[original])
+            row.pop('unresolved',None)
+        slot=settings.get('random_slots',{}).get(str(row.get('id')))
+        sel=number(row)
+        if slot is not None and str(sel) in settings.get('random_selector_pools',{}):
+            original=copy.deepcopy(row)
+            row.update(sid='unholy_none',text='Unholy',pool=sel,slot=slot,active=True,source_stats=[original])
+            row.pop('unresolved',None)
+    if settings.get('subskills'):
+        selector,amount=one(419),one(420)
+        value=item_effects.quantity(amount,420,integral=True) if amount else None
+        talent_id=_native_grant_number(selector,419) if selector else None
+        talent=native['by_id'].get(talent_id)
+        selected=item_effects.quantity(selector,419,integral=True) if selector and talent is None else None
+        random=selected and selected.get('range') and selected['range'][0]>0 and selected['range'][0]<selected['range'][1]
+        if selector and amount and value and (talent or random):
+            grant=effect('Sub Skills','Поднавыки',[selector,amount],kind='subskills',
+                         names=said('talent_name_'+talent['key']) if talent else None,
+                         levels=value.get('range'),random_skill=bool(random))
+            if talent:
+                grant.update(talent_id=talent_id,talent_key=talent['key'])
+            else:
+                grant['skill_selector_range']=selected['range']
+            if value.get('values'):
+                grant['level_values']=value['values']
+    if settings.get('deferred_damage'):
+        percent,seconds=one(279),one(280)
+        p=item_effects.quantity(percent,279,ceiling=100) if percent else None
+        duration=item_effects.quantity(seconds,280) if seconds else None
+        if p and duration:
+            texts=said('stat_damage_taken_over_01') or {'en':'of incoming damage is taken over'}
+            units=said('tal_seconds') or {'en':'s'}
+            lore={lang:f'{render(p)}% {text} {render(duration)} {units.get(lang,units.get("en","s"))}' for lang,text in texts.items()}
+            effect('Delayed Incoming Damage','Отложенный входящий урон',[percent,seconds],lore=lore,
+                   amount=p,duration=duration)
+    for role in settings.get('codex_choices',[]):
+        selector=one(role['selector_stat_id'])
+        selected=item_effects.quantity(selector,selector['id'],integral=True) if selector else None
+        bounds=selected.get('range') if selected else None
+        if not bounds or bounds[0]<1 or bounds[1]>len(role['keys']):
+            continue
+        options=[dict(native_id=n,names=said(role['keys'][n-1])) for n in range(bounds[0],bounds[1]+1)]
+        if all(option['names'] for option in options):
+            positive=role['kind']=='codex_buff'
+            effect('Possible Codex Buffs' if positive else 'Possible Codex Debuffs',
+                   'Возможные усиления кодекса' if positive else 'Возможные ослабления кодекса',
+                   [selector],options=options,selection_range=bounds)
+    for flag in settings.get('tracker_flags',[]):
+        row=one(flag)
+        if row and number(row)==1:
+            effect('Statistics Tracker','Счётчик игровой статистики',[row])
+    for capability in settings.get('positive_capabilities',[]):
+        row=one(capability['stat_id'])
+        value=item_effects.quantity(row,row['id']) if row else None
+        if value and value.get('range') and value['range'][0]>0 and capability['kind']=='bone_spirit_summon_healing':
+            effect('Bone Spirit heals Necromancer summons','Костяной дух исцеляет призванных существ некроманта',[row],
+                   raw_magnitude=value,numeric_unit_certified=False)
+    if settings.get('random_skill_flag'):
+        selector,operand=one(444),one(445)
+        value=item_effects.quantity(operand,445,integral=True) if operand else None
+        if selector and number(selector)==1 and value:
+            grant=effect('Random skill','Случайное умение',[selector,operand],kind='skill',random_skill=True,
+                         levels=value.get('range'),random_skill_rule=copy.deepcopy(settings['random_skill_flag']))
+            if value.get('values'):
+                grant['level_values']=value['values']
+    return mechanics
+
+
+def native_granted_scoped(stats, by_spoken, said, native, mechanics=None):
+    """Outer storage keys are independent conditions, never duplicate slot operands."""
+    contexts={}
+    original=list(stats)
+    for line in original:
+        key=json.dumps(line.get('outer_selector'),sort_keys=True)
+        contexts.setdefault(key,[]).append(line)
+    grants=[]
+    remaining=set()
+    for key,lines in contexts.items():
+        scoped=native_granted(lines,by_spoken,said,native) or []
+        storage=native_presentation(lines,scoped,said,native)
+        if mechanics is not None:
+            for record in storage:
+                if key!='null':
+                    record['outer_selector']=json.loads(key)
+                mechanics.append(record)
+        for grant in scoped:
+            if key!='null':
+                grant['outer_selector']=json.loads(key)
+        grants+=scoped
+        remaining.update(id(line) for line in lines)
+    stats[:]=[line for line in original if id(line) in remaining]
+    return grants or None
+
+
+def native_granted(stats, by_spoken, said, native):
+    """Keep explicit spell text separate from direct, source-bound stat-202 IDs."""
+    original, out, text_grants, numeric_grants = list(stats), [], [], []
+    by_id, domain = native["by_id"], native.get("grant_domain") or {}
+
+    def consume(line):
+        stats[:] = [candidate for candidate in stats if candidate is not line]
+
+    for line in original:
+        if not line.get("spell") or not (line.get("sid") == BY_NAME or line.get("id") == 202):
+            continue
+        got = by_spoken.get(flat(line["spell"]))
+        if not got:
+            continue
+        grant = spoken(got, [line.get("min"), line.get("max")] if line.get("sid") == BY_NAME else None, said)
+        grant.update(talent_key=got["key"], talent_class=got.get("class"),
+                     provenance={"kind": "decoded", "basis": "explicit spell name"},
+                     source_stats=[copy.deepcopy(line)])
+        text_grants.append(grant)
+        out.append(grant)
+        if line.get("sid") == BY_NAME:
+            consume(line)
+
+    aura_grants = native_aura_granted(stats, said, native)
+    out.extend(aura_grants)
+    out.extend(native_triggered(stats,said,native))
+    slot_grants = native_skill_granted(stats, said, native)
+    out.extend(slot_grants)
+    numeric_grants.extend(g for g in slot_grants if g.get("talent_key"))
+    level_observations = [line for line in original if type(line.get("id")) is int and line["id"] == 203]
+    selectors = [line for line in original if type(line.get("id")) is int and line["id"] == 202]
+    for named in selectors if len(selectors) == 1 else []:
+        if all(named is not remaining for remaining in stats):
+            continue
+        if type(named.get("id")) is not int or named["id"] != 202:
+            continue
+        number = _native_grant_number(named)
+        got = by_id.get(number)
+        if got is None:
+            continue
+        # A separate description operand does not prove which duplicate or
+        # ranged statement belongs to this grant. No adjacency or range join.
+        grant = spoken(got, None, said)
+        grant.update(talent_id=number, talent_key=got["key"], talent_class=got["class"],
+                     provenance={"kind": "decoded", "basis": "source-bound native talent insertion key",
+                                 "selector_stat_id": 202,
+                                 "source": "Hero_Siege.exe", "source_sha256": native["source_sha256"],
+                                 "native_contract_id": native["native_contract_id"],
+                                 "scope": "static_native_numeric_map_insertion_key", "runtime_value_inferred": False},
+                     source_stats=[copy.deepcopy(named)])
+        if level_observations and domain.get("level_stat_id") == 203 and domain.get("level_is_separate") is True:
+            grant["level_operand_observations"] = {"scope": "record_stat_observations", "pairing_certified": False,
+                                                   "range_pairing_certified": False, "stats": copy.deepcopy(level_observations)}
+        consume(named)
+        numeric_grants.append(grant)
+        out.append(grant)
+    text_identities = {(grant["talent_key"], grant["talent_class"]) for grant in text_grants}
+    numeric_identities = {(grant["talent_key"], grant["talent_class"]) for grant in numeric_grants}
+    if text_identities and numeric_identities and text_identities != numeric_identities:
+        difference = {"kind": "different_explicit_text_and_numeric_talents", "same_grant_proven": False,
+                      "resolution": "independent_evidence_preserved",
+                      "text": [list(identity) for identity in sorted(text_identities, key=lambda identity: (identity[0], identity[1] or ""))],
+                      "numeric": [list(identity) for identity in sorted(numeric_identities, key=lambda identity: (identity[0], identity[1] or ""))]}
+        for grant in out:
+            grant["evidence_conflict"] = copy.deepcopy(difference)
+    return out or None
+
+
+def granted(tkey, stats, talents, told, by_number, by_spoken, pins, said, native=None):
     """What the item does, out of the talents it grants — a list, because some
     items grant several.
 
@@ -437,14 +985,20 @@ def granted(tkey, stats, talents, told, by_number, by_spoken, pins, said):
     both answer they disagree sixty times over, and the third witness sides with
     the number on fifty-nine of them.
     """
-    if not talents:
+    if native is None and any("id_source" in row for row in (by_number or {}).values()):
+        native = {"by_id": {}, "status": "unsupported"}
+    if native is not None:
+        return native_granted(stats, by_spoken, said, native)
+    if not (talents or by_number or by_spoken):
         return None
     out = []
     for line in [s for s in stats if s.get("sid") == BY_NAME and s.get("spell")]:
         got = by_spoken.get(flat(line["spell"]))
         if got:
             stats.remove(line)
-            out.append(spoken(got, [line.get("min"), line.get("max")], said))
+            grant = spoken(got, [line.get("min"), line.get("max")], said)
+            grant.update(provenance={"kind": "decoded", "basis": "spell name"}, source_stats=[dict(line)])
+            out.append(grant)
 
     marks = [s for s in stats if s.get("sid") == GRANTS]
     # The item's own key spells out one talent and only one, so it answers only
@@ -465,15 +1019,20 @@ def granted(tkey, stats, talents, told, by_number, by_spoken, pins, said):
     # says which — so twenty-three of them are named here and nowhere else.
     if not marks:
         if by_key:
-            out.append(spoken(by_key, None, said))
+            grant = spoken(by_key, None, said)
+            grant["provenance"] = {"kind": "inferred", "basis": "item key"}
+            out.append(grant)
         return out or None
 
     for named in marks:
         got = by_key
+        basis = {"kind": "inferred", "basis": "item key"}
         if not got and named.get("min") is not None:
             got = at_number(named["min"], by_number, pins)
+            basis = {"kind": "inferred", "basis": "numbering anchors"}
         if not got and alone and not out:
             got = (told or {}).get(tkey)
+            basis = {"kind": "reference", "source": "HSPlanner"}
         if not got:
             continue
         # The level it is granted at is a roll like any other, stated under the
@@ -495,7 +1054,9 @@ def granted(tkey, stats, talents, told, by_number, by_spoken, pins, said):
         # and the number itself is plumbing: the game prints the talent's name
         # in its place, which is now what this returns
         stats.remove(named)
-        out.append(spoken(got, [levels.get("min"), levels.get("max")] if levels else None, said))
+        grant = spoken(got, [levels.get("min"), levels.get("max")] if levels else None, said)
+        grant.update(provenance=basis, source_stats=[dict(s) for s in (named, levels) if s is not None])
+        out.append(grant)
     return out or None
 
 
@@ -506,7 +1067,8 @@ def spoken(got, levels, said):
         # a per cent sign — or a key it looks up, and `tal_seconds` is "s" in
         # English and "с" in Russian. Printed raw it read "40tal_seconds".
         mark, unit = e["mark"], said(e["mark"]) if e["mark"].startswith("tal_") else None
-        got_line = {"start": e["start"], "per": e["per_level"],
+        got_line = {"index": e.get("index"), "start": e["start"], "per": e["per_level"],
+                    "mark_known": e.get("mark_known"),
                     "mark": "" if unit else mark,
                     "of": said(e["desc"]) or {"en": e["desc"]}}
         if unit:
@@ -519,11 +1081,25 @@ def spoken(got, levels, said):
         "lines": [line(e) for e in got.get("effects") or []],
         "lasts": got.get("duration"),
         "levels": levels,
+        "talent_source": {field: got[field] for field in
+                          ("raw_fields", "interpretation_sources", "constructor_inheritance",
+                           "inheritance_application", "field_write_sources", "field_write_expressions", "field_value_interpretations", "unresolved_fields", "notes",
+                           "interpretation_notes", "control_flow_complete", "id_source", "kind", "kind_source") if field in got},
     }
 
 
+def unique_talent_index(rows, key):
+    groups = {}
+    for row in rows:
+        value = key(row)
+        if value:
+            groups.setdefault(value, []).append(row)
+    return {value: records[0] for value, records in groups.items() if len(records) == 1}
+
+
 def build(raw_items, csv_path, langs, icons_by_name, tidy, tables, say=None, talent_rows=None,
-          named=None):
+          named=None, stat_names=None, talent_id_contract=None, talent_id_source_sha256=None,
+          item_aura_slot_contract=None, item_effect_contract=None, item_condition_contract=None):
     """Every item worth a page, keyed by the game's own translation key.
 
     `icons_by_name` is the icon sheet's boxes, so an item that has one shows it
@@ -539,16 +1115,18 @@ def build(raw_items, csv_path, langs, icons_by_name, tidy, tables, say=None, tal
     # everything else names them with. Both off the list rather than one off
     # the other: two talents are called `blazingTrail`, so a table keyed by
     # name is one number short.
-    talents = {}
-    for row in talent_rows or []:
-        talents.setdefault(row["key"].lower(), row)
+    talents = unique_talent_index(talent_rows or [], lambda row: row["key"].lower())
     by_number = {t["id"]: t for t in (talent_rows or []) if t.get("id")}
-    by_spoken = {}
-    for row in talent_rows or []:
-        spoken_as = ((say.by_key.get(f"talent_name_{row['key']}") if say else None) or {}).get("en")
-        if spoken_as:
-            by_spoken.setdefault(flat(spoken_as), row)
-    pins = pinned(raw_items, talents)
+    by_spoken = unique_talent_index(talent_rows or [], lambda row: flat(
+        ((say.by_key.get(f"talent_name_{row['key']}") if say else None) or {}).get("en") or ""))
+    current_native = (stat_names is not None or talent_id_contract is not None
+                      or talent_id_source_sha256 is not None
+                      or any("id_source" in row for row in talent_rows or []))
+    native = native_talent_context(talent_rows or [], talent_id_contract, talent_id_source_sha256) if current_native else None
+    if native is not None:
+        native["aura_slots"] = item_aura_slot_contract
+        native['item_effects'] = item_effect_contract
+    pins = [] if current_native else pinned(raw_items, talents)
     rows = text_rows(csv_path)
 
     def said(key):
@@ -571,13 +1149,19 @@ def build(raw_items, csv_path, langs, icons_by_name, tidy, tables, say=None, tal
                 out[lang] = word
         return out or None
 
+    socket_items=item_conditions.socket_catalogue(raw_items,said,item_condition_contract)
     # what a socket name refers to, for the runeword recipes below
     by_name = {}
+    current_type_names = {}
     for it in raw_items:
         m = it.get("metadata") or {}
         tk = m.get("tkey") or ""
         if m.get("name") and (tk.startswith("socketable") or m.get("type") in ("Rune", "Orb", "Gem")):
             by_name.setdefault(tidy(m["name"]), tk)
+        identity = m.get("ID")
+        if (isinstance(identity, list) and len(identity) == 3 and m.get("type")
+                and all(field in (m.get("fromGame") or []) for field in ("ID", "type"))):
+            current_type_names.setdefault(identity[2], set()).add(m["type"])
 
     items = {}
     for it in raw_items:
@@ -587,14 +1171,7 @@ def build(raw_items, csv_path, langs, icons_by_name, tidy, tables, say=None, tal
         # Keyed by tkey rather than by name, because two different things can
         # share one: Death's Scythe is both a Satanic Set weapon and a common
         # relic, and keying by name kept whichever came first.
-        if not tkey or tkey == "-Unknown Name-":
-            continue
-        # `item_type_gem`, `item_type_belt` and seventeen more are the names of
-        # the kinds, sitting in the table beside the things — no type, no stats,
-        # no art, because they are labels and not items.
-        if tkey.startswith("item_type_"):
-            continue
-        if tkey in items:
+        if not tkey:
             continue
         told = said(tkey)
         # The game's own English name leads; the snapshot's fills a gap. Where
@@ -606,13 +1183,40 @@ def build(raw_items, csv_path, langs, icons_by_name, tidy, tables, say=None, tal
         shown = (told or {}).get("en") or (name or "").strip()
         if not shown or shown == "Unknown Name":
             shown = out_of_key(tkey, m.get("type"))
-        if not shown:
-            continue
+        if not shown or shown == "-Unknown Name-":
+            shown = "Unidentified item"
         low = tidy(shown)
-        stats = [stat_line(s) for s in (it.get("stats") or []) if s.get("sid") or s.get("id") in BY_ID]
-        gives = granted(tkey, stats, talents, named, by_number, by_spoken, pins, said)
+        stats = []
+        for stat in it.get("stats") or []:
+            stats.append(stat_line(stat, stat_names))
+        gives = granted(tkey, stats, talents, named, by_number, by_spoken, pins, said, native=native)
+        gives=gives or []
+        mechanics=native_presentation(stats,gives,said,native) if native is not None else []
+        modes = variants(it, stat_names,conditions=item_condition_contract,socket_items=socket_items,said=said)
+        if native is not None:
+            for mode in modes:
+                storage=[]
+                conditional = native_granted_scoped(mode['stats'], by_spoken, said, native,mechanics=storage)
+                if storage:
+                    mode['mechanics']=storage
+                if conditional:
+                    mode['grants'] = conditional
+                    for grant in conditional:
+                        grant['condition'] = {key: mode[key] for key in ('when', 'channel', 'scope') if key in mode}
+                        if grant.get('outer_selector') is not None:
+                            grant['condition']['outer_selector']=copy.deepcopy(grant['outer_selector'])
+                        grant['provenance']['levels_scope'] = 'conditional_item_definition'
+        rate = drop_denominator(it)
+        places = (it.get("dropPlaces") or []) if field_is_current(it, "dropPlaces") else []
+        if isinstance(places, str):
+            places = [places]
+        factor = it.get("chaseDropRate") if field_is_current(it, "chaseDropRate") else None
+        chase = max(1, int(rate * factor)) if rate and places and isinstance(factor, (int, float)) and factor > 0 else None
+        record_id = m.get("record_id") or it.get("record_id") or ":".join(
+            [tkey, *(str(n) for n in (m.get("ID") or [])), str(m.get("tier") or "")])
         rec = {
             "key": tkey,
+            "record_id": record_id,
             "name": shown,
             "rarity": m.get("rarity"),
             "tier": m.get("tier"),
@@ -625,22 +1229,36 @@ def build(raw_items, csv_path, langs, icons_by_name, tidy, tables, say=None, tal
             "size": [m.get("Width"), m.get("Height")] if m.get("Width") else None,
             "stats": stats,
             "grants": gives,
-            "places": tables["DROP_PLACES"].get(low) or it.get("dropPlaces") or [],
-            "rate": tables["DROP_RATE"].get(low) or plain((it.get("droprate") or {}).get("base")),
-            "chase": tables["DROP_CHASE"].get(low),
+            "mechanics": mechanics,
+            "reference": ["granted skill"] if any(g.get("provenance", {}).get("kind") == "reference" for g in gives or []) else None,
+            "inferred": ["granted skill"] if any(g.get("provenance", {}).get("kind") == "inferred" for g in gives or []) else None,
+            "places": places,
+            "rate": rate,
+            "chase": chase,
             "names": told,
             "lore": said(f"lore_{tkey}"),
-            "icon": icons_by_name.get(low) or icons_by_name.get(tidy(name)),
+            "icon": icons_by_name.get("record:" + record_id) or icons_by_name.get(low) or icons_by_name.get(tidy(name)),
+            "iconSource": "game" if icons_by_name.get("record:" + record_id) else "name_match",
             "sockets": sockets(it, by_name, tidy),
+            "recipeSource": (it.get("runeword_recipe") or {}).get("proof"),
             "weapons": weapons(it),
             "set": m.get("Item Set"),
-            "base": (BASE.get(it.get("runewordItemType"))
-                     if isinstance(it.get("runewordItemType"), int)
-                     else " or ".join(BASE.get(n, str(n))
-                                      for n in it.get("runewordItemType") or [])) or None,
-            "more": variants(it),
+            "base": made_in(it, current_type_names),
+            "more": modes,
+            "provenance": it.get("provenance") or m.get("provenance"),
+            "unknowns": it.get("unknowns") or m.get("unknowns"),
         }
-        items[tkey] = {k: v for k, v in rec.items() if v not in (None, [], {})}
+        record = {k: v for k, v in rec.items() if v not in (None, [], {})}
+        if tkey in items:
+            # Translation keys name families as well as individual records.
+            # Retain every grade/identity while the family key keeps old links.
+            siblings = items[tkey].setdefault("variants", [])
+            occupied = {items[tkey]["record_id"], *(r["record_id"] for r in siblings)}
+            if record["record_id"] in occupied:
+                record["record_id"] += f":{len(siblings) + 1}"
+            siblings.append(record)
+        else:
+            items[tkey] = record
 
     # Sets: which pieces belong to each, and what the set is called in every
     # language. The game keys those under `*_setname` and the item data names
@@ -666,7 +1284,7 @@ def build(raw_items, csv_path, langs, icons_by_name, tidy, tables, say=None, tal
     # in — so the commonest-first sort survived the file and died on arrival,
     # with "Unnamed stat 104" at the head of the list.
     vocab = {}
-    for rec in items.values():
+    for rec in item_records(items):
         every = list(rec.get("stats") or [])
         for v in rec.get("more") or []:
             every += v["stats"]
@@ -674,5 +1292,10 @@ def build(raw_items, csv_path, langs, icons_by_name, tidy, tables, say=None, tal
             row = vocab.setdefault(s["sid"], {"sid": s["sid"], "text": s["text"], "n": 0})
             if s.get("unit"):
                 row["unit"] = s["unit"]
+            for field in ('names','unitSource'):
+                if field in s:
+                    row[field]=s[field]
+            if s.get('unitSource')=='native_item_effect':
+                row['unit']=s.get('unit','')
             row["n"] += 1
     return items, sorted(vocab.values(), key=lambda v: (-v["n"], v["text"])), kits
