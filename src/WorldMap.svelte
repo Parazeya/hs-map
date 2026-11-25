@@ -233,6 +233,7 @@
   }
 
   function onwheel(e) {
+    if (e.target.closest?.('.mf')) return;
     e.preventDefault();
     const r = stage.getBoundingClientRect();
     zoomAt(e.clientX - r.left, e.clientY - r.top, e.deltaY < 0 ? 1.12 : 1 / 1.12);
@@ -314,16 +315,12 @@
 
   // ── pointer ────────────────────────────────────────────────────────────────
   let drag = null;
-  let pressed = null;       // the marker a press started on; see up()
 
   function down(e) {
-    if (e.button !== 0) return;
-    // On the GL path the press is picked here, because there is no element
-    // under the pointer to hear its own pointerdown. It is the same fact
-    // either way: which marker the press started on.
-    //
-    if (scene) pressed = scene.pick(e);
-    drag = { id: e.pointerId, x: e.clientX, y: e.clientY, ox: view.x, oy: view.y, moved: 0 };
+    if (drag || !e.isPrimary || e.button !== 0 || e.target.closest?.('.mf')) return;
+    const room = e.target.closest?.('.node')?.dataset.room;
+    const pressed = scene ? scene.pick(e) : room && data.nodes.find((node) => node.room === room);
+    drag = { id: e.pointerId, x: e.clientX, y: e.clientY, ox: view.x, oy: view.y, moved: 0, pressed };
     stage.setPointerCapture(e.pointerId);
     hovered = null;
     overMarker = false;
@@ -331,13 +328,18 @@
   }
 
   function move(e) {
-    if (drag && e.pointerId === drag.id) {
+    if (drag) {
+      if (e.pointerId !== drag.id) return;
+      if (e.pointerType === 'mouse' && !(e.buttons & 1)) {
+        clearDrag();
+        return;
+      }
       const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
       drag.moved = Math.max(drag.moved, Math.abs(dx) + Math.abs(dy));
       setView({ ...view, x: drag.ox + dx, y: drag.oy + dy });
       return;
     }
-    if (!scene) return;
+    if (!scene || e.pointerType === 'touch') return;
     // After the pan, not before: the markers move under a still pointer during
     // a drag, and the DOM map's buttons fire their own enter and leave as they
     // pass beneath it. A scan over 72 boxes is what that cost instead.
@@ -352,31 +354,26 @@
     hovered = null;
   }
 
-  function cancel(e) {
-    if (!drag || e.pointerId !== drag.id) return;
+  function clearDrag() {
+    const id = drag?.id;
     drag = null;
-    pressed = null;
+    if (id != null && stage?.hasPointerCapture(id)) stage.releasePointerCapture(id);
     dragging = false;
     hovered = null;
     overMarker = false;
   }
 
+  function cancel(e) {
+    if (e.pointerId === drag?.id && (e.type !== 'lostpointercapture' || e.target === stage)) clearDrag();
+  }
+
   function up(e) {
     if (!drag || e.pointerId !== drag.id) return;
-    // A press that went nowhere is a click, and it is decided here rather than
-    // on the marker, because the marker never hears its own.
-    //
-    // The stage captures the pointer on the way down — that is what lets a drag
-    // carry on past the edge of whatever it started on — and a captured pointer
-    // sends its pointerup, and with it the click, to the element holding the
-    // capture. So every click on a marker was delivered to the stage, which
-    // read it as a press on empty space and let the active one go: "click a
-    // marker to keep it" did nothing at all, from the day the drag was written.
-    //
-    // `pressed` is the marker the press started on, recorded while the pointer
-    // was still being routed normally on the DOM path, and picked in down() on
-    // the GL one.
-    if (drag.moved < 4) {
+    const { pressed, moved, x, y } = drag;
+    // Capture sends the release to the stage. Use the marker picked on press
+    // and check the final position in case the browser coalesced a move.
+    const tappedMap = moved < 4 && Math.abs(e.clientX - x) + Math.abs(e.clientY - y) < 4;
+    if (tappedMap) {
       active = pressed && active?.room !== pressed.room ? pressed : null;
     }
     // The button is focused by hand on the GL path, because pressing one no
@@ -390,16 +387,14 @@
     // the press's default action and it undoes anything done earlier in the
     // same event, microtask or not. `preventScroll` because `main` scrolls, and
     // a focus that scrolled it would move the map out from under the pointer.
-    if (scene && pressed && drag.moved < 4) {
+    if (scene && pressed && tappedMap) {
       world?.querySelector(`.node[data-room="${pressed.room}"]`)?.focus({ preventScroll: true });
       // AFTER the focus, not before: focusing one button blurs another, and
       // that blur clears this on its way past.
       tapped = pressed.room;
     }
-    pressed = null;
-    drag = null;
-    dragging = false;
-    if (scene) {
+    clearDrag();
+    if (scene && e.pointerType !== 'touch') {
       const hit = scene.pick(e);
       overMarker = !!hit;
       hovered = hit;
@@ -421,6 +416,8 @@
   }
 </script>
 
+<svelte:window onblur={clearDrag} />
+
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
   class="stage"
@@ -435,6 +432,7 @@
   onpointerup={up}
   onpointercancel={cancel}
   onlostpointercapture={cancel}
+  ondragstart={(e) => e.preventDefault()}
 >
   {#if drawn === 'gl'}
     <!-- Two of them, because the names have to sit between the links and the
@@ -548,7 +546,6 @@
         aria-pressed={on}
         onpointerenter={drawn === 'dom' ? () => (hovered = node) : null}
         onpointerleave={drawn === 'dom' ? () => (hovered = null) : null}
-        onpointerdown={drawn === 'dom' ? () => (pressed = node) : null}
         onblur={() => (tapped = null)}
         onclick={(e) => press(e, node)}
       >

@@ -211,9 +211,9 @@
     {/each}
   </select>
   <button type="button" onclick={() => { active = null; map.fit(); }}>{t('Fit')}</button>
-  <a class="go" href={asset('codex.html')}>{t('Items')} ▶</a>
-  <a class="go" href={asset('skills.html')}>{t('Skills')} ▶</a>
-  <a class="go" href={asset('bounty.html')}>{t('Bounties')} ▶</a>
+  <a class="go" href={asset('codex.html')} draggable="false">{t('Items')} ▶</a>
+  <a class="go" href={asset('skills.html')} draggable="false">{t('Skills')} ▶</a>
+  <a class="go" href={asset('bounty.html')} draggable="false">{t('Bounties')} ▶</a>
   <button type="button" class="only-narrow" class:on={panel} onclick={() => (panel = !panel)}>
     {panel ? '✕' : '☰'}
   </button>
