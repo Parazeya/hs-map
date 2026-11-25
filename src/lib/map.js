@@ -71,9 +71,20 @@ export const called = (rec, key, lang) => rec?.names?.[lang] || titleCase(key);
 export const titleCase = (s) => s.replace(/(^|[\s([-])\p{Ll}/gu, (c) => c.toUpperCase());
 
 export function zoneDropOdds(node, name, items) {
-  if (node.reference_drops?.includes(name)) return null;
-  return items[name]?.chase ?? items[name]?.rate;
+  const { chase, rate } = items[name] ?? {};
+  if (!node.reference_drops?.includes(name) && Number.isFinite(chase) && chase > 0) {
+    return { odds: chase, oddsBasis: 'zone' };
+  }
+  if (Number.isFinite(rate) && rate > 0) return { odds: rate, oddsBasis: 'base' };
+  return { odds: null, oddsBasis: null };
 }
+
+const BASE_ODDS = {
+  en: 'Base', fi: 'Perus', pt: 'Base', ru: 'Базовый', zh: '基础', ja: '基本',
+  ko: '기본', de: 'Basis', fr: 'De base', sp: 'Base', pl: 'Bazowa',
+};
+
+export const baseOddsLabel = (lang) => BASE_ODDS[lang] ?? BASE_ODDS.en;
 
 /** "1 in 46k" — a drop rate is a denominator, and a bare 46750 says nothing. */
 /**

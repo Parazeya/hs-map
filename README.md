@@ -68,7 +68,7 @@ selected game build.
 
 The map uses current drop locations first. When a current item has no location
 data, matching entries from the previously published map can fill in the zone
-list. Those entries have no zone odds.
+list. Their current base odds are labelled in the drop list when available.
 
 ## Building it
 

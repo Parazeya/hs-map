@@ -251,12 +251,12 @@
           rows={hovered.drops.map((n) => ({
             name: n,
             inferno: data.items[n]?.inferno,
-            odds: zoneDropOdds(hovered, n, data.items),
+            ...zoneDropOdds(hovered, n, data.items),
           }))}
           boss={hovered.boss ?? null}
           foot={hovered.key
             ? `${t('opened with')} ${t(hovered.key)}`
-            : hovered.drops.some((n) => zoneDropOdds(hovered, n, data.items))
+            : hovered.drops.length && hovered.drops.every((n) => zoneDropOdds(hovered, n, data.items).oddsBasis === 'zone')
               ? t('the odds are for standing in this zone')
               : null}
         />
