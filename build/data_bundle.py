@@ -192,11 +192,22 @@ def verify_item_coverage(rows, items):
     return {"input_records": len(expected), "output_records": len(actual), "families": len(items)}
 
 
+MAP_MARKER_EXCLUSIONS = {"Cabin_01_rm": "tutorial_cabin_without_drops"}
+
+
 def verify_map_marker_sources(native, rendered):
-    by_room = {row["room"]: row for row in native}
+    exported = {row["room"]: row for row in native}
+    if len(exported) != len(native):
+        raise BundleError("Map export duplicated a marker identity")
+    excluded = [{"room": room, "reason": MAP_MARKER_EXCLUSIONS[room]}
+                for room in sorted(exported.keys() & MAP_MARKER_EXCLUSIONS.keys())]
+    by_room = {room: row for room, row in exported.items() if room not in MAP_MARKER_EXCLUSIONS}
     shown, references = set(), []
+    native_shown = set()
     for row in rendered:
         room, source = row["room"], row.get("source") or {}
+        if room in MAP_MARKER_EXCLUSIONS:
+            raise BundleError(f"Map generation displayed excluded marker: {room}")
         if room in shown:
             raise BundleError("Map generation duplicated a marker identity")
         shown.add(room)
@@ -204,6 +215,7 @@ def verify_map_marker_sources(native, rendered):
             current = by_room.get(room)
             if current is None or (row["x"], row["y"]) != (current["x"], current["y"]):
                 raise BundleError("A native map marker lost its verified coordinates")
+            native_shown.add(room)
         elif source.get("kind") == "inferred":
             anchor = by_room.get(source.get("anchor_room"))
             reference = source.get("reference") or {}
@@ -216,10 +228,10 @@ def verify_map_marker_sources(native, rendered):
             references.append({"room": room, "source": source})
         else:
             raise BundleError("A map marker has no coordinate provenance")
-    missing = set(by_room) - shown
+    missing = by_room.keys() - native_shown
     if missing:
         raise BundleError("Map generation omitted verified native markers: " + ", ".join(sorted(missing)))
-    return {"native_exported": len(native), "native_shown": len(by_room),
+    return {"native_exported": len(native), "native_shown": len(native_shown), "native_excluded": excluded,
             "reference_markers": len(references), "rendered_markers": len(rendered), "references": references}
 
 
@@ -282,6 +294,21 @@ ROMAN = {"I": 1, "II": 2, "III": 3, "IV": 4, "V": 5, "VI": 6,
 
 
 def place_codes(place: str, rooms) -> list[str]:
+    act_number = r"[IVX]+|\d+"
+    if dungeon := re.fullmatch(
+            rf"(?:Act\s+((?:{act_number})(?:\s*(?:&|and)\s*(?:Act\s+)?(?:{act_number}))*)\s+)?"
+            r"(Boss\s+)?Dungeons?", place.strip(), re.I):
+        suffix = "BD" if dungeon[2] else "D"
+        if dungeon[1]:
+            acts = {int(token) if token.isdigit() else ROMAN.get(token.upper())
+                    for token in re.findall(act_number, dungeon[1], re.I)}
+        else:
+            room_pattern = r"Act_(\d\d)_Boss(?:_Dungeon_\d+)?"
+            if not dungeon[2]:
+                room_pattern = r"Act_(\d\d)_\d\d"
+            acts = {int(room[1]) for name in rooms if (room := re.fullmatch(room_pattern, name))}
+        return [f"{act}-{suffix}" for act in sorted(acts - {None})]
+
     match = re.search(r"\bAct\s+([IVX]+|\d+)\s+(.*)", place, re.I)
     if not match:
         return []

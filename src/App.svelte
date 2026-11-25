@@ -1,5 +1,5 @@
 <script>
-  import { KIND, asset, called, load, nameOf, recall } from './lib/map.js';
+  import { KIND, asset, called, load, nameOf, recall, zoneDropOdds } from './lib/map.js';
   import { speak } from './lib/lang.js';
   import { talk } from './lib/say.js';
   import WorldMap from './WorldMap.svelte';
@@ -83,7 +83,7 @@
     const codes = new Set(data.items[peek.name]?.zones ?? []);
     const rooms = new Set(
       data.nodes
-        .filter((n) => (n.code && codes.has(n.code)) || (n.boss && who.has(n.boss)))
+        .filter((n) => (n.code && codes.has(n.code)) || (n.boss && who.has(n.boss)) || n.reference_drops?.includes(peek.name))
         .map((n) => n.room),
     );
     return { who, rooms };
@@ -251,12 +251,12 @@
           rows={hovered.drops.map((n) => ({
             name: n,
             inferno: data.items[n]?.inferno,
-            odds: data.items[n]?.chase ?? data.items[n]?.rate,
+            odds: zoneDropOdds(hovered, n, data.items),
           }))}
           boss={hovered.boss ?? null}
           foot={hovered.key
             ? `${t('opened with')} ${t(hovered.key)}`
-            : hovered.drops.length
+            : hovered.drops.some((n) => zoneDropOdds(hovered, n, data.items))
               ? t('the odds are for standing in this zone')
               : null}
         />

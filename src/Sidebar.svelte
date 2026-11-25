@@ -1,5 +1,5 @@
 <script>
-  import { KIND, asset, called, figure, nameOf, odds, titleCase, withMF } from './lib/map.js';
+  import { KIND, asset, called, figure, nameOf, odds, titleCase, withMF, zoneDropOdds } from './lib/map.js';
   import { mf } from './lib/mf.svelte.js';
   import { talk } from './lib/say.js';
   import ItemIcon from './ItemIcon.svelte';
@@ -166,15 +166,18 @@
         <ul class="rows">
           {#each active.drops as name (name)}
             {@const item = data.items[name] ?? {}}
+            {@const chance = zoneDropOdds(active, name, data.items)}
             <li class:lit={peek?.name === name} {...row(name)}>
               <ItemIcon {item} sheet={data.sheet} />
               <span class="name {cls(item.rarity)}">{called(item, name, lang)}</span>
               {#if item.inferno}<span class="inferno">INF</span>{/if}
-              <span class="odds">{odds(item.chase ?? item.rate)}{#if mf.value > 0 && (item.chase ?? item.rate)}<span class="mine">({figure(withMF(item.chase ?? item.rate, mf.value))})</span>{/if}</span>
+              <span class="odds">{odds(chance)}{#if mf.value > 0 && chance}<span class="mine">({figure(withMF(chance, mf.value))})</span>{/if}</span>
             </li>
           {/each}
         </ul>
-        <p class="foot">{t('the odds are for standing in this zone')}</p>
+        {#if active.drops.some((name) => zoneDropOdds(active, name, data.items))}
+          <p class="foot">{t('the odds are for standing in this zone')}</p>
+        {/if}
       {/if}
     </section>
   {/if}

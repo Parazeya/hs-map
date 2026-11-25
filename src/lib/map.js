@@ -70,6 +70,11 @@ export const called = (rec, key, lang) => rec?.names?.[lang] || titleCase(key);
  */
 export const titleCase = (s) => s.replace(/(^|[\s([-])\p{Ll}/gu, (c) => c.toUpperCase());
 
+export function zoneDropOdds(node, name, items) {
+  if (node.reference_drops?.includes(name)) return null;
+  return items[name]?.chase ?? items[name]?.rate;
+}
+
 /** "1 in 46k" — a drop rate is a denominator, and a bare 46750 says nothing. */
 /**
  * The same odds for a reader carrying `mf` percent of magic find.

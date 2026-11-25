@@ -36,11 +36,12 @@ import item_effects
 import item_conditions
 import reference_sources
 import reference_sets
+import reference_zones
 import skills as skilltree
 import suits
 import portraits
 import unholy
-from data_bundle import Bundle, BundleError, attach_exclusive_sources, configured_game, item_records, tables_from_items, verify_item_coverage, verify_map_marker_sources
+from data_bundle import Bundle, BundleError, MAP_MARKER_EXCLUSIONS, attach_exclusive_sources, configured_game, item_records, tables_from_items, verify_item_coverage, verify_map_marker_sources
 from publication import BuildLock, publish, recover
 
 HERE = Path(__file__).resolve().parent.parent
@@ -62,6 +63,8 @@ CHEST_REFERENCE = reference_sources.catalogue()
 SOURCE["reference_chest_drops"] = CHEST_REFERENCE["reference"]
 SET_REFERENCE = reference_sets.catalogue()
 SOURCE['reference_item_sets'] = SET_REFERENCE['reference']
+ZONE_REFERENCE = reference_zones.catalogue()
+SOURCE["reference_zone_drops"] = ZONE_REFERENCE["reference"]
 AURA_SLOTS = item_grant_slots.discover(GAME / "Hero_Siege.exe", next(
     (row["sha256"] for row in BUNDLE.game["files"] if row["path"] == "Hero_Siege.exe"), None))
 SOURCE["item_aura_slots"] = {key: AURA_SLOTS[key] for key in
@@ -991,6 +994,8 @@ def main():
         raise BundleError("Extractor map coordinates and current background dimensions do not match")
     for r in map_data["nodes"]:
         room = r["room"]
+        if room in MAP_MARKER_EXCLUSIONS:
+            continue
         code = zone_code(room)
         kind = ("town" if room.startswith("Town")
                 else "dungeon" if "Boss" in room
@@ -1106,6 +1111,8 @@ def main():
     # a step on the way through an act — and after the vocabulary is up, which
     # is what gives them their names.
     nodes += dungeon_nodes(nodes, per_code, t, say, names)
+    restored = reference_zones.merge_map(items, nodes, ZONE_REFERENCE)
+    print(f"sources  {restored} published zone entries retained as unverified reference data")
     marker_coverage = verify_map_marker_sources(map_data["nodes"], nodes)
     SOURCE["map_markers"] = {key: value for key, value in marker_coverage.items() if key != "references"}
     (DIAGNOSTICS / "map-marker-coverage.json").write_text(

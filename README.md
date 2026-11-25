@@ -24,12 +24,14 @@ records from the manifest, including their source evidence. The values are marke
 **centres** in the background sprite's pixel space. Historical independent
 comparison notes remain in `tools/map/` in the Tracker repository.
 
-Every native marker is retained, including the Cabin. The site also displays
-26 dungeon shortcuts from a community catalogue. Their zone associations are
+The tutorial cabin (`Cabin_01_rm`) remains in the source export and is omitted
+from the drop map because it has no drops. All other native markers are shown.
+The site also displays 26 dungeon shortcuts from a community catalogue. Their zone associations are
 unverified reference data and their positions are schematic offsets beside
 native markers. Each data record carries an explicit
 reference and inferred-coordinate provenance. `diagnostics/map-marker-coverage.json`
-checks native coverage and lists these additional markers separately.
+checks native coverage and records the tutorial cabin exclusion and the inferred
+markers separately.
 
 **The paths between markers** are the one thing on the page the game does not
 draw. `Map_Zone_Line_obj` is compiled in — a create event, a step and a draw, and
@@ -63,6 +65,10 @@ items and talents from that same bundle rather than from separate Tracker files.
 Unresolved numeric values and separate item records survive the build. Reference
 catalogue additions carry their source and are marked as unverified for the
 selected game build.
+
+The map uses current drop locations first. When a current item has no location
+data, matching entries from the previously published map can fill in the zone
+list. Those entries have no zone odds.
 
 ## Building it
 

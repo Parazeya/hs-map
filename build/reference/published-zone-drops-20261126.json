@@ -1,0 +1,1140 @@
+{
+  "schema_version": 1,
+  "reference": {
+    "url": "https://parazeya.github.io/hs-map/",
+    "data_url": "https://parazeya.github.io/hs-map/data/map.json",
+    "captured_date": "2026-11-20",
+    "snapshot_commit": "6a39f9b634d77906d26fdf2c18d067fe7c964f90",
+    "snapshot_sha256": "ce57efed86153c4aecc1ae8b5c24aff75da99e3a7541f151de026b371857dc3f",
+    "verified_for_game_build": false
+  },
+  "zones": [
+    {
+      "room": "Act_01_01",
+      "code": "1-1",
+      "drops": [
+        {"item": "bonetti's rapier", "rarity": "Heroic"},
+        {"item": "tectonic grips", "rarity": "Heroic"},
+        {"item": "the eye of tarethiel", "rarity": "Heroic"},
+        {"item": "arachno phobia", "rarity": "Heroic"},
+        {"item": "giant's band of strength", "rarity": "Heroic"},
+        {"item": "ukko's revenge", "rarity": "Heroic"},
+        {"item": "belt of skulls", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_01_02",
+      "code": "1-2",
+      "drops": [
+        {"item": "bonetti's rapier", "rarity": "Heroic"},
+        {"item": "tectonic grips", "rarity": "Heroic"},
+        {"item": "the eye of tarethiel", "rarity": "Heroic"},
+        {"item": "arachno phobia", "rarity": "Heroic"},
+        {"item": "giant's band of strength", "rarity": "Heroic"},
+        {"item": "ukko's revenge", "rarity": "Heroic"},
+        {"item": "belt of skulls", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_01_03",
+      "code": "1-3",
+      "drops": [
+        {"item": "bonetti's rapier", "rarity": "Heroic"},
+        {"item": "clafaxier's legacy", "rarity": "Heroic"},
+        {"item": "tectonic grips", "rarity": "Heroic"},
+        {"item": "the eye of tarethiel", "rarity": "Heroic"},
+        {"item": "giant's band of strength", "rarity": "Heroic"},
+        {"item": "ukko's revenge", "rarity": "Heroic"},
+        {"item": "tarethiel's ancient wisdom", "rarity": "Heroic"},
+        {"item": "belt of skulls", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_01_04",
+      "code": "1-4",
+      "drops": [
+        {"item": "dark knight's lance", "rarity": "Heroic"},
+        {"item": "clafaxier's legacy", "rarity": "Heroic"},
+        {"item": "tectonic grips", "rarity": "Heroic"},
+        {"item": "the eye of tarethiel", "rarity": "Heroic"},
+        {"item": "glowstick estoc", "rarity": "Heroic"},
+        {"item": "ukko's revenge", "rarity": "Heroic"},
+        {"item": "tarethiel's ancient wisdom", "rarity": "Heroic"},
+        {"item": "tombstone", "rarity": "Heroic"},
+        {"item": "belt of skulls", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_01_05",
+      "code": "1-5",
+      "drops": [
+        {"item": "dark knight's lance", "rarity": "Heroic"},
+        {"item": "tectonic grips", "rarity": "Heroic"},
+        {"item": "the eye of tarethiel", "rarity": "Heroic"},
+        {"item": "glowstick estoc", "rarity": "Heroic"},
+        {"item": "ukko's revenge", "rarity": "Heroic"},
+        {"item": "tombstone", "rarity": "Heroic"},
+        {"item": "belt of skulls", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_01_Boss_Dungeon_03",
+      "code": "1-BD",
+      "drops": [
+        {"item": "pagan god's blasphemy", "rarity": "Heroic"},
+        {"item": "quickening zephyr", "rarity": "Heroic"},
+        {"item": "eden's harvester", "rarity": "Heroic"},
+        {"item": "tectonic grips", "rarity": "Heroic"},
+        {"item": "shishkebab", "rarity": "Heroic"},
+        {"item": "ukko's revenge", "rarity": "Heroic"},
+        {"item": "gurag's stone crusher", "rarity": "Set"},
+        {"item": "tarethiel's ancient wisdom", "rarity": "Heroic"},
+        {"item": "sähköpuimuri", "rarity": "Heroic"},
+        {"item": "tombstone", "rarity": "Heroic"},
+        {"item": "stone of premonition", "rarity": "Heroic"},
+        {"item": "belt of skulls", "rarity": "Heroic"},
+        {"item": "gurag's pebble", "rarity": "Set"},
+        {"item": "gurag's heart charm", "rarity": "Set"}
+      ]
+    },
+    {
+      "room": "Act_02_01",
+      "code": "2-1",
+      "drops": [
+        {"item": "arcanum asphyxiators", "rarity": "Heroic"},
+        {"item": "soulburn belt", "rarity": "Heroic"},
+        {"item": "tarethiel's ancient wisdom", "rarity": "Heroic"},
+        {"item": "graxy's lucky lure", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_02_02",
+      "code": "2-2",
+      "drops": [
+        {"item": "arcanum asphyxiators", "rarity": "Heroic"},
+        {"item": "soulburn belt", "rarity": "Heroic"},
+        {"item": "sowyer's javelin of devastation", "rarity": "Heroic"},
+        {"item": "tarethiel's ancient wisdom", "rarity": "Heroic"},
+        {"item": "graxy's lucky lure", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_02_03",
+      "code": "2-3",
+      "drops": [
+        {"item": "arcanum asphyxiators", "rarity": "Heroic"},
+        {"item": "soulburn belt", "rarity": "Heroic"},
+        {"item": "sowyer's javelin of devastation", "rarity": "Heroic"},
+        {"item": "graxy's lucky lure", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_02_04",
+      "code": "2-4",
+      "drops": [
+        {"item": "wraith forged cleaver", "rarity": "Heroic"},
+        {"item": "arcanum asphyxiators", "rarity": "Heroic"},
+        {"item": "soulburn belt", "rarity": "Heroic"},
+        {"item": "shield of the abyss", "rarity": "Heroic"},
+        {"item": "luci's day", "rarity": "Heroic"},
+        {"item": "graxy's lucky lure", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_02_05",
+      "code": "2-5",
+      "drops": [
+        {"item": "wraith forged cleaver", "rarity": "Heroic"},
+        {"item": "arcanum asphyxiators", "rarity": "Heroic"},
+        {"item": "soulburn belt", "rarity": "Heroic"},
+        {"item": "shield of the abyss", "rarity": "Heroic"},
+        {"item": "luci's day", "rarity": "Heroic"},
+        {"item": "graxy's lucky lure", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_02_Boss_Dungeon_03",
+      "code": "2-BD",
+      "drops": [
+        {"item": "pagan god's blasphemy", "rarity": "Heroic"},
+        {"item": "wraith forged cleaver", "rarity": "Heroic"},
+        {"item": "quickening zephyr", "rarity": "Heroic"},
+        {"item": "eden's harvester", "rarity": "Heroic"},
+        {"item": "arcanum asphyxiators", "rarity": "Heroic"},
+        {"item": "plague bringer's touch", "rarity": "Heroic"},
+        {"item": "shishkebab", "rarity": "Heroic"},
+        {"item": "sähköpuimuri", "rarity": "Heroic"},
+        {"item": "graxy's lucky lure", "rarity": "Heroic"},
+        {"item": "death's grasp", "rarity": "Set"},
+        {"item": "doomweed vial", "rarity": "Satanic"},
+        {"item": "death's scythe", "rarity": "Set"},
+        {"item": "reaper's hood", "rarity": "Set"}
+      ]
+    },
+    {
+      "room": "Act_03_01",
+      "code": "3-1",
+      "drops": [
+        {"item": "plague bringer's touch", "rarity": "Heroic"},
+        {"item": "desert's storm", "rarity": "Heroic"},
+        {"item": "ancient aegis", "rarity": "Heroic"},
+        {"item": "recurving corrosion", "rarity": "Heroic"},
+        {"item": "nikita's kj-33 helmet", "rarity": "Heroic"},
+        {"item": "philosopher's stone", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_03_02",
+      "code": "3-2",
+      "drops": [
+        {"item": "venomsteel carapace", "rarity": "Heroic"},
+        {"item": "plague bringer's touch", "rarity": "Heroic"},
+        {"item": "desert's storm", "rarity": "Heroic"},
+        {"item": "ancient aegis", "rarity": "Heroic"},
+        {"item": "recurving corrosion", "rarity": "Heroic"},
+        {"item": "demon's mirror", "rarity": "Heroic"},
+        {"item": "nikita's kj-33 helmet", "rarity": "Heroic"},
+        {"item": "philosopher's stone", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_03_03",
+      "code": "3-3",
+      "drops": [
+        {"item": "venomsteel carapace", "rarity": "Heroic"},
+        {"item": "plague bringer's touch", "rarity": "Heroic"},
+        {"item": "desert's storm", "rarity": "Heroic"},
+        {"item": "ancient aegis", "rarity": "Heroic"},
+        {"item": "recurving corrosion", "rarity": "Heroic"},
+        {"item": "philosopher's stone", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_03_04",
+      "code": "3-4",
+      "drops": [
+        {"item": "desert's storm", "rarity": "Heroic"},
+        {"item": "giant's band of strength", "rarity": "Heroic"},
+        {"item": "philosopher's stone", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_03_05",
+      "code": "3-5",
+      "drops": [
+        {"item": "desert's storm", "rarity": "Heroic"},
+        {"item": "giant's band of strength", "rarity": "Heroic"},
+        {"item": "nikita's kj-33 helmet", "rarity": "Heroic"},
+        {"item": "philosopher's stone", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_03_Boss_Dungeon_03",
+      "code": "3-BD",
+      "drops": [
+        {"item": "astral projector", "rarity": "Heroic"},
+        {"item": "pagan god's blasphemy", "rarity": "Heroic"},
+        {"item": "quickening zephyr", "rarity": "Heroic"},
+        {"item": "eden's harvester", "rarity": "Heroic"},
+        {"item": "manahungerers", "rarity": "Heroic"},
+        {"item": "shishkebab", "rarity": "Heroic"},
+        {"item": "sähköpuimuri", "rarity": "Heroic"},
+        {"item": "storm in a vial", "rarity": "Heroic"},
+        {"item": "demon's mirror", "rarity": "Heroic"},
+        {"item": "nikita's kj-33 helmet", "rarity": "Heroic"},
+        {"item": "philosopher's stone", "rarity": "Heroic"},
+        {"item": "anubis' mighty hands", "rarity": "Set"},
+        {"item": "anubis oculus", "rarity": "Set"},
+        {"item": "anubis torso", "rarity": "Set"}
+      ]
+    },
+    {
+      "room": "Act_04_01",
+      "code": "4-1",
+      "drops": [
+        {"item": "set's lightning sash", "rarity": "Heroic"},
+        {"item": "frostbitten necrosis", "rarity": "Heroic"},
+        {"item": "sharpshooter's cloak", "rarity": "Heroic"},
+        {"item": "rugal's sash of undertaking", "rarity": "Satanic"},
+        {"item": "stone of premonition", "rarity": "Heroic"},
+        {"item": "deathquill", "rarity": "Heroic"},
+        {"item": "hypothermia", "rarity": "Heroic"},
+        {"item": "luci's day", "rarity": "Heroic"},
+        {"item": "elixir of unworldly cognition", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_04_02",
+      "code": "4-2",
+      "drops": [
+        {"item": "set's lightning sash", "rarity": "Heroic"},
+        {"item": "frostbitten necrosis", "rarity": "Heroic"},
+        {"item": "sharpshooter's cloak", "rarity": "Heroic"},
+        {"item": "rugal's sash of undertaking", "rarity": "Satanic"},
+        {"item": "stone of premonition", "rarity": "Heroic"},
+        {"item": "deathquill", "rarity": "Heroic"},
+        {"item": "serpent's tooth", "rarity": "Heroic"},
+        {"item": "hypothermia", "rarity": "Heroic"},
+        {"item": "luci's day", "rarity": "Heroic"},
+        {"item": "elixir of unworldly cognition", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_04_03",
+      "code": "4-3",
+      "drops": [
+        {"item": "set's lightning sash", "rarity": "Heroic"},
+        {"item": "frostbitten necrosis", "rarity": "Heroic"},
+        {"item": "sharpshooter's cloak", "rarity": "Heroic"},
+        {"item": "rugal's sash of undertaking", "rarity": "Satanic"},
+        {"item": "stone of premonition", "rarity": "Heroic"},
+        {"item": "diablo", "rarity": "Heroic"},
+        {"item": "deathquill", "rarity": "Heroic"},
+        {"item": "serpent's tooth", "rarity": "Heroic"},
+        {"item": "hypothermia", "rarity": "Heroic"},
+        {"item": "elixir of unworldly cognition", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_04_04",
+      "code": "4-4",
+      "drops": [
+        {"item": "set's lightning sash", "rarity": "Heroic"},
+        {"item": "frostbitten necrosis", "rarity": "Heroic"},
+        {"item": "diablo", "rarity": "Heroic"},
+        {"item": "deathquill", "rarity": "Heroic"},
+        {"item": "hypothermia", "rarity": "Heroic"},
+        {"item": "elixir of unworldly cognition", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_04_05",
+      "code": "4-5",
+      "drops": [
+        {"item": "set's lightning sash", "rarity": "Heroic"},
+        {"item": "frostbitten necrosis", "rarity": "Heroic"},
+        {"item": "diablo", "rarity": "Heroic"},
+        {"item": "deathquill", "rarity": "Heroic"},
+        {"item": "hypothermia", "rarity": "Heroic"},
+        {"item": "elixir of unworldly cognition", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_04_Boss_Dungeon_03",
+      "code": "4-BD",
+      "drops": [
+        {"item": "pagan god's blasphemy", "rarity": "Heroic"},
+        {"item": "quickening zephyr", "rarity": "Heroic"},
+        {"item": "eden's harvester", "rarity": "Heroic"},
+        {"item": "frostbitten necrosis", "rarity": "Heroic"},
+        {"item": "spell eater", "rarity": "Heroic"},
+        {"item": "shishkebab", "rarity": "Heroic"},
+        {"item": "winter's bite", "rarity": "Heroic"},
+        {"item": "sähköpuimuri", "rarity": "Heroic"},
+        {"item": "diablo", "rarity": "Heroic"},
+        {"item": "the absence of constraint", "rarity": "Heroic"},
+        {"item": "elixir of unworldly cognition", "rarity": "Heroic"},
+        {"item": "damien's soulstone", "rarity": "Set"},
+        {"item": "damien's head", "rarity": "Set"},
+        {"item": "damien's cage", "rarity": "Set"}
+      ]
+    },
+    {
+      "room": "Act_05_01",
+      "code": "5-1",
+      "drops": [
+        {"item": "grasp of the phoenix", "rarity": "Heroic"},
+        {"item": "serpent's embrace", "rarity": "Heroic"},
+        {"item": "ali's boxing gloves", "rarity": "Heroic"},
+        {"item": "monsoon", "rarity": "Heroic"},
+        {"item": "riftmaster's dirge", "rarity": "Heroic"},
+        {"item": "master's magnum", "rarity": "Heroic"},
+        {"item": "orange grayon", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_05_02",
+      "code": "5-2",
+      "drops": [
+        {"item": "dark knight's lance", "rarity": "Heroic"},
+        {"item": "grasp of the phoenix", "rarity": "Heroic"},
+        {"item": "serpent's embrace", "rarity": "Heroic"},
+        {"item": "ali's boxing gloves", "rarity": "Heroic"},
+        {"item": "monsoon", "rarity": "Heroic"},
+        {"item": "riftmaster's dirge", "rarity": "Heroic"},
+        {"item": "master's magnum", "rarity": "Heroic"},
+        {"item": "orange grayon", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_05_03",
+      "code": "5-3",
+      "drops": [
+        {"item": "dark knight's lance", "rarity": "Heroic"},
+        {"item": "grasp of the phoenix", "rarity": "Heroic"},
+        {"item": "serpent's embrace", "rarity": "Heroic"},
+        {"item": "ali's boxing gloves", "rarity": "Heroic"},
+        {"item": "monsoon", "rarity": "Heroic"},
+        {"item": "riftmaster's dirge", "rarity": "Heroic"},
+        {"item": "master's magnum", "rarity": "Heroic"},
+        {"item": "orange grayon", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_05_04",
+      "code": "5-4",
+      "drops": [
+        {"item": "revenant's lasher", "rarity": "Satanic"},
+        {"item": "grasp of the phoenix", "rarity": "Heroic"},
+        {"item": "shield of the abyss", "rarity": "Heroic"},
+        {"item": "riftmaster's dirge", "rarity": "Heroic"},
+        {"item": "orange grayon", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_05_05",
+      "code": "5-5",
+      "drops": [
+        {"item": "revenant's lasher", "rarity": "Satanic"},
+        {"item": "grasp of the phoenix", "rarity": "Heroic"},
+        {"item": "shield of the abyss", "rarity": "Heroic"},
+        {"item": "orange grayon", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_05_Boss_Dungeon_03",
+      "code": "5-BD",
+      "drops": [
+        {"item": "pagan god's blasphemy", "rarity": "Heroic"},
+        {"item": "genji's sword of fate", "rarity": "Set"},
+        {"item": "scarred battle darts", "rarity": "Heroic"},
+        {"item": "quickening zephyr", "rarity": "Heroic"},
+        {"item": "eden's harvester", "rarity": "Heroic"},
+        {"item": "grasp of the phoenix", "rarity": "Heroic"},
+        {"item": "shishkebab", "rarity": "Heroic"},
+        {"item": "shield of the abyss", "rarity": "Heroic"},
+        {"item": "nobunaga's battle slicer", "rarity": "Set"},
+        {"item": "monsoon", "rarity": "Heroic"},
+        {"item": "sähköpuimuri", "rarity": "Heroic"},
+        {"item": "mana bender's will", "rarity": "Heroic"},
+        {"item": "orange grayon", "rarity": "Heroic"},
+        {"item": "genji's battle helmet", "rarity": "Set"},
+        {"item": "genji's battle armor", "rarity": "Set"}
+      ]
+    },
+    {
+      "room": "Act_06_01",
+      "code": "6-1",
+      "drops": [
+        {"item": "freya's frozen buckle", "rarity": "Heroic"},
+        {"item": "death knight's gauntlets", "rarity": "Heroic"},
+        {"item": "the light of dawn", "rarity": "Heroic"},
+        {"item": "arch angel's phase blade", "rarity": "Heroic"},
+        {"item": "dracula's demise", "rarity": "Heroic"},
+        {"item": "candy shredder", "rarity": "Heroic"},
+        {"item": "harlequinn's veil", "rarity": "Heroic"},
+        {"item": "doomweed vial", "rarity": "Satanic"}
+      ]
+    },
+    {
+      "room": "Act_06_02",
+      "code": "6-2",
+      "drops": [
+        {"item": "freya's frozen buckle", "rarity": "Heroic"},
+        {"item": "death knight's gauntlets", "rarity": "Heroic"},
+        {"item": "the light of dawn", "rarity": "Heroic"},
+        {"item": "arch angel's phase blade", "rarity": "Heroic"},
+        {"item": "dracula's demise", "rarity": "Heroic"},
+        {"item": "candy shredder", "rarity": "Heroic"},
+        {"item": "harlequinn's veil", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_06_03",
+      "code": "6-3",
+      "drops": [
+        {"item": "freya's frozen buckle", "rarity": "Heroic"},
+        {"item": "death knight's gauntlets", "rarity": "Heroic"},
+        {"item": "the light of dawn", "rarity": "Heroic"},
+        {"item": "dracula's demise", "rarity": "Heroic"},
+        {"item": "candy shredder", "rarity": "Heroic"},
+        {"item": "harlequinn's veil", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_06_04",
+      "code": "6-4",
+      "drops": [
+        {"item": "wind walker's step", "rarity": "Heroic"},
+        {"item": "freya's frozen buckle", "rarity": "Heroic"},
+        {"item": "death knight's gauntlets", "rarity": "Heroic"},
+        {"item": "dracula's demise", "rarity": "Heroic"},
+        {"item": "candy shredder", "rarity": "Heroic"},
+        {"item": "harlequinn's veil", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_06_05",
+      "code": "6-5",
+      "drops": [
+        {"item": "wind walker's step", "rarity": "Heroic"},
+        {"item": "freya's frozen buckle", "rarity": "Heroic"},
+        {"item": "death knight's gauntlets", "rarity": "Heroic"},
+        {"item": "dracula's demise", "rarity": "Heroic"},
+        {"item": "candy shredder", "rarity": "Heroic"},
+        {"item": "harlequinn's veil", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_06_Boss_Dungeon_03",
+      "code": "6-BD",
+      "drops": [
+        {"item": "pagan god's blasphemy", "rarity": "Heroic"},
+        {"item": "quickening zephyr", "rarity": "Heroic"},
+        {"item": "eden's harvester", "rarity": "Heroic"},
+        {"item": "shishkebab", "rarity": "Heroic"},
+        {"item": "recurving corrosion", "rarity": "Heroic"},
+        {"item": "sähköpuimuri", "rarity": "Heroic"},
+        {"item": "dracula's demise", "rarity": "Heroic"},
+        {"item": "candy shredder", "rarity": "Heroic"},
+        {"item": "harlequinn's veil", "rarity": "Heroic"},
+        {"item": "satan's precious", "rarity": "Set"},
+        {"item": "satan's chalice", "rarity": "Satanic"},
+        {"item": "satan's molten steps", "rarity": "Set"},
+        {"item": "satan's cuirass", "rarity": "Set"}
+      ]
+    },
+    {
+      "room": "Act_07_01",
+      "code": "7-1",
+      "drops": [
+        {"item": "astral projector", "rarity": "Heroic"},
+        {"item": "thunder guardian's plate", "rarity": "Heroic"},
+        {"item": "fumacinha's favela flipflop", "rarity": "Heroic"},
+        {"item": "glacier talons", "rarity": "Heroic"},
+        {"item": "blood of abaddon", "rarity": "Heroic"},
+        {"item": "executioner's cocoon", "rarity": "Heroic"},
+        {"item": "the absence of constraint", "rarity": "Heroic"},
+        {"item": "pearlescent dream", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_07_02",
+      "code": "7-2",
+      "drops": [
+        {"item": "astral projector", "rarity": "Heroic"},
+        {"item": "thunder guardian's plate", "rarity": "Heroic"},
+        {"item": "fumacinha's favela flipflop", "rarity": "Heroic"},
+        {"item": "glacier talons", "rarity": "Heroic"},
+        {"item": "blood of abaddon", "rarity": "Heroic"},
+        {"item": "executioner's cocoon", "rarity": "Heroic"},
+        {"item": "the absence of constraint", "rarity": "Heroic"},
+        {"item": "pearlescent dream", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_07_03",
+      "code": "7-3",
+      "drops": [
+        {"item": "astral projector", "rarity": "Heroic"},
+        {"item": "thunder guardian's plate", "rarity": "Heroic"},
+        {"item": "fumacinha's favela flipflop", "rarity": "Heroic"},
+        {"item": "glacier talons", "rarity": "Heroic"},
+        {"item": "blood of abaddon", "rarity": "Heroic"},
+        {"item": "executioner's cocoon", "rarity": "Heroic"},
+        {"item": "the absence of constraint", "rarity": "Heroic"},
+        {"item": "pearlescent dream", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_07_04",
+      "code": "7-4",
+      "drops": [
+        {"item": "glacier talons", "rarity": "Heroic"},
+        {"item": "blood of abaddon", "rarity": "Heroic"},
+        {"item": "the absence of constraint", "rarity": "Heroic"},
+        {"item": "ak-47", "rarity": "Heroic"},
+        {"item": "pearlescent dream", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_07_05",
+      "code": "7-5",
+      "drops": [
+        {"item": "glacier talons", "rarity": "Heroic"},
+        {"item": "blood of abaddon", "rarity": "Heroic"},
+        {"item": "the absence of constraint", "rarity": "Heroic"},
+        {"item": "ak-47", "rarity": "Heroic"},
+        {"item": "pearlescent dream", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_07_Boss_Dungeon_03",
+      "code": "7-BD",
+      "drops": [
+        {"item": "pagan god's blasphemy", "rarity": "Heroic"},
+        {"item": "quickening zephyr", "rarity": "Heroic"},
+        {"item": "eden's harvester", "rarity": "Heroic"},
+        {"item": "shishkebab", "rarity": "Heroic"},
+        {"item": "blood of abaddon", "rarity": "Heroic"},
+        {"item": "spellweavers", "rarity": "Heroic"},
+        {"item": "sähköpuimuri", "rarity": "Heroic"},
+        {"item": "ak-47", "rarity": "Heroic"},
+        {"item": "scourge loop", "rarity": "Heroic"},
+        {"item": "pearlescent dream", "rarity": "Heroic"},
+        {"item": "mevius' mighty plate", "rarity": "Set"},
+        {"item": "mevius' mighty gauntlets", "rarity": "Set"},
+        {"item": "mevius' mighty helmet", "rarity": "Set"},
+        {"item": "mevius' mighty marchers", "rarity": "Set"}
+      ]
+    },
+    {
+      "room": "Act_08_01",
+      "code": "8-1",
+      "drops": [
+        {"item": "book of cold death", "rarity": "Heroic"},
+        {"item": "pendant of eternity", "rarity": "Heroic"},
+        {"item": "arcanist's wrath", "rarity": "Heroic"},
+        {"item": "the light of dawn", "rarity": "Heroic"},
+        {"item": "oculus of ages", "rarity": "Heroic"},
+        {"item": "storm in a vial", "rarity": "Heroic"},
+        {"item": "the downfall of felps", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_08_02",
+      "code": "8-2",
+      "drops": [
+        {"item": "book of cold death", "rarity": "Heroic"},
+        {"item": "pendant of eternity", "rarity": "Heroic"},
+        {"item": "arcanist's wrath", "rarity": "Heroic"},
+        {"item": "the light of dawn", "rarity": "Heroic"},
+        {"item": "oculus of ages", "rarity": "Heroic"},
+        {"item": "storm in a vial", "rarity": "Heroic"},
+        {"item": "the downfall of felps", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_08_03",
+      "code": "8-3",
+      "drops": [
+        {"item": "book of cold death", "rarity": "Heroic"},
+        {"item": "pendant of eternity", "rarity": "Heroic"},
+        {"item": "arcanist's wrath", "rarity": "Heroic"},
+        {"item": "the light of dawn", "rarity": "Heroic"},
+        {"item": "oculus of ages", "rarity": "Heroic"},
+        {"item": "storm in a vial", "rarity": "Heroic"},
+        {"item": "the downfall of felps", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_08_04",
+      "code": "8-4",
+      "drops": [
+        {"item": "book of cold death", "rarity": "Heroic"},
+        {"item": "pendant of eternity", "rarity": "Heroic"},
+        {"item": "arcanist's wrath", "rarity": "Heroic"},
+        {"item": "oculus of ages", "rarity": "Heroic"},
+        {"item": "storm in a vial", "rarity": "Heroic"},
+        {"item": "the downfall of felps", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_08_05",
+      "code": "8-5",
+      "drops": [
+        {"item": "book of cold death", "rarity": "Heroic"},
+        {"item": "pendant of eternity", "rarity": "Heroic"},
+        {"item": "arcanist's wrath", "rarity": "Heroic"},
+        {"item": "oculus of ages", "rarity": "Heroic"},
+        {"item": "storm in a vial", "rarity": "Heroic"},
+        {"item": "fenrir's bloodfang", "rarity": "Heroic"},
+        {"item": "the downfall of felps", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_08_Boss_Dungeon_03",
+      "code": "8-BD",
+      "drops": [
+        {"item": "pagan god's blasphemy", "rarity": "Heroic"},
+        {"item": "book of cold death", "rarity": "Heroic"},
+        {"item": "quickening zephyr", "rarity": "Heroic"},
+        {"item": "eden's harvester", "rarity": "Heroic"},
+        {"item": "muspelheim guardian's scorched plate", "rarity": "Heroic"},
+        {"item": "fighter magi's grips", "rarity": "Heroic"},
+        {"item": "shishkebab", "rarity": "Heroic"},
+        {"item": "necrocaller's grips", "rarity": "Heroic"},
+        {"item": "sähköpuimuri", "rarity": "Heroic"},
+        {"item": "oculus of ages", "rarity": "Heroic"},
+        {"item": "fenrir's bloodfang", "rarity": "Heroic"},
+        {"item": "the downfall of felps", "rarity": "Heroic"},
+        {"item": "thorn of helheim", "rarity": "Set"},
+        {"item": "odin's eternal visage", "rarity": "Set"},
+        {"item": "odin's battlearmor", "rarity": "Set"}
+      ]
+    },
+    {
+      "room": "Act_09_01",
+      "code": "9-1",
+      "drops": [
+        {"item": "ra's band", "rarity": "Heroic"},
+        {"item": "tablet of awakening", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_09_02",
+      "code": "9-2",
+      "drops": [
+        {"item": "ra's band", "rarity": "Heroic"},
+        {"item": "dreadnought", "rarity": "Heroic"},
+        {"item": "tablet of awakening", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_09_03",
+      "code": "9-3",
+      "drops": [
+        {"item": "tundra hunter's long coat", "rarity": "Heroic"},
+        {"item": "ra's band", "rarity": "Heroic"},
+        {"item": "defender's justice", "rarity": "Heroic"},
+        {"item": "tablet of awakening", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_09_04",
+      "code": "9-4",
+      "drops": [
+        {"item": "tundra hunter's long coat", "rarity": "Heroic"},
+        {"item": "the colossal avenger", "rarity": "Heroic"},
+        {"item": "tablet of awakening", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_09_05",
+      "code": "9-5",
+      "drops": [
+        {"item": "steampowered flamewalkers", "rarity": "Heroic"},
+        {"item": "tundra hunter's long coat", "rarity": "Heroic"},
+        {"item": "lava king's lost mask", "rarity": "Heroic"},
+        {"item": "the colossal avenger", "rarity": "Heroic"},
+        {"item": "tablet of awakening", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_09_06",
+      "code": "9-6",
+      "drops": [
+        {"item": "tablet of awakening", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_09_Boss",
+      "code": "9-BD",
+      "drops": [
+        {"item": "pagan god's blasphemy", "rarity": "Heroic"},
+        {"item": "quickening zephyr", "rarity": "Heroic"},
+        {"item": "eden's harvester", "rarity": "Heroic"},
+        {"item": "shishkebab", "rarity": "Heroic"},
+        {"item": "tundra hunter's long coat", "rarity": "Heroic"},
+        {"item": "sähköpuimuri", "rarity": "Heroic"},
+        {"item": "ra's band", "rarity": "Heroic"},
+        {"item": "tablet of awakening", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Rat_Den_01_rm",
+      "code": "1-D",
+      "drops": [
+        {"item": "eden's harvester", "rarity": "Heroic"},
+        {"item": "fighter magi's grips", "rarity": "Heroic"},
+        {"item": "tectonic grips", "rarity": "Heroic"},
+        {"item": "arrow of zamjo", "rarity": "Heroic"},
+        {"item": "ancient aegis", "rarity": "Heroic"},
+        {"item": "ukko's revenge", "rarity": "Heroic"},
+        {"item": "suomi finland perkele", "rarity": "Heroic"},
+        {"item": "belt of skulls", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Pumpkin_Cellar_01_rm",
+      "code": "1-D",
+      "drops": [
+        {"item": "eden's harvester", "rarity": "Heroic"},
+        {"item": "fighter magi's grips", "rarity": "Heroic"},
+        {"item": "tectonic grips", "rarity": "Heroic"},
+        {"item": "arrow of zamjo", "rarity": "Heroic"},
+        {"item": "ancient aegis", "rarity": "Heroic"},
+        {"item": "ukko's revenge", "rarity": "Heroic"},
+        {"item": "suomi finland perkele", "rarity": "Heroic"},
+        {"item": "belt of skulls", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Black_Tower_01_rm",
+      "code": "1-D",
+      "drops": [
+        {"item": "eden's harvester", "rarity": "Heroic"},
+        {"item": "fighter magi's grips", "rarity": "Heroic"},
+        {"item": "tectonic grips", "rarity": "Heroic"},
+        {"item": "arrow of zamjo", "rarity": "Heroic"},
+        {"item": "ancient aegis", "rarity": "Heroic"},
+        {"item": "ukko's revenge", "rarity": "Heroic"},
+        {"item": "suomi finland perkele", "rarity": "Heroic"},
+        {"item": "belt of skulls", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Frozen_Cellar_01_rm",
+      "code": "2-D",
+      "drops": [
+        {"item": "eden's harvester", "rarity": "Heroic"},
+        {"item": "arcanum asphyxiators", "rarity": "Heroic"},
+        {"item": "soulburn belt", "rarity": "Heroic"},
+        {"item": "fighter magi's grips", "rarity": "Heroic"},
+        {"item": "plague bringer's touch", "rarity": "Heroic"},
+        {"item": "arrow of zamjo", "rarity": "Heroic"},
+        {"item": "sowyer's javelin of devastation", "rarity": "Heroic"},
+        {"item": "necrocaller's grips", "rarity": "Heroic"},
+        {"item": "suomi finland perkele", "rarity": "Heroic"},
+        {"item": "graxy's lucky lure", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Ancient_City_01_rm",
+      "code": "2-D",
+      "drops": [
+        {"item": "eden's harvester", "rarity": "Heroic"},
+        {"item": "arcanum asphyxiators", "rarity": "Heroic"},
+        {"item": "soulburn belt", "rarity": "Heroic"},
+        {"item": "fighter magi's grips", "rarity": "Heroic"},
+        {"item": "plague bringer's touch", "rarity": "Heroic"},
+        {"item": "arrow of zamjo", "rarity": "Heroic"},
+        {"item": "sowyer's javelin of devastation", "rarity": "Heroic"},
+        {"item": "necrocaller's grips", "rarity": "Heroic"},
+        {"item": "suomi finland perkele", "rarity": "Heroic"},
+        {"item": "graxy's lucky lure", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Sand_Cave_01_rm",
+      "code": "3-D",
+      "drops": [
+        {"item": "astral projector", "rarity": "Heroic"},
+        {"item": "eden's harvester", "rarity": "Heroic"},
+        {"item": "fighter magi's grips", "rarity": "Heroic"},
+        {"item": "arrow of zamjo", "rarity": "Heroic"},
+        {"item": "manahungerers", "rarity": "Heroic"},
+        {"item": "desert's storm", "rarity": "Heroic"},
+        {"item": "suomi finland perkele", "rarity": "Heroic"},
+        {"item": "storm in a vial", "rarity": "Heroic"},
+        {"item": "philosopher's stone", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Forgotten_City_01_rm",
+      "code": "3-D",
+      "drops": [
+        {"item": "astral projector", "rarity": "Heroic"},
+        {"item": "eden's harvester", "rarity": "Heroic"},
+        {"item": "fighter magi's grips", "rarity": "Heroic"},
+        {"item": "arrow of zamjo", "rarity": "Heroic"},
+        {"item": "manahungerers", "rarity": "Heroic"},
+        {"item": "desert's storm", "rarity": "Heroic"},
+        {"item": "suomi finland perkele", "rarity": "Heroic"},
+        {"item": "storm in a vial", "rarity": "Heroic"},
+        {"item": "philosopher's stone", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Cauflax_Tomb_01_rm",
+      "code": "3-D",
+      "drops": [
+        {"item": "astral projector", "rarity": "Heroic"},
+        {"item": "eden's harvester", "rarity": "Heroic"},
+        {"item": "fighter magi's grips", "rarity": "Heroic"},
+        {"item": "arrow of zamjo", "rarity": "Heroic"},
+        {"item": "manahungerers", "rarity": "Heroic"},
+        {"item": "desert's storm", "rarity": "Heroic"},
+        {"item": "suomi finland perkele", "rarity": "Heroic"},
+        {"item": "storm in a vial", "rarity": "Heroic"},
+        {"item": "philosopher's stone", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Old_Copper_Mine_01_rm",
+      "code": "4-D",
+      "drops": [
+        {"item": "eden's harvester", "rarity": "Heroic"},
+        {"item": "set's lightning sash", "rarity": "Heroic"},
+        {"item": "fighter magi's grips", "rarity": "Heroic"},
+        {"item": "frostbitten necrosis", "rarity": "Heroic"},
+        {"item": "arrow of zamjo", "rarity": "Heroic"},
+        {"item": "winter's bite", "rarity": "Heroic"},
+        {"item": "sharpshooter's cloak", "rarity": "Heroic"},
+        {"item": "suomi finland perkele", "rarity": "Heroic"},
+        {"item": "the absence of constraint", "rarity": "Heroic"},
+        {"item": "serpent's tooth", "rarity": "Heroic"},
+        {"item": "hypothermia", "rarity": "Heroic"},
+        {"item": "elixir of unworldly cognition", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Abandoned_Mine_01_rm",
+      "code": "4-D",
+      "drops": [
+        {"item": "eden's harvester", "rarity": "Heroic"},
+        {"item": "set's lightning sash", "rarity": "Heroic"},
+        {"item": "fighter magi's grips", "rarity": "Heroic"},
+        {"item": "frostbitten necrosis", "rarity": "Heroic"},
+        {"item": "arrow of zamjo", "rarity": "Heroic"},
+        {"item": "winter's bite", "rarity": "Heroic"},
+        {"item": "sharpshooter's cloak", "rarity": "Heroic"},
+        {"item": "suomi finland perkele", "rarity": "Heroic"},
+        {"item": "the absence of constraint", "rarity": "Heroic"},
+        {"item": "serpent's tooth", "rarity": "Heroic"},
+        {"item": "hypothermia", "rarity": "Heroic"},
+        {"item": "elixir of unworldly cognition", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Devils_Hole_01_rm",
+      "code": "4-D",
+      "drops": [
+        {"item": "eden's harvester", "rarity": "Heroic"},
+        {"item": "set's lightning sash", "rarity": "Heroic"},
+        {"item": "fighter magi's grips", "rarity": "Heroic"},
+        {"item": "frostbitten necrosis", "rarity": "Heroic"},
+        {"item": "arrow of zamjo", "rarity": "Heroic"},
+        {"item": "winter's bite", "rarity": "Heroic"},
+        {"item": "sharpshooter's cloak", "rarity": "Heroic"},
+        {"item": "suomi finland perkele", "rarity": "Heroic"},
+        {"item": "the absence of constraint", "rarity": "Heroic"},
+        {"item": "serpent's tooth", "rarity": "Heroic"},
+        {"item": "hypothermia", "rarity": "Heroic"},
+        {"item": "elixir of unworldly cognition", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Fuji_Crater_01_rm",
+      "code": "5-D",
+      "drops": [
+        {"item": "revenant's lasher", "rarity": "Satanic"},
+        {"item": "scarred battle darts", "rarity": "Heroic"},
+        {"item": "eden's harvester", "rarity": "Heroic"},
+        {"item": "grasp of the phoenix", "rarity": "Heroic"},
+        {"item": "fighter magi's grips", "rarity": "Heroic"},
+        {"item": "arrow of zamjo", "rarity": "Heroic"},
+        {"item": "sidewinder", "rarity": "Heroic"},
+        {"item": "monsoon", "rarity": "Heroic"},
+        {"item": "suomi finland perkele", "rarity": "Heroic"},
+        {"item": "master's magnum", "rarity": "Heroic"},
+        {"item": "orange grayon", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Underground_Garden_01_rm",
+      "code": "5-D",
+      "drops": [
+        {"item": "revenant's lasher", "rarity": "Satanic"},
+        {"item": "scarred battle darts", "rarity": "Heroic"},
+        {"item": "eden's harvester", "rarity": "Heroic"},
+        {"item": "grasp of the phoenix", "rarity": "Heroic"},
+        {"item": "fighter magi's grips", "rarity": "Heroic"},
+        {"item": "arrow of zamjo", "rarity": "Heroic"},
+        {"item": "sidewinder", "rarity": "Heroic"},
+        {"item": "monsoon", "rarity": "Heroic"},
+        {"item": "suomi finland perkele", "rarity": "Heroic"},
+        {"item": "master's magnum", "rarity": "Heroic"},
+        {"item": "orange grayon", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Kaojin_Temple_01_rm",
+      "code": "5-D",
+      "drops": [
+        {"item": "revenant's lasher", "rarity": "Satanic"},
+        {"item": "scarred battle darts", "rarity": "Heroic"},
+        {"item": "eden's harvester", "rarity": "Heroic"},
+        {"item": "grasp of the phoenix", "rarity": "Heroic"},
+        {"item": "fighter magi's grips", "rarity": "Heroic"},
+        {"item": "arrow of zamjo", "rarity": "Heroic"},
+        {"item": "sidewinder", "rarity": "Heroic"},
+        {"item": "monsoon", "rarity": "Heroic"},
+        {"item": "suomi finland perkele", "rarity": "Heroic"},
+        {"item": "master's magnum", "rarity": "Heroic"},
+        {"item": "orange grayon", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Temple_Trapdoor_01_rm",
+      "code": "5-D",
+      "drops": [
+        {"item": "revenant's lasher", "rarity": "Satanic"},
+        {"item": "scarred battle darts", "rarity": "Heroic"},
+        {"item": "eden's harvester", "rarity": "Heroic"},
+        {"item": "grasp of the phoenix", "rarity": "Heroic"},
+        {"item": "fighter magi's grips", "rarity": "Heroic"},
+        {"item": "arrow of zamjo", "rarity": "Heroic"},
+        {"item": "sidewinder", "rarity": "Heroic"},
+        {"item": "monsoon", "rarity": "Heroic"},
+        {"item": "suomi finland perkele", "rarity": "Heroic"},
+        {"item": "master's magnum", "rarity": "Heroic"},
+        {"item": "orange grayon", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Unmarked_Grave_01_rm",
+      "code": "6-D",
+      "drops": [
+        {"item": "wind walker's step", "rarity": "Heroic"},
+        {"item": "eden's harvester", "rarity": "Heroic"},
+        {"item": "fighter magi's grips", "rarity": "Heroic"},
+        {"item": "freya's frozen buckle", "rarity": "Heroic"},
+        {"item": "arrow of zamjo", "rarity": "Heroic"},
+        {"item": "death knight's gauntlets", "rarity": "Heroic"},
+        {"item": "recurving corrosion", "rarity": "Heroic"},
+        {"item": "suomi finland perkele", "rarity": "Heroic"},
+        {"item": "harlequinn's veil", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Arm_Storage_01_rm",
+      "code": "6-D",
+      "drops": [
+        {"item": "wind walker's step", "rarity": "Heroic"},
+        {"item": "eden's harvester", "rarity": "Heroic"},
+        {"item": "fighter magi's grips", "rarity": "Heroic"},
+        {"item": "freya's frozen buckle", "rarity": "Heroic"},
+        {"item": "arrow of zamjo", "rarity": "Heroic"},
+        {"item": "death knight's gauntlets", "rarity": "Heroic"},
+        {"item": "recurving corrosion", "rarity": "Heroic"},
+        {"item": "suomi finland perkele", "rarity": "Heroic"},
+        {"item": "harlequinn's veil", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Distorted_Horizons_01_rm",
+      "code": "7-D",
+      "drops": [
+        {"item": "eden's harvester", "rarity": "Heroic"},
+        {"item": "fighter magi's grips", "rarity": "Heroic"},
+        {"item": "arrow of zamjo", "rarity": "Heroic"},
+        {"item": "fumacinha's favela flipflop", "rarity": "Heroic"},
+        {"item": "glacier talons", "rarity": "Heroic"},
+        {"item": "blood of abaddon", "rarity": "Heroic"},
+        {"item": "spellweavers", "rarity": "Heroic"},
+        {"item": "executioner's cocoon", "rarity": "Heroic"},
+        {"item": "suomi finland perkele", "rarity": "Heroic"},
+        {"item": "pearlescent dream", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Gladsheim_Halls_01_rm",
+      "code": "8-D",
+      "drops": [
+        {"item": "book of cold death", "rarity": "Heroic"},
+        {"item": "eden's harvester", "rarity": "Heroic"},
+        {"item": "muspelheim guardian's scorched plate", "rarity": "Heroic"},
+        {"item": "fighter magi's grips", "rarity": "Heroic"},
+        {"item": "arrow of zamjo", "rarity": "Heroic"},
+        {"item": "serpent's embrace", "rarity": "Heroic"},
+        {"item": "sidewinder", "rarity": "Heroic"},
+        {"item": "suomi finland perkele", "rarity": "Heroic"},
+        {"item": "oculus of ages", "rarity": "Heroic"},
+        {"item": "the downfall of felps", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Naga_Temple_01_rm",
+      "code": "8-D",
+      "drops": [
+        {"item": "book of cold death", "rarity": "Heroic"},
+        {"item": "eden's harvester", "rarity": "Heroic"},
+        {"item": "muspelheim guardian's scorched plate", "rarity": "Heroic"},
+        {"item": "fighter magi's grips", "rarity": "Heroic"},
+        {"item": "arrow of zamjo", "rarity": "Heroic"},
+        {"item": "serpent's embrace", "rarity": "Heroic"},
+        {"item": "sidewinder", "rarity": "Heroic"},
+        {"item": "suomi finland perkele", "rarity": "Heroic"},
+        {"item": "oculus of ages", "rarity": "Heroic"},
+        {"item": "the downfall of felps", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Muspelheim_01_rm",
+      "code": "8-D",
+      "drops": [
+        {"item": "book of cold death", "rarity": "Heroic"},
+        {"item": "eden's harvester", "rarity": "Heroic"},
+        {"item": "muspelheim guardian's scorched plate", "rarity": "Heroic"},
+        {"item": "fighter magi's grips", "rarity": "Heroic"},
+        {"item": "arrow of zamjo", "rarity": "Heroic"},
+        {"item": "serpent's embrace", "rarity": "Heroic"},
+        {"item": "sidewinder", "rarity": "Heroic"},
+        {"item": "suomi finland perkele", "rarity": "Heroic"},
+        {"item": "oculus of ages", "rarity": "Heroic"},
+        {"item": "the downfall of felps", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Niflhel_01_rm",
+      "code": "8-D",
+      "drops": [
+        {"item": "book of cold death", "rarity": "Heroic"},
+        {"item": "eden's harvester", "rarity": "Heroic"},
+        {"item": "muspelheim guardian's scorched plate", "rarity": "Heroic"},
+        {"item": "fighter magi's grips", "rarity": "Heroic"},
+        {"item": "arrow of zamjo", "rarity": "Heroic"},
+        {"item": "serpent's embrace", "rarity": "Heroic"},
+        {"item": "sidewinder", "rarity": "Heroic"},
+        {"item": "suomi finland perkele", "rarity": "Heroic"},
+        {"item": "oculus of ages", "rarity": "Heroic"},
+        {"item": "the downfall of felps", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_09_Wasp_Nest_rm",
+      "code": "9-D",
+      "drops": [
+        {"item": "eden's harvester", "rarity": "Heroic"},
+        {"item": "fighter magi's grips", "rarity": "Heroic"},
+        {"item": "arrow of zamjo", "rarity": "Heroic"},
+        {"item": "suomi finland perkele", "rarity": "Heroic"},
+        {"item": "tablet of awakening", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_09_Treasure_Dungeon_rm",
+      "code": "9-D",
+      "drops": [
+        {"item": "eden's harvester", "rarity": "Heroic"},
+        {"item": "fighter magi's grips", "rarity": "Heroic"},
+        {"item": "arrow of zamjo", "rarity": "Heroic"},
+        {"item": "suomi finland perkele", "rarity": "Heroic"},
+        {"item": "tablet of awakening", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_09_Monster_Dungeon_rm",
+      "code": "9-D",
+      "drops": [
+        {"item": "eden's harvester", "rarity": "Heroic"},
+        {"item": "fighter magi's grips", "rarity": "Heroic"},
+        {"item": "arrow of zamjo", "rarity": "Heroic"},
+        {"item": "suomi finland perkele", "rarity": "Heroic"},
+        {"item": "tablet of awakening", "rarity": "Heroic"}
+      ]
+    },
+    {
+      "room": "Act_09_Boreal_Dungeon_rm",
+      "code": "9-D",
+      "drops": [
+        {"item": "eden's harvester", "rarity": "Heroic"},
+        {"item": "fighter magi's grips", "rarity": "Heroic"},
+        {"item": "arrow of zamjo", "rarity": "Heroic"},
+        {"item": "suomi finland perkele", "rarity": "Heroic"},
+        {"item": "tablet of awakening", "rarity": "Heroic"}
+      ]
+    }
+  ]
+}

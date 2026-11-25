@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from data_bundle import Bundle, BundleError, attach_exclusive_sources, drop_denominator, inventory_fingerprint, tables_from_items, verify_item_coverage, verify_map_marker_sources
+from data_bundle import Bundle, BundleError, attach_exclusive_sources, drop_denominator, inventory_fingerprint, place_codes, tables_from_items, verify_item_coverage, verify_map_marker_sources
 import encyclopedia
 import skills
 import words
@@ -103,6 +103,14 @@ class ExportBoundaryTests(unittest.TestCase):
 
 
 class ItemPreservationTests(unittest.TestCase):
+    def test_generic_and_compound_dungeon_locations(self):
+        rooms = ["Act_01_01", "Act_08_02", "Act_09_04", "Act_01_Boss_Dungeon_03", "Act_09_Boss", "Town_01_rm"]
+        self.assertEqual(place_codes("Boss Dungeons", rooms), ["1-BD", "9-BD"])
+        self.assertEqual(place_codes("Dungeons", rooms), ["1-D", "8-D", "9-D"])
+        self.assertEqual(place_codes("Act V & VIII Dungeons", rooms), ["5-D", "8-D"])
+        self.assertEqual(place_codes("Act IV Boss Dungeons", rooms), ["4-BD"])
+        self.assertEqual(place_codes("Challenge Dungeon (Inferno Only)", rooms), [])
+
     def test_native_recipe_keeps_order_duplicates_and_does_not_guess_id_domain(self):
         row = {"runeword_recipe": {"value": [14, 17, 14]},
                "runewordSockets": ["Old reference"]}
@@ -150,6 +158,25 @@ class ItemPreservationTests(unittest.TestCase):
         rendered[1].pop("source")
         with self.assertRaisesRegex(BundleError, "no coordinate provenance"):
             verify_map_marker_sources(native, rendered)
+
+    def test_only_the_tutorial_cabin_is_excluded_from_the_public_map(self):
+        cabin = {"room": "Cabin_01_rm", "x": 109, "y": 521, "source": {"kind": "decoded"}}
+        town = {"room": "Town_01_rm", "x": 145, "y": 530, "source": {"kind": "decoded"}}
+        other_cabin = {"room": "Cabin_02_rm", "x": 200, "y": 530, "source": {"kind": "decoded"}}
+        native = [cabin, town, other_cabin]
+
+        coverage = verify_map_marker_sources(native, [town, other_cabin])
+        self.assertEqual(coverage["native_exported"], 3)
+        self.assertEqual(coverage["native_shown"], 2)
+        self.assertEqual(coverage["native_excluded"], [
+            {"room": "Cabin_01_rm", "reason": "tutorial_cabin_without_drops"},
+        ])
+        self.assertEqual(coverage["rendered_markers"], 2)
+
+        with self.assertRaisesRegex(BundleError, "displayed excluded marker: Cabin_01_rm"):
+            verify_map_marker_sources(native, native)
+        with self.assertRaisesRegex(BundleError, "omitted verified native markers: Cabin_02_rm"):
+            verify_map_marker_sources(native, [town])
 
     def test_failed_record_icon_binding_does_not_certify_a_name_match(self):
         with tempfile.TemporaryDirectory() as directory:
