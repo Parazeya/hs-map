@@ -1,13 +1,14 @@
 <script>
-  import { asset, figure, odds, titleCase, withMF } from '../lib/map.js';
-  import { mf } from '../lib/mf.svelte.js';
-  import { places } from '../lib/say.js';
   import { formatStatRange as statSpan, formatStatValue } from '../lib/stat-value.js';
   import { visibleItemStats, itemGrantGroups } from '../lib/grant-stats.js';
   import { conditionModeKey, conditionRecordKey, isPreviewCondition, conditionChoices, selectedConditionModes, conditionName } from '../lib/item-conditions.js';
+  import { setBonusText } from '../lib/set-bonuses.js';
   import ItemIcon from '../ItemIcon.svelte';
+  import FarmSummary from './FarmSummary.svelte';
+  import { codexPhrase } from './phrases.js';
 
-  let { data, item: selection, lang, sheet, t = (s) => s, pick = null } = $props();
+  let { data, item: selection, lang, sheet, t = (s) => s, pick = null, compare = null,
+    comparison = [], initialRecordId = null, onVariantChange = null } = $props();
   let variant = $state(0);
   const records = $derived(selection ? [selection, ...(selection.variants ?? [])] : []);
   const item = $derived(records[variant] ?? selection);
@@ -22,8 +23,7 @@
     conditionSelections = {};
   });
   $effect(() => {
-    selection?.key;
-    variant = 0;
+    variant = Math.max(0, records.findIndex(record => record.record_id === initialRecordId));
   });
 
   /** A runeword's recipe, each socket resolved to the thing that goes in it. */
@@ -62,18 +62,6 @@
 
   const name = $derived(item ? (item.names?.[lang] || item.name) : '');
 
-  /// Where the map would open for this item, or nothing for something that
-  /// drops nowhere the map draws.
-  ///
-  /// The map keys its items by the lowercased English name and takes the name
-  /// in `find`. Anything with a place or a drop rate is worth offering: of the
-  /// 1140 that pass, the map knows 1129, and it knows nothing this refuses.
-  /// `asset` already puts a query on the path, so the second one is joined.
-  const onMap = $derived.by(() => {
-    if (!item?.name || !(item.places?.length || item.rate != null)) return null;
-    const at = asset('index.html');
-    return `${at}${at.includes('?') ? '&' : '?'}find=${encodeURIComponent(item.name.toLowerCase())}`;
-  });
   const lore = $derived(item ? (item.lore?.[lang] || item.lore?.en || null) : null);
 
   /** One of the game's phrases, in the reader's language. */
@@ -94,20 +82,12 @@
     ...plainModes.flatMap(mode => itemGrantGroups(mode).map(group => ({ ...group, mode }))),
   ]);
   const modeLabel = mode => conditionName(mode, lang, t);
-  const dropPlaces = $derived([...new Set([
-    ...(item?.places ?? []).map(titleCase),
-    ...(item?.reference_places ?? []).map(source => source.name),
-  ])]);
   const shown = $derived(visibleItemStats(item));
   const cls = (r) => 'r-' + String(r ?? 'common').toLowerCase().replace(/\s+/g, '-');
-
-  /**
-   * A stat as the game names it, or as this project reads it off the identifier.
-   *
-   * 212 of the 322 are the game's own — see words.Words.stats for how the two
-   * are joined — which is nine in ten of the lines anyone actually meets.
-   */
-  const place = $derived(places(lang, data?.words));
+  const pinned = $derived(comparison.find(entry => entry.key === item?.key && entry.variant === variant));
+  const comparisonFull = $derived(comparison.length >= 2 && !pinned);
+  const isPinned = $derived(!!pinned && choices.every(({ kind }) =>
+    (pinned.conditions[kind] ?? '*') === (conditionSelections[kind] ?? '*')));
 
   /**
    * The Unholy slots, grouped by the pool each rolls from.
@@ -285,13 +265,18 @@
     {#if records.length > 1}
       <label class="variant">
         {t('Variant')}
-        <select bind:value={variant}>
+        <select aria-label={t('Variant')} value={variant} onchange={(e) => {
+          variant = Number(e.currentTarget.value);
+          onVariantChange?.(records[variant], variant);
+        }}>
           {#each records as record, i (record.record_id ?? i)}
             <option value={i}>{`${t('Variant')} ${i + 1}`}{#if record.rarity || record.type || record.tier || record.lvl != null} · {[record.rarity ? t(record.rarity) : null, record.type ? t(record.type) : null, record.tier, record.lvl != null ? `${t('Level')} ${record.lvl}` : null].filter(Boolean).join(' · ')}{/if}</option>
           {/each}
         </select>
       </label>
     {/if}
+
+    <FarmSummary {item} {lang} {data} {t} />
 
     <dl class="facts">
       {#if item.base}<dt>{t('Made in')}</dt><dd>{t(item.base)}</dd>{/if}
@@ -300,16 +285,6 @@
       {/if}
       {#if item.lvl}<dt>{t('Level')}</dt><dd>{item.lvl}</dd>{/if}
       {#if item.size}<dt>{t('Space')}</dt><dd>{item.size[0]}×{item.size[1]}</dd>{/if}
-      <!-- and beside each, what it is for whoever is reading: the same figure
-           divided by the magic find they gave the map. See mf.svelte.js. -->
-      {#if item.rate}
-        <dt>{t('Drop rate')}</dt>
-        <dd>{odds(item.rate)}{#if mf.value > 0 && item.rate}<span class="mine">({figure(withMF(item.rate, mf.value))})</span>{/if}</dd>
-      {/if}
-      {#if item.chase && item.chase !== item.rate}
-        <dt>{t('In its zone')}</dt>
-        <dd>{odds(item.chase)}{#if mf.value > 0 && item.chase}<span class="mine">({figure(withMF(item.chase, mf.value))})</span>{/if}</dd>
-      {/if}
     </dl>
 
     {#if recipe.length}
@@ -352,6 +327,13 @@
       </div>
     {/if}
 
+    {#if compare}
+      <button class="compare" disabled={comparisonFull}
+        onclick={() => compare({ key: item.key, variant, conditions: { ...conditionSelections } }, isPinned)}>
+        {codexPhrase(lang, comparisonFull ? 'Comparison has two items' : isPinned ? 'Remove from comparison' : pinned ? 'Update comparison' : 'Add to comparison')}
+      </button>
+    {/if}
+
     {#if shown.length}
       <h2>{t(item.more?.length ? 'Stats, as it comes' : 'Stats')}</h2>
       {@render statList(shown, item)}
@@ -385,7 +367,7 @@
           <li>
             <span class="worn">{step.pieces}</span>
             <span class="gives">
-              {#each step.lines as l, i (i)}<span class="line">{l.says}</span>{/each}
+              {#each step.lines as l, i (i)}<span class="line">{setBonusText(l, lang, data)}</span>{/each}
             </span>
           </li>
         {/each}
@@ -442,20 +424,6 @@
       </ul>
     {/if}
 
-    {#if dropPlaces.length}
-      <h2>{t('Drop location')}</h2>
-      <ul class="places">
-        {#each dropPlaces as p (p)}<li>{place(p)}</li>{/each}
-      </ul>
-    {/if}
-
-    <!-- The two pages knew the same item and had no way to say so: this one
-         names the places, the map draws them. The link carries the name the map
-         keys its items by, which is what its own search box takes. -->
-    {#if onMap}
-      <p class="tomap"><a href={onMap}>{t('Show it on the map')} ▶</a></p>
-    {/if}
-
     {#if lore}
       <h2>{t('Lore')}</h2>
       <p class="lore">{lore}</p>
@@ -478,7 +446,10 @@
   h1 { margin: 0; font-size: 19px; line-height: 1.2; }
   .sub { margin: 3px 0 0; color: var(--dim); font-size: 12px; }
   .variant { display: flex; gap: 8px; align-items: center; margin: 12px 0; color: var(--dim); font-size: 12px; }
-  .variant select { color: var(--ink); background: var(--ground, #180d13); border: 1px solid var(--edge); padding: 4px 7px; font: inherit; }
+  .variant select { min-width: 0; max-width: 100%; color: var(--ink); background: var(--ground, #180d13); border: 1px solid var(--edge); padding: 4px 7px; font: inherit; }
+  .compare { margin-top: 9px; color: var(--hot); background: #0e0912; border: 1px solid var(--edge); border-radius: 6px; padding: 6px 9px; font: inherit; font-size: 12px; cursor: pointer; }
+  .compare:hover:not(:disabled) { border-color: var(--hot); }
+  .compare:disabled { color: var(--dim); cursor: default; }
   .condition-controls { display: grid; gap: 9px; margin: 14px 0; }
   .condition-controls label { display: flex; flex-direction: column; gap: 4px; color: var(--dim); font-size: 12px; }
   .condition-controls select { width: 100%; min-width: 0; max-width: 100%; color: var(--ink); background: var(--ground, #180d13); border: 1px solid var(--edge); border-radius: 5px; padding: 6px 7px; font: inherit; }
@@ -601,9 +572,6 @@
   .pieces .k { flex: none; color: var(--dim); font-size: 11px; }
 
   .places li { padding: 1px 0; font-size: 13px; }
-  .tomap { margin: 10px 0 0; }
-  .tomap a { color: var(--hot); font-size: 12px; text-decoration: none; }
-  .tomap a:hover { text-decoration: underline; }
   .anyone { margin: 0; font-size: 13px; }
   .suits { list-style: none; margin: 0; padding: 0; }
   .suits li {
@@ -635,7 +603,4 @@
   .effect-options summary { cursor: pointer; color: var(--dim); }
   .grant strong { color: var(--gold, #d8b45a); font-weight: 600; }
   .grant .second { margin-left: 6px; }
-  /* the same odds for whoever is reading; a margin and not a space, which
-     Svelte trims at the edge of an {#if} */
-  .mine { color: #e8c860; margin-left: .45em; }
 </style>

@@ -141,6 +141,8 @@ export function main(argv = process.argv.slice(2)) {
   const stage = mkdtempSync(join(root, '.hs-map-stage-package-')), candidate = join(stage, 'docs');
   const result = spawnSync(process.execPath, [join(root, 'node_modules', 'vite', 'bin', 'vite.js'), 'build', '--base', '/hs-map/', '--outDir', candidate], { cwd: root, env: process.env, stdio: 'inherit' });
   if (result.status !== 0) throw new Error(`Map candidate build failed; retained ${stage}`);
+  const diagnostics = join(candidate, 'diagnostics');
+  if (existsSync(diagnostics)) removeOwned(diagnostics, candidate, 'diagnostics');
   const report = validatePackage(candidate);
   writeFileSync(join(candidate, 'package-manifest.json'), JSON.stringify(report, null, 2) + '\n');
   if (dry) console.log(JSON.stringify({ candidate, ...report }, null, 2));

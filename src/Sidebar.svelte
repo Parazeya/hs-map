@@ -1,54 +1,57 @@
 <script>
   import { KIND, asset, called, figure, nameOf, odds, titleCase, withMF, zoneDropOdds } from './lib/map.js';
   import { mf } from './lib/mf.svelte.js';
+  import { mapMessages } from './lib/map-messages.js';
   import { talk } from './lib/say.js';
+  import { ITEM_GRADES } from './lib/source-search.js';
   import ItemIcon from './ItemIcon.svelte';
 
   let {
     data,
     lang,
     query = $bindable(''),
-    peek = $bindable(null),      // the item under the pointer, and where its row sits
-    active = $bindable(null),
-    // A boss, a chest or the rift, clicked on the bar below the map. It sits
-    // where a zone would and is the same card without a place around it.
-    source = $bindable(null),
-    panel = false,               // only a narrow screen reads this; see App
-    open = null,                 // what a click on a row does, if anything
+    peek = $bindable(null),
+    rarity = $bindable(null),
+    active,
+    source,
+    panel,
+    narrow,
+    rows,
+    sourceChoices,
+    closeRoom,
+    closeSource,
+    closePanel,
+    open,
+    languageIssue,
   } = $props();
 
-  /** Rarest first, because that is what anyone is looking for. */
-  const ORDER = ['Satanic', 'Unholy', 'Angelic', 'Heroic', 'Set', 'Runeword', 'Common'];
-  const RANK = Object.fromEntries(ORDER.map((r, i) => [r, i]));
+  let drawer = $state(null);
+  let searchBox = $state(null);
+  let closeButton = $state(null);
 
-  let rarity = $state(null);
+  export function focus(target) {
+    (target === 'search' ? searchBox : closeButton)?.focus({ preventScroll: true });
+  }
 
-  const all = $derived(Object.entries(data.items));
-  // Only the grades something is actually on. The full scale has seven rungs
-  // and the tables use five: nothing in the game is Common or a Runeword, so
-  // those two buttons could only ever answer "Nothing by that name". Counted
-  // rather than crossed off a list, so a patch that adds a runeword brings its
-  // button back without anyone remembering to.
-  const grades = $derived(ORDER.filter((r) => all.some(([, it]) => it.rarity === r)));
+  export function trapTab(event) {
+    const focusable = [...drawer.querySelectorAll('button:not(:disabled), input:not(:disabled), [tabindex="0"], summary')]
+      .filter((element) => element.getClientRects().length > 0);
+    const first = focusable[0];
+    const last = focusable.at(-1);
+    if (event.shiftKey ? document.activeElement === first : document.activeElement === last) {
+      event.preventDefault();
+      (event.shiftKey ? last : first)?.focus();
+    }
+  }
 
-  const found = $derived.by(() => {
-    const q = query.trim().toLowerCase();
-    let rows = all;
-    if (rarity) rows = rows.filter(([, it]) => it.rarity === rarity);
-    // by any of its names, not only the English key: a reader who has set the
-    // page to Russian types Russian, and the eleven names ride on the item
-    if (q) rows = rows.filter(([name, it]) =>
-      name.includes(q) ||
-      Object.values(it.names ?? {}).some((n) => n.toLowerCase().includes(q)));
-    return rows
-      .sort((a, b) =>
-        (RANK[a[1].rarity] ?? 9) - (RANK[b[1].rarity] ?? 9) ||
-        (b[1].tier ?? 0) - (a[1].tier ?? 0) ||
-        a[0].localeCompare(b[0]))
-      .slice(0, 400);
-  });
+  const grades = $derived(ITEM_GRADES.filter((r) => Object.values(data.items).some((it) => it.rarity === r)));
+  const PAGE_SIZE = 200;
+  let visibleRows = $state(PAGE_SIZE);
+  const found = $derived(rows.slice(0, visibleRows));
+  $effect(() => { query; rarity; visibleRows = PAGE_SIZE; });
 
   const t = $derived(talk(lang, data.words));
+  const messages = $derived(mapMessages(lang));
   const cls = (r) => 'r-' + String(r ?? 'common').toLowerCase();
   const tier = (item) => data.tiers[(item?.tier ?? 1) - 1] ?? '?';
 
@@ -57,9 +60,6 @@
   // for once the pointer has gone somewhere else.
   const BOX = 76;
   const boss = $derived(active?.boss ? data.bosses[active.boss] : null);
-  const face = $derived(boss?.icon ?? null);
-  const scale = $derived(face ? Math.min(1, BOX / Math.max(face[2], face[3])) : 1);
-
   const pinned = $derived(source ? data.bosses[source] : null);
 
   /**
@@ -70,16 +70,19 @@
    * is what the thing does. That one is a click away.
    */
   const row = (name) => ({
-    onpointerenter: (e) => (peek = { name, top: e.currentTarget.getBoundingClientRect().top }),
-    onclick: () => open?.(name),
+    onpointerenter: (e) => {
+      if (e.pointerType !== 'touch') peek = { name, top: e.currentTarget.getBoundingClientRect().top };
+    },
+    onpointerleave: () => { if (peek?.name === name) peek = null; },
+    onclick: (event) => open(name, event.currentTarget),
     onkeydown: (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
-        open?.(name);
+        open(name, e.currentTarget);
       }
     },
-    role: open ? 'button' : undefined,
-    tabindex: open ? 0 : undefined,
+    role: 'button',
+    tabindex: 0,
   });
 </script>
 
@@ -116,7 +119,7 @@
             <ItemIcon {item} sheet={data.sheet} />
             <span class="name {cls(item.rarity)}">{called(item, d.item, lang)}</span>
             {#if d.inferno}<span class="inferno">INF</span>{/if}
-            <span class="odds">{odds(data.items[d.item]?.rate)}{#if mf.value > 0 && (data.items[d.item]?.rate)}<span class="mine">({figure(withMF(data.items[d.item]?.rate, mf.value))})</span>{/if}</span>
+            <span class="odds">{odds(data.items[d.item]?.rate, lang)}{#if mf.value > 0 && (data.items[d.item]?.rate)}<span class="mine">({figure(withMF(data.items[d.item]?.rate, mf.value))})</span>{/if}</span>
           </li>
         {/each}
       </ul>
@@ -124,14 +127,48 @@
   </div>
 {/snippet}
 
-<!-- svelte-ignore a11y_no_static_element_interactions -->
-<aside class:open={panel} onpointerleave={() => (peek = null)}>
+<!-- svelte-ignore a11y_no_static_element_interactions a11y_no_noninteractive_element_to_interactive_role -->
+<aside id="map-sidebar" class:open={panel} bind:this={drawer} inert={narrow && !panel}
+  role={narrow ? 'dialog' : undefined} aria-modal={panel ? 'true' : undefined}
+  aria-label={t('Find an item…')} onpointerleave={() => (peek = null)}>
+  <div class="head">
+    <div class="search">
+      <input
+        type="search"
+        bind:this={searchBox}
+        bind:value={query}
+        aria-label={t('Find an item…')}
+        placeholder={t('Find an item…')}
+        autocomplete="off"
+        spellcheck="false"
+      >
+      <button type="button" class="x close-panel" bind:this={closeButton} aria-label={messages.close} onclick={closePanel}>×</button>
+    </div>
+    <div class="rarities">
+      <button class:on={!rarity} aria-pressed={!rarity} onclick={() => (rarity = null)}>{t('all')}</button>
+      {#each grades as r (r)}
+        <button class={cls(r)} class:on={rarity === r} aria-pressed={rarity === r}
+          onclick={() => (rarity = rarity === r ? null : r)}>{t(r)}</button>
+      {/each}
+    </div>
+    {#if sourceChoices.length}
+      <details class="locations" open={sourceChoices.length <= 6}>
+        <summary>{messages.sources} ({sourceChoices.length})</summary>
+        <div class="source-list">
+          {#each sourceChoices as choice (choice.key)}
+            <button type="button" aria-pressed={choice.selected} onclick={choice.pick}>{choice.label}</button>
+          {/each}
+        </div>
+      </details>
+    {/if}
+  </div>
+
   {#if pinned}
     <!-- what was clicked on the bar: a boss, a chest, the rift -->
     <section class="zone">
       <header>
         <h2>{called(pinned, source, lang)}</h2>
-        <button class="x" aria-label={t('Let it go')} onclick={() => (source = null)}>×</button>
+        <button class="x" aria-label={t('Let it go')} onclick={closeSource}>×</button>
       </header>
       <p class="sub">
         {[t(pinned.kind === 'source' ? 'not a boss' : 'boss'),
@@ -148,7 +185,7 @@
     <section class="zone">
       <header>
         <h2>{nameOf(active, lang)}</h2>
-        <button class="x" aria-label={t('Let it go')} onclick={() => (active = null)}>×</button>
+        <button class="x" aria-label={t('Let it go')} onclick={closeRoom}>×</button>
       </header>
       <p class="sub">
         {[t(KIND[active.kind]), active.act ? `${t('act')} ${active.act}` : null, active.code]
@@ -172,7 +209,7 @@
               <span class="name {cls(item.rarity)}">{called(item, name, lang)}</span>
               {#if item.inferno}<span class="inferno">INF</span>{/if}
               <span class="odds">
-                {odds(chance.odds) || '—'}
+                {odds(chance.odds, lang) || '—'}
                 {#if mf.value > 0 && chance.odds}<span class="mine">({figure(withMF(chance.odds, mf.value))})</span>{/if}
               </span>
             </li>
@@ -185,26 +222,8 @@
     </section>
   {/if}
 
-  <div class="head">
-    <input
-      type="search"
-      bind:value={query}
-      placeholder={t('Find an item…')}
-      autocomplete="off"
-      spellcheck="false"
-    >
-    <div class="rarities">
-      <button class:on={!rarity} onclick={() => (rarity = null)}>{t('all')}</button>
-      {#each grades as r (r)}
-        <button class={cls(r)} class:on={rarity === r} onclick={() => (rarity = rarity === r ? null : r)}>
-          {t(r)}
-        </button>
-      {/each}
-    </div>
-  </div>
-
   <p class="count">
-    <span>{found.length}{found.length === 400 ? '+' : ''} {t('items')}</span>
+    <span>{rows.length} {t('items')}</span>
     <!-- The badge sits on rows all over this page and on the cards, and said
          what it meant only to a pointer that stopped on it. It says it here
          instead, once, beside the count — where the eye already goes to read
@@ -218,11 +237,15 @@
         <span class="tier">{tier(item)}</span>
         <span class="name {cls(item.rarity)}">{called(item, name, lang)}</span>
         {#if item.inferno}<span class="inferno">INF</span>{/if}
-        <span class="odds">{odds(item.rate)}{#if mf.value > 0 && (item.rate)}<span class="mine">({figure(withMF(item.rate, mf.value))})</span>{/if}</span>
+        <span class="odds">{odds(item.rate, lang)}{#if mf.value > 0 && (item.rate)}<span class="mine">({figure(withMF(item.rate, mf.value))})</span>{/if}</span>
       </li>
     {/each}
-    {#if found.length === 0}<li class="note">Nothing by that name.</li>{/if}
+    {#if found.length === 0}<li class="note">{messages.emptyItems}</li>{/if}
+    {#if found.length < rows.length}
+      <li><button type="button" class="show-more" onclick={() => (visibleRows += PAGE_SIZE)}>{messages.showMore}</button></li>
+    {/if}
   </ul>
+  {#if panel}{@render languageIssue()}{/if}
 </aside>
 
 <style>
@@ -267,6 +290,7 @@
   .zone {
     flex: 0 1 auto;
     min-height: 0;
+    max-height: 55%;
     display: flex;
     flex-direction: column;
     padding: 8px 10px 10px;
@@ -280,12 +304,14 @@
     color: var(--dim); font: inherit; font-size: 18px; line-height: 1; cursor: pointer;
   }
   .x:hover { color: var(--hot); }
+  .close-panel { display: none; }
   .sub { margin: 1px 0 7px; color: var(--dim); font-size: 11px; }
   .zone .rows { overflow-y: auto; }
   .foot { margin: 6px 0 0; color: var(--dim); font-size: 11px; font-style: italic; }
 
   /* ── search ───────────────────────────────────────────────────────────── */
-  .head { padding: 9px 10px 8px; }
+  .head { flex: none; padding: 9px 10px 8px; }
+  .search { display: flex; align-items: center; gap: 7px; }
 
   input {
     width: 100%;
@@ -313,6 +339,20 @@
   }
   .rarities button.on { border-color: currentColor; background: #ffffff0f; }
   .rarities button:hover { background: #ffffff14; }
+
+  .locations { margin-top: 7px; color: var(--dim); font-size: 11px; }
+  .locations summary { width: fit-content; cursor: pointer; }
+  .source-list { display: flex; flex-wrap: wrap; gap: 4px; max-height: 5rem; overflow: auto; margin: 4px 0 0; }
+  .source-list button {
+    border: 1px solid var(--edge); border-radius: 4px; background: #211728;
+    color: var(--ink); padding: 2px 6px; font: inherit; cursor: pointer;
+  }
+  .source-list button:is(:hover, :focus-visible, [aria-pressed='true']) { color: var(--hot); border-color: var(--hot); }
+  .show-more {
+    width: 100%; margin-top: 6px; padding: 5px 8px; border: 1px solid var(--edge); border-radius: 4px;
+    color: var(--ink); background: #211728; font: inherit; cursor: pointer;
+  }
+  .show-more:is(:hover, :focus-visible) { color: var(--hot); border-color: var(--hot); }
 
   .count {
     display: flex;
@@ -394,6 +434,9 @@
       box-shadow: -12px 0 30px #0008;
     }
     aside.open { transform: none; }
+    aside:not(.open) { visibility: hidden; }
+    .close-panel { display: block; min-width: 32px; min-height: 32px; }
+    .source-list button, .show-more { min-height: 32px; }
   }
 
   @media (max-width: 46rem) and (prefers-reduced-motion: reduce) {

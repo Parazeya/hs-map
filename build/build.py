@@ -35,6 +35,9 @@ import item_grant_slots
 import item_effects
 import item_conditions
 import reference_sources
+import catalogue_sources
+import localized_content
+import translated_labels
 import reference_sets
 import reference_zones
 import skills as skilltree
@@ -596,7 +599,7 @@ def types_said(say, items):
     return out
 
 
-def codex(dw, raw_items, langs, tables):
+def codex(dw, raw_items, langs, tables, map_items, nodes, shelves, places):
     """The encyclopedia's own data and its own sheet of icons.
 
     A sheet apart from the map's, on purpose. The map draws 931 things and this
@@ -729,6 +732,8 @@ def codex(dw, raw_items, langs, tables):
     print(f"         {borne} carry an aura, which is nobody's in particular")
     out["classes"] = [{"id": c, "names": class_said(say, c)} for c in sorted(profiles)]
     out["about"] = suits.words(lambda k: say.by_key.get(k))
+    catalogue_sources.attach(map_items, nodes, shelves, places, out)
+    localized_content.correct_japanese_item_names(items, map_items)
 
     report(langsplit.write(out, langs, DATA / "codex.json"))
     print(f"squeeze  {rows} stat lines say their name and unit by number now")
@@ -1126,6 +1131,7 @@ def main():
         told = say.of(name)
         if told:
             row["names"] = told
+    translated_labels.fill_source_names(who, said.SAID)
     for n in nodes:
         n["drops"] = n["drops"]          # untouched; names ride on the items
     # The place strings the cards list are not all shelf entries — the tables
@@ -1150,12 +1156,13 @@ def main():
     for it in items.values():
         it.pop("_machinery", None)
 
-    codex(dw, raw_items, langs, t)
+    codex(dw, raw_items, langs, t, items, nodes, who, spoken)
 
     # The Bounty Board's own page. Its quests are named and worded by the game
     # in all eleven languages; which quests are the board's is the one thing
     # written down, and build/bounty.py says on what evidence.
     board_langs, quests = bounty.collect(GAME, source_csv("translationsQuest"))
+    localized_content.fill_finnish_bounties(quests)
     board = {
         "source": SOURCE,
         "langs": board_langs,

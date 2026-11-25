@@ -31,7 +31,7 @@ export function hydrate(d) {
   for (const [key, it] of Object.entries(d.items)) {
     for (const record of recordsOf(it)) {
       record.key = key;
-      record.name ??= record.names?.en ?? it.name ?? it.names?.en;
+      record.name ??= record.names?.en ?? it.name ?? it.names?.en ?? key;
       for (const row of [...(record.stats ?? []), ...(record.more ?? []).flatMap((m) => m.stats)]) {
         const said = d.stats[row.sid];
         if (!said) throw new Error(`Missing stat vocabulary entry ${row.sid}`);
@@ -56,9 +56,10 @@ let held = null;
 export async function read(lang) {
   held ??= fetch(asset('data/codex.json'))
     .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`${r.status} ${r.statusText}`))))
-    .then(hydrate);
+    .then(hydrate)
+    .catch((error) => { held = null; throw error; });
   const got = await held;
-  if (lang && lang !== 'en') await speak(got, 'codex', lang).catch(() => {});
+  if (lang && lang !== 'en') await speak(got, 'codex', lang);
   return { ...got };
 }
 
@@ -72,15 +73,29 @@ const indexed = new WeakMap();
  * English name is what they have in common. All 1126 of the map's items find
  * their record this way.
  */
-export function find(book, name) {
+const folded = (name) => name?.normalize('NFC').replace(/[‘’]/g, "'").replace(/\s+/g, ' ').trim().toLowerCase();
+
+export function resolveItem(book, name, key, recordId) {
+  if (key) {
+    const item = Object.hasOwn(book.items, key) ? book.items[key] : null;
+    if (!item || (recordId && !recordsOf(item).some(record => record.record_id === recordId))) return null;
+    return { key, recordId: recordId ?? null };
+  }
   let by = indexed.get(book);
   if (!by) {
     by = new Map();
     for (const [key, it] of Object.entries(book.items)) {
-      const said = it.name || it.names?.en;
-      if (said) by.set(said.replace(/\s+/g, ' ').trim().toLowerCase(), key);
+      for (const record of recordsOf(it)) {
+        const said = folded(record.name || record.names?.en);
+        if (!said) continue;
+        if (!by.has(said)) by.set(said, new Set());
+        by.get(said).add(key);
+      }
     }
     indexed.set(book, by);
   }
-  return by.get(name) ?? null;
+  const keys = by.get(folded(name));
+  return keys?.size === 1 ? { key: [...keys][0], recordId: null } : null;
 }
+
+export const find = (book, name, key) => resolveItem(book, name, key)?.key ?? null;

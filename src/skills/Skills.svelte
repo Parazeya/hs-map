@@ -1,14 +1,21 @@
 <script>
-  import { asset, recall, remember } from '../lib/map.js';
-  import { speak } from '../lib/lang.js';
+  import { tick } from 'svelte';
+  import { asset, mapDocument, recall, remember } from '../lib/map.js';
   import { talk } from '../lib/say.js';
+  import { catalogueLanguage, preferredUiLanguage } from '../lib/ui-language.svelte.js';
+  import { catalogueMessages } from '../lib/catalogue-messages.js';
+  import CatalogueLoadStatus from '../CatalogueLoadStatus.svelte';
+  import LanguageNotice from '../LanguageNotice.svelte';
   import ItemIcon from '../ItemIcon.svelte';
 
   const SHEET = 'img/skills.webp';
 
   let data = $state(null);
-  let failed = $state(null);
-  let lang = $state('en');
+  let failed = $state(false);
+  const language = catalogueLanguage('skills');
+  const lang = $derived(language.current);
+  const startupLang = preferredUiLanguage();
+  const messages = catalogueMessages(startupLang);
 
   let query = $state('');
   let hero = $state(null); // a class id
@@ -17,7 +24,7 @@
   // Read before anything else runs: the effect below writes the address back
   // as soon as the page mounts, and with nothing open yet that erases what the
   // address was holding before the table has arrived to check it against.
-  const asked = { skill: recall('skill'), node: Number(recall('node')) };
+  const asked = { skill: recall('skill'), node: Number(recall('node') ?? NaN) };
 
   let chosen = $state(null); // the skill being read, by key
   let node = $state(null); // the place in its tree being read, 0 to 14
@@ -27,15 +34,6 @@
   let heroQuery = $state('');
   let heroOpen = $state(false);
   let tagQuery = $state('');
-
-  const KEPT = 'hs-map.lang';
-  const remembered = () => {
-    try {
-      return localStorage.getItem(KEPT);
-    } catch {
-      return null;
-    }
-  };
 
   const t = $derived(talk(lang, data?.words));
   /** One of the game's phrases, in the reader's language. */
@@ -144,16 +142,59 @@
   });
   const reading = $derived(node == null ? null : open?.subs?.find((x) => x.i === node));
 
-  function read(key, at = null) {
+  const narrowScreen = window.matchMedia('(max-width: 60rem)');
+  let detailTitle = $state(null);
+  let detailPanel = $state(null);
+  let listPanel = $state(null);
+  let filtersPanel = $state(null);
+  let searchBox = $state(null);
+  let filtersButton = $state(null);
+  let lastResult;
+  let resultScroll = 0;
+
+  async function read(key, at, button) {
+    lastResult = button;
+    resultScroll = listPanel?.scrollTop ?? 0;
     chosen = key;
     node = at;
+    await tick();
+    detailPanel?.scrollTo(0, 0);
+    if (narrowScreen.matches) detailTitle?.focus({ preventScroll: true });
+  }
+
+  async function backToResults() {
+    chosen = null;
+    node = null;
+    await tick();
+    listPanel?.scrollTo(0, resultScroll);
+    (lastResult?.isConnected ? lastResult : searchBox)?.focus({ preventScroll: true });
+  }
+
+  async function toggleFilters() {
+    filters = !filters;
+    if (!filters) filtersButton?.focus();
+    else {
+      await tick();
+      filtersPanel?.querySelector('button:not(:disabled), input')?.focus();
+    }
+  }
+
+  function onkeydown(event) {
+    if (event.key !== 'Escape') return;
+    if (open) {
+      event.preventDefault();
+      backToResults();
+    } else if (filters && narrowScreen.matches) {
+      event.preventDefault();
+      toggleFilters();
+    }
   }
 
   // What is open, in the address, so a skill can be reloaded or sent to
   // somebody — the node it is opened at as well, because a tree of fifteen is
   // worth pointing at one of.
   $effect(() => {
-    remember({ skill: chosen, node: chosen && node != null ? node : null });
+    if (data) remember({ skill: chosen, node: chosen && node != null ? node : null });
   });
 
   function nothing() {
@@ -191,16 +232,14 @@
     return by;
   });
 
-  async function load() {
+  async function load(retry = false) {
+    failed = false;
     try {
-      const res = await fetch(asset('data/skills.json'));
+      const res = await fetch(asset('data/skills.json'), { cache: retry ? 'reload' : 'default' });
       if (!res.ok) throw new Error(`skills.json: ${res.status} ${res.statusText}`);
-      data = await res.json();
-      const want = remembered();
-      if (want && want !== 'en' && data.langs.includes(want)) {
-        await speak(data, 'skills', want);
-        lang = want;
-      }
+      const loaded = await res.json();
+      await language.prepare(loaded);
+      data = loaded;
       // and what the address was holding, now that there is a table to check
       if (asked.skill && data.skills[asked.skill]) {
         chosen = asked.skill;
@@ -208,24 +247,13 @@
           node = asked.node;
         }
       }
-    } catch (e) {
-      failed = String(e);
+    } catch {
+      failed = true;
     } finally {
       document.getElementById('boot')?.remove();
     }
   }
   load();
-
-  async function say(next) {
-    if (next === lang || !data) return;
-    if (next !== 'en') await speak(data, 'skills', next);
-    lang = next;
-    try {
-      localStorage.setItem(KEPT, next);
-    } catch {
-      /* a browser that keeps nothing still gets the language, just not twice */
-    }
-  }
 
   const only = (set, v) => (set === v ? null : v);
 
@@ -250,26 +278,32 @@
   });
 </script>
 
-<header>
-  <a class="back" href={asset('')}>◀ {t('Map')}</a>
+<svelte:window {onkeydown} />
+
+<header class:detail-open={open}>
+  <a class="back" href={mapDocument('index.html')}>◀ {t('Map')}</a>
   <h1>{t('Skills')}</h1>
-  <input class="find" type="search" bind:value={query} placeholder={t('a skill…')} />
+  {#if data}
+  <input class="find" type="search" bind:this={searchBox} bind:value={query}
+    aria-label={t('a skill…')} placeholder={t('a skill…')} />
   {#if filtered}
     <button class="wipe" onclick={nothing}>{t('clear')}</button>
   {/if}
-  <button class="narrow" onclick={() => (filters = !filters)}>{t('Filters')}</button>
-  {#if data}
-    <select class="lang" value={lang} onchange={(e) => say(e.currentTarget.value)}>
+  <button class="narrow" bind:this={filtersButton} aria-expanded={filters} aria-controls="skill-filters"
+    onclick={toggleFilters}>{t('Filters')}</button>
+    <select class="lang" aria-label={t('Language')} value={language.pending ?? lang}
+      aria-busy={!!language.pending} onchange={(e) => language.pick(data, e.currentTarget.value)}>
       {#each data.langs as l (l)}<option value={l}>{l.toUpperCase()}</option>{/each}
     </select>
   {/if}
 </header>
 
-{#if failed}
-  <p class="bad">{failed}</p>
-{:else if data}
-  <main>
-    <aside class="side" class:open={filters}>
+{#if !data}
+  <CatalogueLoadStatus {failed} loading={messages.skillsLoading} message={messages.skillsError}
+    lang={startupLang} retry={() => load(true)} />
+{:else}
+  <main class:reading={open} class:filtering={filters}>
+    <aside id="skill-filters" class="side" class:open={filters} bind:this={filtersPanel}>
       <p class="head">{t('Damage')}{#if element}<button class="drop" title={t('clear')} aria-label={t('clear')} onclick={() => { element = null; }}>×</button>{/if}</p>
       <div class="chips">
         {#each data.elements as e (e.id)}
@@ -313,7 +347,7 @@
       </div>
     </aside>
 
-    <section class="list">
+    <section class="list" bind:this={listPanel}>
       <p class="count">{shown.length} {t('of')} {all.length}</p>
       <ul>
         {#each shown as s (s.key)}
@@ -321,7 +355,8 @@
             <button
               class="row"
               class:on={chosen === s.key}
-              onclick={() => read(s.key, s.via.at?.i ?? null)}
+              aria-current={chosen === s.key ? 'true' : null}
+              onclick={(event) => read(s.key, s.via.at?.i ?? null, event.currentTarget)}
             >
               <ItemIcon item={s} sheet={data.sheet} from={SHEET} box={22} />
               <span class="nm">
@@ -339,9 +374,12 @@
       </ul>
     </section>
 
-    <section class="panel" class:reading={open} bind:clientWidth={panelW}>
+    <section class="panel" class:reading={open} bind:this={detailPanel} bind:clientWidth={panelW}>
       {#if open}
-        <h2 class="title">
+        <div class="detail-nav">
+          <button aria-label={`${t('Back')} · ${t('Skills')}`} onclick={backToResults}>← {t('Skills')}</button>
+        </div>
+        <h2 class="title" tabindex="-1" bind:this={detailTitle}>
           <ItemIcon item={open} sheet={data.sheet} from={SHEET} box={34} />
           {word(open.names)}
         </h2>
@@ -447,6 +485,8 @@
                   class:on={node === x.i}
                   style="left:{spot.at[0] * 100}%;top:{spot.at[1] * 100}%"
                   title={word(x.names)}
+                  aria-label={word(x.names)}
+                  aria-pressed={node === x.i}
                   onclick={() => (node = node === x.i ? null : x.i)}
                 >
                   <span class="disc" style={art(data.nodes?.disc?.[big ? 'bg' : 'sm'])}></span>
@@ -488,6 +528,8 @@
       {/if}
     </section>
   </main>
+  <LanguageNotice {lang} failure={language.failure}
+    retry={(next) => language.pick(data, next)} dismiss={language.dismiss} />
 {/if}
 
 <style>
@@ -516,7 +558,7 @@
     margin-left: auto; background: rgba(0, 0, 0, .35); color: var(--ink);
     border: 1px solid var(--edge); border-radius: 6px; padding: 5px 8px; font: inherit;
   }
-  .narrow { display: none; }
+  .narrow, .detail-nav { display: none; }
 
   main {
     position: fixed;
@@ -681,21 +723,61 @@
   .says { display: block; color: var(--dim); font-size: 12px; margin: 4px 0 0; }
   .n { color: var(--dim); }
   .hint { color: var(--dim); }
-  .bad { color: #ff8b8b; padding: 16px; }
 
   @media (max-width: 60rem) {
-    main { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+    main { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
     .narrow {
       display: inline-block; background: rgba(0, 0, 0, .3); color: var(--ink);
       border: 1px solid var(--edge); border-radius: 6px; padding: 5px 9px;
       font: inherit; cursor: pointer;
     }
-    /* On a phone the list is what the page is for, so the filters and the
-       reading panel come over it rather than beside it. */
     .side { display: none; border-right: 0; }
-    .side.open { display: block; grid-row: 1 / -1; }
-    .list { border-right: 0; }
+    .side.open { display: block; }
+    .list { border-right: 0; min-height: 0; }
+    main.filtering .list, main.reading .list, main.reading .side { display: none; }
     .panel { display: none; }
-    .panel.reading { display: block; grid-row: 1 / -1; }
+    .panel.reading {
+      display: block;
+      position: fixed;
+      inset: 0;
+      z-index: 6;
+      background: var(--ground, #100a13);
+      padding-top: 0;
+    }
+    .detail-nav {
+      display: flex;
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      background: var(--ground, #100a13);
+      margin: 0 -16px 12px;
+      padding: 8px 16px;
+      border-bottom: 1px solid var(--edge);
+    }
+    .detail-nav button {
+      padding: 5px 9px;
+      color: var(--ink);
+      background: var(--panel);
+      border: 1px solid var(--edge);
+      border-radius: 6px;
+      font: inherit;
+      cursor: pointer;
+    }
+    header.detail-open { visibility: hidden; }
+  }
+  @media (max-width: 38rem) {
+    header {
+      height: 92px;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) repeat(3, auto);
+      grid-template-rows: minmax(0, 1fr) auto;
+      gap: 5px 8px;
+      padding: 5px 12px 8px;
+    }
+    .find { grid-area: 2 / 1 / 3 / -1; width: 100%; min-width: 0; max-width: none; }
+    .wipe { grid-area: 1 / 3; }
+    .narrow { grid-area: 1 / 4; }
+    .lang { grid-area: 1 / 5; margin-left: 0; }
+    main { top: 92px; }
   }
 </style>

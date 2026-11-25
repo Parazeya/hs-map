@@ -1,10 +1,11 @@
 <script>
-  import { called, figure, nameOf, odds, titleCase, withMF } from './lib/map.js';
+  import { called, figure, nameOf, odds, withMF } from './lib/map.js';
   import { mf } from './lib/mf.svelte.js';
   import { places, talk } from './lib/say.js';
+  import { itemSourceDetails } from './lib/source-search.js';
   import ItemIcon from './ItemIcon.svelte';
 
-  let { data, name, lang, top } = $props();
+  let { data, index, name, lang, top } = $props();
 
   const it = $derived(data.items[name] ?? {});
   const cls = $derived('r-' + String(it.rarity ?? 'common').toLowerCase());
@@ -15,11 +16,7 @@
            (n) => data.places?.[n]?.[lang] || data.bosses[n]?.names?.[lang]),
   );
 
-  /** Which markers carry it — the map is the point, after all. */
-  const wheres = $derived.by(() => {
-    const codes = new Set(it.zones ?? []);
-    return data.nodes.filter((n) => n.code && codes.has(n.code));
-  });
+  const locations = $derived(itemSourceDetails(data, index, name));
 
   // pinned to the menu's edge, level with the row, and kept inside the window
   const y = $derived(Math.max(8, Math.min(top - 20, innerHeight - 340)));
@@ -41,22 +38,27 @@
   <dl>
     {#if it.rate}
       <dt>{t('anywhere')}</dt>
-      <dd>{odds(it.rate)}{#if mf.value > 0 && it.rate}<span class="mine">({figure(withMF(it.rate, mf.value))})</span>{/if}</dd>
+      <dd>{odds(it.rate, lang)}{#if mf.value > 0 && it.rate}<span class="mine">({figure(withMF(it.rate, mf.value))})</span>{/if}</dd>
     {/if}
     {#if it.chase}
       <dt>{t('in its own zone')}</dt>
-      <dd>{odds(it.chase)}{#if mf.value > 0 && it.chase}<span class="mine">({figure(withMF(it.chase, mf.value))})</span>{/if}</dd>
+      <dd>{odds(it.chase, lang)}{#if mf.value > 0 && it.chase}<span class="mine">({figure(withMF(it.chase, mf.value))})</span>{/if}</dd>
     {/if}
   </dl>
 
-  {#if it.places?.length}
+  {#if locations.sources.length}
+    <h4>{t('drops from')}</h4>
+    <ul class="zones">
+      {#each locations.sources as [key, source] (key)}<li>{called(source, key, lang)}</li>{/each}
+    </ul>
+  {:else if !locations.rooms.length && it.places?.length}
     <h4>{t('drops from')}</h4>
     <ul>{#each it.places as p (p)}<li>{place(p)}</li>{/each}</ul>
   {/if}
 
-  {#if wheres.length}
+  {#if locations.rooms.length}
     <h4>{t('on the map')}</h4>
-    <ul class="zones">{#each wheres as n (n.room)}<li>{nameOf(n, lang)}</li>{/each}</ul>
+    <ul class="zones">{#each locations.rooms as n (n.room)}<li>{nameOf(n, lang)}</li>{/each}</ul>
   {/if}
 </div>
 

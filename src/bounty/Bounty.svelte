@@ -6,29 +6,37 @@
   // the game's own, in whichever of the eleven languages the reader picked; see
   // build/bounty.py for which quests are the board's and how that was settled.
   //
-  // The video beside each one is the part the game cannot supply. Until there is
-  // a link the card draws the space where it goes, so a quest without one reads
-  // as "not yet" rather than as broken.
-  import { asset, recall, remember } from '../lib/map.js';
-  import { speak } from '../lib/lang.js';
+  import { asset, mapDocument, recall, remember } from '../lib/map.js';
   import { talk } from '../lib/say.js';
+  import { catalogueLanguage, preferredUiLanguage } from '../lib/ui-language.svelte.js';
+  import { catalogueMessages } from '../lib/catalogue-messages.js';
+  import CatalogueLoadStatus from '../CatalogueLoadStatus.svelte';
+  import LanguageNotice from '../LanguageNotice.svelte';
 
   let data = $state(null);
-  let failed = $state(null);
-  let lang = $state('en');
+  let failed = $state(false);
+  const language = catalogueLanguage('bounty');
+  const lang = $derived(language.current);
+  const startupLang = preferredUiLanguage();
+  const messages = catalogueMessages(startupLang);
   let query = $state(recall('find') ?? '');
-  let loading = $state(null);
-
-  const KEPT = 'hs-map.lang';
-  const remembered = () => {
-    try {
-      return localStorage.getItem(KEPT);
-    } catch {
-      return null;
-    }
-  };
+  let guide = $state(null);
 
   const t = $derived(talk(lang, data?.words));
+  const guideLabels = {
+    en: ['Watch video guide', 'Hide video guide'],
+    fi: ['Katso opasvideo', 'Piilota opasvideo'],
+    pt: ['Assistir ao guia em vídeo', 'Ocultar guia em vídeo'],
+    ru: ['Смотреть видеогайд', 'Скрыть видеогайд'],
+    zh: ['观看视频攻略', '隐藏视频攻略'],
+    ja: ['攻略動画を見る', '攻略動画を非表示'],
+    ko: ['공략 영상 보기', '공략 영상 숨기기'],
+    de: ['Videoanleitung ansehen', 'Videoanleitung ausblenden'],
+    fr: ['Voir le guide vidéo', 'Masquer le guide vidéo'],
+    sp: ['Ver la guía en vídeo', 'Ocultar la guía en vídeo'],
+    pl: ['Zobacz poradnik wideo', 'Ukryj poradnik wideo'],
+  };
+  const guideLabel = (open) => (guideLabels[lang] ?? guideLabels.en)[open ? 1 : 0];
   /** One of the game's phrases, in the reader's language. */
   const word = (o) => o?.[lang] || o?.en || '';
 
@@ -56,6 +64,7 @@
 
   $effect(() => {
     remember({ find: query.trim() || null });
+    if (guide && !found.some(quest => quest.key === guide)) guide = null;
   });
 
   /**
@@ -81,43 +90,28 @@
     return `${two(Math.floor(secs / 3600))}:${two(Math.floor(secs / 60) % 60)}:${two(secs % 60)}`;
   });
 
-  async function load() {
+  async function load(retry = false) {
+    failed = false;
     try {
-      const res = await fetch(asset('data/bounty.json'));
+      const res = await fetch(asset('data/bounty.json'), { cache: retry ? 'reload' : 'default' });
       if (!res.ok) throw new Error(`bounty.json: ${res.status} ${res.statusText}`);
-      data = await res.json();
-      const want = remembered();
-      if (want && want !== 'en' && data.langs.includes(want)) {
-        await speak(data, 'bounty', want);
-        lang = want;
-      }
-    } catch (e) {
-      failed = String(e);
+      const loaded = await res.json();
+      await language.prepare(loaded);
+      data = loaded;
+    } catch {
+      failed = true;
     } finally {
       document.getElementById('boot')?.remove();
     }
   }
   load();
 
-  async function say(next) {
-    if (next === lang || !data) return;
-    loading = next;
-    try {
-      if (next !== 'en') await speak(data, 'bounty', next);
-      lang = next;
-      localStorage.setItem(KEPT, next);
-    } catch {
-      // the page is whole in the language it is in; the picker snapping back is
-      // what says the switch failed
-    } finally {
-      loading = null;
-    }
-  }
 </script>
 
-{#if failed}
-  <p class="broke">The bounty list would not load.<br><code>{failed}</code></p>
-{:else if data}
+{#if !data}
+  <CatalogueLoadStatus {failed} loading={messages.bountyLoading} message={messages.bountyError}
+    lang={startupLang} retry={() => load(true)} />
+{:else}
   <!-- The scroller, and it has to be here rather than on the document:
        theme.css pins html and body for the map, which fills the window and
        must never scroll behind itself. Every other page scrolls a box of its
@@ -126,13 +120,14 @@
   <div class="page">
     <header>
       <span class="side">
-        <a class="back" href={asset('index.html')}>◀ {t('Back')}</a>
+        <a class="back" href={mapDocument('index.html')}>◀ {t('Back')}</a>
         <span class="count">{found.length} / {data.quests.length}</span>
       </span>
 
       <input
         type="search"
         placeholder={t('Find a quest, or what it asks for…')}
+        aria-label={t('Find a quest, or what it asks for…')}
         title={lang === 'en' ? null : t('searched in this language and English')}
         autocomplete="off"
         spellcheck="false"
@@ -144,11 +139,11 @@
           <button class="clear" onclick={() => (query = '')}>{t('clear')}</button>
         {/if}
         <select
-          value={loading ?? lang}
+          value={language.pending ?? lang}
           aria-label={t('Language')}
-          aria-busy={loading ? 'true' : null}
-          class:loading
-          onchange={(e) => say(e.currentTarget.value)}
+          aria-busy={!!language.pending}
+          class:loading={language.pending != null}
+          onchange={(e) => language.pick(data, e.currentTarget.value)}
         >
           {#each data.langs as l (l)}<option value={l}>{l.toUpperCase()}</option>{/each}
         </select>
@@ -180,36 +175,32 @@
               {/if}
             </div>
 
-            <!-- The video, or the space it will take. A 16:9 box either way, so
-                 a list half filled in does not jump about as it is filled. -->
-            <div class="film">
-              <!-- The referrer policy sends the origin and never the path. The
-                   tighter `no-referrer` is what the player refuses: with no
-                   Referer at all it cannot tell which site embedded it, and
-                   every video came back as a player configuration error, 153,
-                   instead of playing. Privacy is `youtube-nocookie` above. -->
-              {#if q.video}
+            {#if q.video}
+              <button class="guide" aria-expanded={guide === q.key}
+                aria-controls={`guide-${q.key}`}
+                onclick={() => (guide = guide === q.key ? null : q.key)}>
+                {guideLabel(guide === q.key)}
+              </button>
+              <div id={`guide-${q.key}`} class="film" hidden={guide !== q.key}>
+              {#if guide === q.key}
                 <iframe
                   src={`https://www.youtube-nocookie.com/embed/${q.video}`}
-                  title={word(q.name)}
-                  loading="lazy"
+                  title={`${guideLabel(false)} · ${word(q.name)}`}
                   referrerpolicy="strict-origin-when-cross-origin"
                   allow="accelerometer; clipboard-write; encrypted-media; picture-in-picture"
                   allowfullscreen
                 ></iframe>
-              {:else}
-                <div class="soon">
-                  <span class="play">▶</span>
-                  <span>{t('a walkthrough goes here')}</span>
-                </div>
               {/if}
-            </div>
+              </div>
+            {/if}
           </li>
         {/each}
       </ul>
     {/if}
   </div>
   </div>
+  <LanguageNotice {lang} failure={language.failure}
+    retry={(next) => language.pick(data, next)} dismiss={language.dismiss} />
 {/if}
 
 <style>
@@ -303,24 +294,27 @@
     letter-spacing: .5px;
   }
   .empty { color: var(--dim); font-style: italic; }
-  .broke { padding: 40px; text-align: center; color: var(--dim); }
 
-  .quests { margin: 0; padding: 0; list-style: none; display: grid; gap: 14px; }
-
-  /* Words on the left, picture on the right, and one under the other as soon as
-     that stops fitting — the brief is three lines and the film is 16:9, so side
-     by side is only worth having on a wide screen. */
+  .quests { margin: 0; padding: 0; list-style: none; display: grid; gap: 9px; }
   .quest {
     display: grid;
-    grid-template-columns: 1fr 320px;
-    gap: 16px;
-    padding: 14px 16px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 8px 14px;
+    padding: 12px 14px;
     background: var(--panel);
     border: 1px solid var(--edge);
     border-radius: 9px;
   }
-  @media (max-width: 720px) {
-    .quest { grid-template-columns: 1fr; }
+  @media (max-width: 560px) {
+    header {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 7px 10px;
+    }
+    header input[type='search'] { grid-area: 2 / 1 / 3 / -1; width: 100%; }
+    .side.end { grid-area: 1 / 2; }
+    .quest { grid-template-columns: minmax(0, 1fr); }
   }
 
   .what { min-width: 0; }
@@ -341,25 +335,24 @@
   .goals { margin: 0; padding: 0 0 0 16px; font-size: 13px; line-height: 1.6; }
   .goals li::marker { color: var(--dim); }
 
-  .film { align-self: start; }
-  .film iframe,
-  .soon {
+  .guide {
+    justify-self: start;
+    background: #0e0912;
+    color: var(--hot);
+    border: 1px solid var(--edge);
+    border-radius: 6px;
+    padding: 6px 9px;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .guide:hover { border-color: var(--hot); }
+  .film { grid-column: 1 / -1; width: min(100%, 38rem); }
+  .film iframe {
     display: block;
     width: 100%;
     aspect-ratio: 16 / 9;
     border: 0;
     border-radius: 6px;
   }
-  .soon {
-    display: grid;
-    place-content: center;
-    gap: 8px;
-    justify-items: center;
-    color: #5f5259;
-    background: #150e19;
-    border: 1px dashed var(--edge);
-    font-size: 11px;
-    text-align: center;
-  }
-  .soon .play { font-size: 20px; opacity: .5; }
 </style>

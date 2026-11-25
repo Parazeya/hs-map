@@ -17,6 +17,8 @@ for something this dictionary also names, the game wins, because it is what the
 game itself prints. That was the order inside `talk` and it is the order here.
 """
 
+from translated_labels import LABELS
+
 SAID = {
     "All variants": {"ru": "Все варианты"},
     "Socketed item": {"ru": "Вставленный камень"},
@@ -807,3 +809,6 @@ SAID = {
         "de": "von", "fr": "sur", "sp": "de", "pl": "z",
     },
 }
+
+for label, translations in LABELS.items():
+    SAID[label] = {**translations, **SAID.get(label, {})}

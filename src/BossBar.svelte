@@ -22,6 +22,7 @@
     lang = 'en',
     hovered = $bindable(null),
     lit = null,
+    selected = null,
     controls,
     pick = null,
   } = $props();
@@ -37,6 +38,20 @@
   const sources = $derived(
     Object.entries(data.bosses).filter(([, b]) => b.kind === 'source'),
   );
+
+  let shelves = $state({ top: null, bottom: null });
+  $effect(() => {
+    if (!selected) return;
+    for (const shelf of [shelves.top, shelves.bottom]) {
+      const cell = shelf?.querySelector(`button[data-source="${CSS.escape(selected)}"]`);
+      if (!cell) continue;
+      const bounds = cell.getBoundingClientRect();
+      const rack = shelf.getBoundingClientRect();
+      if (bounds.left < rack.left || bounds.right > rack.right) {
+        shelf.scrollLeft += bounds.left - rack.left - (rack.width - bounds.width) / 2;
+      }
+    }
+  });
 </script>
 
 <!-- `class="shelf {where}"` looked tidier and did not work: Svelte cannot see a
@@ -48,6 +63,7 @@
     class="shelf"
     class:top={atTop}
     class:bottom={!atTop}
+    bind:this={shelves[atTop ? 'top' : 'bottom']}
     onpointerleave={() => (hovered = null)}
   >
     {#each rows as [name, it] (name)}
@@ -57,10 +73,13 @@
         class="cell"
         class:on={hovered === name}
         class:hit={lit?.has(name)}
-        class:faded={lit && !lit.has(name)}
+        class:faded={lit && !lit.has(name) && selected !== name}
+        class:selected={selected === name}
         class:inferno={it.inferno_only}
+        data-source={name}
         aria-label={called(it, name, lang)}
-        onpointerenter={() => (hovered = name)}
+        aria-pressed={selected === name}
+        onpointerenter={(e) => { if (e.pointerType !== 'touch') hovered = name; }}
         onclick={() => pick?.(name)}
       >
         {#if box}
@@ -159,6 +178,8 @@
   /* the ones that only give anything up on the hardest difficulty */
   .cell.inferno { border-color: #6b2a14; }
   .cell.inferno:hover, .cell.inferno.on { border-color: #ff8a4a; }
+  .cell.inferno.hit, .cell.inferno.selected { border-color: #ff8a4a; }
+  .cell.selected { border-color: var(--hot); background: #d8b4ff24; }
 
   /* the ones with no art in the game, said in words instead */
   .named {

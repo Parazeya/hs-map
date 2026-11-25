@@ -221,6 +221,16 @@
     });
   }
 
+  function showFocusedMarker(node, button) {
+    if (focusingPointer || !button.matches(':focus-visible')) return;
+    const x = view.x + node.x * view.k;
+    const y = view.y + node.y * view.k;
+    const margin = 30;
+    if (x >= margin && x <= viewport.w - margin &&
+        y >= SHELF_TOP + margin && y <= viewport.h - SHELF_BOTTOM - margin) return;
+    setView({ ...view, x: viewport.w / 2 - node.x * view.k, y: viewport.h / 2 - node.y * view.k });
+  }
+
   /** Zoom about a point, keeping whatever is under it where it is. */
   function zoomAt(px, py, factor) {
     const k = Math.max(floor(), Math.min(MAX, view.k * factor));
@@ -315,9 +325,12 @@
 
   // ── pointer ────────────────────────────────────────────────────────────────
   let drag = null;
+  let pendingTap = null;
+  let focusingPointer = false;
 
   function down(e) {
     if (drag || !e.isPrimary || e.button !== 0 || e.target.closest?.('.mf')) return;
+    pendingTap = null;
     const room = e.target.closest?.('.node')?.dataset.room;
     const pressed = scene ? scene.pick(e) : room && data.nodes.find((node) => node.room === room);
     drag = { id: e.pointerId, x: e.clientX, y: e.clientY, ox: view.x, oy: view.y, moved: 0, pressed };
@@ -373,27 +386,10 @@
     // Capture sends the release to the stage. Use the marker picked on press
     // and check the final position in case the browser coalesced a move.
     const tappedMap = moved < 4 && Math.abs(e.clientX - x) + Math.abs(e.clientY - y) < 4;
-    if (tappedMap) {
-      active = pressed && active?.room !== pressed.room ? pressed : null;
-    }
-    // The button is focused by hand on the GL path, because pressing one no
-    // longer can: it is pointer-events: none there, so the press lands on the
-    // stage, which is a plain div, and the browser moves focus to the body —
-    // after which Tab carries on from the top of the page rather than from the
-    // marker just touched. Pressing a marker on the DOM path leaves it focused
-    // and this is what that costs here.
-    //
-    // On the way UP and not on the way down: the browser's own focus move is
-    // the press's default action and it undoes anything done earlier in the
-    // same event, microtask or not. `preventScroll` because `main` scrolls, and
-    // a focus that scrolled it would move the map out from under the pointer.
-    if (scene && pressed && tappedMap) {
-      world?.querySelector(`.node[data-room="${pressed.room}"]`)?.focus({ preventScroll: true });
-      // AFTER the focus, not before: focusing one button blurs another, and
-      // that blur clears this on its way past.
-      tapped = pressed.room;
-    }
     clearDrag();
+    // Keep the stage in place until the browser delivers this tap's click.
+    // Opening the drawer here would put the next click on the drawer or scrim.
+    pendingTap = tappedMap ? { node: pressed, x: e.clientX, y: e.clientY } : null;
     if (scene && e.pointerType !== 'touch') {
       const hit = scene.pick(e);
       overMarker = !!hit;
@@ -401,24 +397,30 @@
     }
   }
 
-  /**
-   * Enter and Space on a focused marker, and only those.
-   *
-   * On the DOM path a click from a pointer is handled in up() and never arrives
-   * here; `detail` is 0 when no pointer was involved, which is what the
-   * keyboard sends. On the GL path the button is pointer-events: none until it
-   * is focused, so nothing but the keyboard can reach it at all — the test
-   * stays because the rule is the same rule.
-   */
+  function clickMap(e) {
+    if (!e.detail || e.target.closest?.('.mf')) return;
+    const tap = pendingTap;
+    pendingTap = null;
+    if (!tap || Math.abs(e.clientX - tap.x) + Math.abs(e.clientY - tap.y) >= 4) return;
+    const node = tap.node;
+    if (node) {
+      focusingPointer = true;
+      world?.querySelector(`.node[data-room="${node.room}"]`)?.focus({ preventScroll: true });
+      focusingPointer = false;
+      tapped = node.room;
+    }
+    active = node && active?.room !== node.room ? node : null;
+  }
+
   function press(e, node) {
     if (e.detail !== 0) return;
     active = active?.room === node.room ? null : node;
   }
 </script>
 
-<svelte:window onblur={clearDrag} />
+<svelte:window onblur={() => { pendingTap = null; clearDrag(); }} />
 
-<!-- svelte-ignore a11y_no_static_element_interactions -->
+<!-- svelte-ignore a11y_no_static_element_interactions, a11y_click_events_have_key_events -->
 <div
   class="stage"
   class:dragging
@@ -430,6 +432,7 @@
   onpointermove={move}
   onpointerleave={leave}
   onpointerup={up}
+  onclick={clickMap}
   onpointercancel={cancel}
   onlostpointercapture={cancel}
   ondragstart={(e) => e.preventDefault()}
@@ -517,7 +520,7 @@
       <span
         class="tag"
         class:high={node.boss}
-        class:faded={searching && !matches?.has(node.room)}
+        class:faded={searching && !matches?.has(node.room) && active?.room !== node.room}
         style="left: {node.x}px; top: {node.y}px"
       >{nameOf(node, lang)}</span>
     {/each}
@@ -538,13 +541,14 @@
         class:lit
         class:on
         class:hit
-        class:faded={searching && !hit}
+        class:faded={searching && !hit && !on}
         class:tap={tapped === node.room}
         style="left: {node.x}px; top: {node.y}px"
         data-room={node.room}
         aria-label={nameOf(node, lang)}
         aria-pressed={on}
-        onpointerenter={drawn === 'dom' ? () => (hovered = node) : null}
+        onfocus={(e) => showFocusedMarker(node, e.currentTarget)}
+        onpointerenter={drawn === 'dom' ? (e) => { if (e.pointerType !== 'touch') hovered = node; } : null}
         onpointerleave={drawn === 'dom' ? () => (hovered = null) : null}
         onblur={() => (tapped = null)}
         onclick={(e) => press(e, node)}

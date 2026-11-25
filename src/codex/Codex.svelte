@@ -1,17 +1,25 @@
 <script>
-  import { asset, figure, odds, titleCase, withMF, recall, remember } from '../lib/map.js';
+  import { tick } from 'svelte';
+  import { asset, figure, mapDocument, odds, withMF, recall, remember } from '../lib/map.js';
   import { mf, setMF } from '../lib/mf.svelte.js';
   import { hydrate, recordsOf, statsOf, grantsOf } from '../lib/book.js';
-  import { speak } from '../lib/lang.js';
-  import { places, talk } from '../lib/say.js';
+  import { talk } from '../lib/say.js';
+  import { catalogueLanguage, preferredUiLanguage } from '../lib/ui-language.svelte.js';
+  import CatalogueLoadStatus from '../CatalogueLoadStatus.svelte';
+  import LanguageNotice from '../LanguageNotice.svelte';
   import ItemIcon from '../ItemIcon.svelte';
   import Detail from './Detail.svelte';
+  import Comparison from './Comparison.svelte';
+  import { codexPhrase } from './phrases.js';
+  import { dropLocations } from './farm.js';
 
   const SHEET = 'img/codex.webp';
 
   let data = $state(null);
-  let failed = $state(null);
-  let lang = $state('en');
+  let failed = $state(false);
+  const startupLang = preferredUiLanguage();
+  const language = catalogueLanguage('codex', () => haystack.clear());
+  const lang = $derived(language.current);
 
   let query = $state('');
   let rarity = $state(null);
@@ -20,9 +28,32 @@
   // Read before anything else runs: the effect that writes the address back
   // fires as soon as the page mounts, and with nothing open yet that erases
   // what the address was holding before the table has arrived to check it.
-  const asked = recall('item');
+  const asked = { key: recall('item'), record: recall('record') };
 
   let chosen = $state(null);        // the item being read, by key
+  let chosenRecord = $state(null);
+  let comparison = $state([]);
+  let comparing = $state(false);
+  let nextSlot = 0;
+  const sameRecord = (a, b) => a.key === b.key && a.variant === b.variant;
+  const phrase = (text) => codexPhrase(lang, text);
+
+  function removeComparison(slot) {
+    comparison = comparison.filter(entry => entry.slot !== slot);
+    if (!comparison.length) comparing = false;
+  }
+
+  function updateComparison(entry) {
+    if (comparison.some(existing => existing.slot !== entry.slot && sameRecord(existing, entry))) return;
+    comparison = comparison.map(existing => existing.slot === entry.slot ? entry : existing);
+  }
+
+  function toggleComparison(entry, alreadyPinned) {
+    const pinned = comparison.find(existing => sameRecord(existing, entry));
+    if (alreadyPinned && pinned) removeComparison(pinned.slot);
+    else if (pinned) updateComparison({ ...entry, slot: pinned.slot });
+    else if (comparison.length < 2) comparison = [...comparison, { ...entry, slot: nextSlot++ }];
+  }
   // Shut, which only means anything on a phone: the rule that reads this flag
   // lives in a media query, so a wide screen shows the column whatever it says.
   // On a narrow one the list is what the page opens on — it is what the page is
@@ -47,77 +78,21 @@
                  'Runeword', 'Mythic', 'Rare', 'Superior', 'Common'];
   const RANK = Object.fromEntries(ORDER.map((r, i) => [r, i]));
 
-  // The language is remembered the way the map's is, and for the same reason.
-  const KEPT = 'hs-map.lang';
-  const remembered = () => {
+  async function load(retry = false) {
+    failed = false;
     try {
-      return localStorage.getItem(KEPT);
+      const response = await fetch(asset('data/codex.json'), { cache: retry ? 'reload' : 'default' });
+      if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+      const loaded = await response.json();
+      await language.prepare(loaded);
+      data = hydrate(loaded);
+      if (asked.key && data.items[asked.key]) chooseItem(asked.key, null, asked.record);
     } catch {
-      return null;
-    }
-  };
-
-  // The language a name is in and the language it is fetched in are two things
-  // now: `lang` only moves once the names for it are on the records, so the
-  // page never goes blank or half-translated waiting for them. `loading` is
-  // what it is waiting for, and it is only ever one file of about fifty
-  // kilobytes — see src/lib/lang.js.
-  let loading = $state(null);
-
-  async function pickLang(want) {
-    if (want === lang || !data) return;
-    loading = want;
-    try {
-      await speak(data, 'codex', want);
-      // the search index holds the names it was built from, and there are more
-      // of them now
-      haystack.clear();
-      lang = want;
-    } catch {
-      // the page is whole and readable in the language it is in; taking it down
-      // to an error because a second file did not arrive would be the worse
-      // answer, and the picker snapping back is what says the switch failed
+      failed = true;
     } finally {
-      loading = null;
+      document.getElementById('boot')?.remove();
     }
   }
-
-  fetch(asset('data/codex.json'))
-    .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`${r.status} ${r.statusText}`))))
-    .then(async (d) => {
-      const want = remembered() || (navigator.language || 'en').slice(0, 2).toLowerCase();
-      const first = d.langs.includes(want) ? want : 'en';
-      // grafted before the page ever draws, so a Russian reader's first paint
-      // is already Russian rather than English replaced a moment later
-      if (first !== 'en') await speak(d, 'codex', first).catch(() => {});
-      data = hydrate(d);
-      // what the address was holding, now that there is a table to check it
-      if (asked && data.items[asked]) chosen = asked;
-      lang = first;
-    })
-    .catch((e) => (failed = e));
-
-  /**
-   * Take the boot screen down once there is something to look at.
-   *
-   * It lives in the HTML rather than here so it paints before this file has
-   * been fetched, let alone run — which is the whole point of it — and so
-   * taking it down is this file's job. Removed rather than hidden: it covers
-   * the window, and a hidden thing that covers the window is a bug waiting.
-   */
-  $effect(() => {
-    if (data) document.getElementById('boot')?.remove();
-  });
-
-  $effect(() => {
-    if (!data) return;
-    try {
-      localStorage.setItem(KEPT, lang);
-    } catch {
-      // a browser that will not store it still shows the page
-    }
-  });
-
   const rows = $derived(data ? Object.entries(data.items) : []);
 
   /** Only the grades and types something is actually on. */
@@ -169,21 +144,21 @@
    * Cleared when a language arrives, because there is more to look through.
    */
   const haystack = new Map();
+  const glossary = $derived(new Map((data?.stats ?? []).map(stat => [stat.sid, stat])));
   const findable = (key, it) => {
     let s = haystack.get(key);
     if (s === undefined) {
       s = [
         it.name,
-        ...Object.values(it.names ?? {}),
+        it.names?.[lang],
         ...recordsOf(it).flatMap((record) => [record.type, record.rarity, record.tier]),
         it.set, ...Object.values(data.sets[it.set]?.names ?? {}),
         ...(it.weapons ?? []),
         // the runes a runeword asks for, so "Vex" finds the six that want one
         ...(it.sockets ?? []).flatMap((k) => [k.name, k.key]),
-        ...statsOf(it)
-          .map((v) => `${v.text} ${v.spell ?? ''} ${v.cls ?? ''}`),
-        ...grantsOf(it).flatMap(grant => [...Object.values(grant.names ?? {}), grant.talent_key ?? '']),
-        ...(it.places ?? []),
+        ...statsOf(it).map((v) => [v.text, glossary.get(v.sid)?.names?.[lang], v.spell, v.cls].filter(Boolean).join(' ')),
+        ...grantsOf(it).flatMap(grant => [grant.names?.en, grant.names?.[lang], grant.talent_key]),
+        ...recordsOf(it).flatMap(record => [...dropLocations(record, 'en', data), ...dropLocations(record, lang, data)]),
         Object.values(it.lore ?? {}).join(' '),
       ].join(' ').toLowerCase();
       haystack.set(key, s);
@@ -191,7 +166,8 @@
     return s;
   };
 
-  const CAP = 300;
+  const PAGE_SIZE = 300;
+  let page = $state(0);
 
   /// Which column the list is ordered by, and which way round. "rarity" is what
   /// it has always been and stays the default.
@@ -240,7 +216,7 @@
       tier: (a, b) => dir * (TIERS.indexOf(b[1].tier) - TIERS.indexOf(a[1].tier)) || usual(a, b),
       lvl: (a, b) => dir * ((b[1].lvl ?? 0) - (a[1].lvl ?? 0)) || usual(a, b),
       from: (a, b) => {
-        const x = a[1].places?.[0] ?? '', y = b[1].places?.[0] ?? '';
+        const x = dropLocations(a[1], lang, data)[0] ?? '', y = dropLocations(b[1], lang, data)[0] ?? '';
         return last(x, y) || dir * x.localeCompare(y) || usual(a, b);
       },
       rate: (a, b) => {
@@ -252,8 +228,16 @@
     return out.slice().sort((a, b) => (stat ? worth(b) - worth(a) : 0) || cmp(a, b));
   });
 
-  const shown = $derived(found.slice(0, CAP));
+  const pageCount = $derived(Math.max(1, Math.ceil(found.length / PAGE_SIZE)));
+  const currentPage = $derived(Math.min(page, pageCount - 1));
+  const shown = $derived(found.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE));
   const item = $derived(chosen ? data?.items[chosen] : null);
+
+  $effect(() => {
+    query; rarity; kind; kit; stat; sort; down; lang;
+    page = 0;
+    itemList?.scrollTo(0, 0);
+  });
 
   /** The stats worth offering, commonest first, with a search of their own. */
   let statQuery = $state('');
@@ -270,14 +254,11 @@
   // the game's own vocabulary first, then this site's; see lib/say.js
   const t = $derived(data ? talk(lang, { ...data.words, ...data.types }) : (s) => s);
   const cls = (r) => 'r-' + String(r ?? 'common').toLowerCase().replace(/\s+/g, '-');
-  /// "Act I Dungeons" and "Colossal Chest" as the reader's language spells them.
-  const place = $derived(data ? places(lang, data.words) : (x) => x);
-
   // What is open, in the address, so a card can be reloaded or sent to
   // somebody. Read once when the table arrives, because until then there is
   // nothing to check the key against.
   $effect(() => {
-    remember({ item: chosen });
+    if (data) remember({ item: chosen, record: chosenRecord });
   });
 
   function clear() {
@@ -293,53 +274,136 @@
 
   const filtered = $derived(Boolean(query.trim() || rarity || kind || kit || stat));
 
-  let box = $state(null);           // the search field, for the shortcut below
+  const narrowScreen = window.matchMedia('(max-width: 55rem)');
+  let narrow = $state(narrowScreen.matches);
+  const reading = $derived(narrow && !!item);
+  let box = $state(null);
+  let itemList = $state(null);
+  let detailPane = $state(null);
+  let detailBack = $state(null);
+  let filterToggle = $state(null);
+  let filterPane = $state(null);
+  let returnTo;
+  let listScroll = 0;
+
+  $effect(() => {
+    const changed = (event) => { narrow = event.matches; };
+    narrowScreen.addEventListener('change', changed);
+    return () => narrowScreen.removeEventListener('change', changed);
+  });
+
+  async function chooseItem(key, trigger = null, record = null) {
+    if (trigger && chosen === key) {
+      closeItem();
+      return;
+    }
+    if (trigger) {
+      returnTo = trigger;
+      listScroll = itemList?.scrollTop ?? 0;
+    }
+    const records = recordsOf(data.items[key]);
+    chosenRecord = records.slice(1).some(entry => entry.record_id === record) ? record : null;
+    chosen = key;
+    filters = false;
+    await tick();
+    detailPane?.scrollTo(0, 0);
+    if (reading) detailBack?.focus({ preventScroll: true });
+  }
+
+  async function closeItem() {
+    chosen = null;
+    chosenRecord = null;
+    await tick();
+    itemList?.scrollTo(0, listScroll);
+    (returnTo?.isConnected ? returnTo : box)?.focus({ preventScroll: true });
+  }
+
+  async function toggleFilters() {
+    filters = !filters;
+    await tick();
+    if (filters) filterPane?.querySelector('button')?.focus();
+    else filterToggle?.focus({ preventScroll: true });
+  }
+
+  function movePage(offset) {
+    page = currentPage + offset;
+    itemList?.scrollTo(0, 0);
+  }
+
+  function comparisonName(entry) {
+    const record = data.items[entry.key];
+    return recordsOf(record).length > 1
+      ? `${nameOf(record)} · ${t('Variant')} ${entry.variant + 1}`
+      : nameOf(record);
+  }
 
   function onkeydown(e) {
+    if (comparing) return;
     // Ctrl+F is what anyone presses to look for a thing on a page, and the
     // browser's own find would search the three hundred rows that happen to be
     // drawn rather than the seventeen hundred items behind them. So it is
     // taken, and it selects what is already typed, the way a find box does.
     if ((e.ctrlKey || e.metaKey) && (e.key === 'f' || e.key === 'F')) {
+      if (reading) return;
       e.preventDefault();
       box?.focus();
       box?.select();
       return;
     }
+    if (reading && e.key === 'Tab') {
+      const controls = [...detailPane.querySelectorAll('button:not(:disabled), a[href], select:not(:disabled), summary')]
+        .filter(control => control.getClientRects().length);
+      const first = controls[0];
+      const last = controls.at(-1);
+      if (!detailPane.contains(document.activeElement) || document.activeElement === (e.shiftKey ? first : last)) {
+        e.preventDefault();
+        (e.shiftKey ? last : first)?.focus();
+      }
+      return;
+    }
     if (e.key !== 'Escape') return;
-    if (chosen) chosen = null;
+    if (filters && narrow) toggleFilters();
+    else if (chosen) closeItem();
     else clear();
   }
+  load();
 </script>
 
 <svelte:window {onkeydown} />
 
-{#if failed}
-  <p class="failed">{t('The item table would not load')}: {failed.message}</p>
-{:else if !data}
-  <p class="failed">{t('Reading the item table…')}</p>
+{#snippet languageIssue()}
+  <LanguageNotice {lang} failure={language.failure}
+    retry={(next) => language.pick(data, next)} dismiss={language.dismiss} />
+{/snippet}
+
+{#if !data}
+  <CatalogueLoadStatus {failed} loading={codexPhrase(startupLang, 'Reading the item table…')}
+    message={codexPhrase(startupLang, 'Could not load the item catalogue.')}
+    lang={startupLang} retry={() => load(true)} />
 {:else}
   <!-- Three tracks, not a row: the search sits in the middle of the window
        whatever stands beside it, instead of drifting with the width of the
        buttons on its left. -->
-  <header>
+  <header inert={reading}>
     <span class="side">
-      <a class="back" href={asset('index.html')}>◀ {t('Back')}</a>
+      <a class="back" href={mapDocument('index.html')}>◀ {t('Back')}</a>
       <!-- Only where the three columns cannot stand side by side. On a phone the
            filters filled the screen on their own and the list of items, which is
            what the page is for, was nowhere on it. -->
-      <button class="only-narrow" class:on={filters} onclick={() => (filters = !filters)}>
+      <button class="only-narrow" class:on={filters} bind:this={filterToggle}
+        aria-expanded={filters} aria-controls="codex-filters" onclick={toggleFilters}>
         {t('Filters')}{filtered ? ' ●' : ''}
       </button>
       <span class="count">
         {found.length}
-        {t(found.length === 1 ? 'item' : 'items')}{found.length > CAP ? `, ${t('showing')} ${CAP}` : ''}
+        {t(found.length === 1 ? 'item' : 'items')}
       </span>
     </span>
 
     <input
       type="search"
       placeholder={t('Find an item, or what it does…')}
+      aria-label={t('Find an item, or what it does…')}
       title={lang === 'en' ? null : t('searched in this language and English')}
       autocomplete="off"
       spellcheck="false"
@@ -366,22 +430,24 @@
         <span class="pc">%</span>
       </label>
       {#if filtered}
-        <button class="clear" onclick={clear}>{t('clear')}</button>
+        <button class="clear" aria-label={t('clear')} title={t('clear')} onclick={clear}>
+          <span class="clear-label">{t('clear')}</span><span class="clear-icon" aria-hidden="true">×</span>
+        </button>
       {/if}
       <select
-        value={loading ?? lang}
+        value={language.pending ?? lang}
         aria-label={t('Item names')}
-        aria-busy={loading ? 'true' : null}
-        class:loading
-        onchange={(e) => pickLang(e.currentTarget.value)}
+        aria-busy={!!language.pending}
+        class:loading={language.pending != null}
+        onchange={(e) => language.pick(data, e.currentTarget.value)}
       >
         {#each data.langs as l (l)}<option value={l}>{l.toUpperCase()}</option>{/each}
       </select>
     </span>
   </header>
 
-  <main class:picked={item}>
-    <aside class="filters" class:shut={!filters}>
+  <main class:reading class:with-comparison={comparison.length && !reading}>
+    <aside id="codex-filters" class="filters" class:shut={!filters} inert={reading} bind:this={filterPane}>
       <p class="head">{t('Rarity')}{#if rarity}<button class="drop" title={t('clear')} aria-label={t('clear')} onclick={() => { rarity = null; }}>×</button>{/if}</p>
       <div class="chips">
         {#each grades as r (r)}
@@ -456,7 +522,7 @@
     <!-- The headings and the rows they head are one column of the three, so
          they ride in one box; loose in the grid the headings took the middle
          track for themselves and pushed the list into the detail's. -->
-    <div class="middle">
+    <div class="middle" inert={reading || (narrow && filters)}>
     <div class="cols">
       <!-- The same widths as a row, so a heading stands over its own column.
            Clicking one orders by it; clicking it again turns it round. -->
@@ -469,14 +535,15 @@
     </div>
 
     <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <ul class="list">
+    <ul class="list" bind:this={itemList}>
       {#each shown as [key, it] (key)}
         <li>
-          <button class:on={chosen === key} onclick={() => (chosen = chosen === key ? null : key)}>
+          <button class:on={chosen === key} aria-current={chosen === key ? 'true' : null}
+            onclick={(event) => chooseItem(key, event.currentTarget)}>
             <ItemIcon item={it} sheet={data.sheet} from={SHEET} box={32} />
             <span class="name {cls(it.rarity)}">{nameOf(it)}</span>
             {#if stat}
-              {@const mine = [...(it.stats ?? []), ...(it.more ?? []).flatMap((m) => m.stats)].filter((s) => s.sid === stat)}
+              {@const mine = statsOf(it).filter((s) => s.sid === stat)}
               <span class="worth">{mine.map((s) => s.max ?? s.min).join(', ')}</span>
             {/if}
             <!-- the badge in a cell of the heading's width, so the two line up -->
@@ -487,7 +554,7 @@
                  rate at all — it does that for two items in five, and printing
                  its placeholder said "one in fifty million" of a thing that
                  simply does not fall out of the world. -->
-            <span class="from">{(it.places ?? []).map(place).join(', ')}</span>
+            <span class="from">{dropLocations(it, lang, data).join(', ')}</span>
             <span class="odds">{odds(it.rate) || '—'}{#if mf.value > 0 && it.rate}<span class="mine">({figure(withMF(it.rate, mf.value))})</span>{/if}</span>
           </button>
         </li>
@@ -499,39 +566,97 @@
           {#if lang !== 'en'}<em>{t('searched in this language and English')}</em>{/if}
         </li>
       {/if}
-      {#if found.length > CAP}
-        <li class="none">…{t('and')} {found.length - CAP} {t('more')}. {t('Narrow it down.')}</li>
-      {/if}
     </ul>
+    {#if pageCount > 1}
+      <nav class="pagination" aria-label={phrase('Results pages')}>
+        <button disabled={currentPage === 0} onclick={() => movePage(-1)}>{phrase('Previous')}</button>
+        <span aria-live="polite">{currentPage + 1} / {pageCount}</span>
+        <button disabled={currentPage === pageCount - 1} onclick={() => movePage(1)}>{phrase('Next')}</button>
+      </nav>
+    {/if}
     </div>
 
-    <div class="detail">
+    <div class="detail" role={reading ? 'dialog' : undefined} aria-modal={reading ? 'true' : undefined}
+      aria-label={reading ? nameOf(item) : undefined} bind:this={detailPane}>
       <!-- On a phone the item covers the list rather than sitting beside it,
            and this is the way back. -->
-      <button class="only-narrow back-to-list" onclick={() => (chosen = null)}>
-        ◀ {t('Items')}
-      </button>
-      <Detail {data} {item} {lang} {t} sheet={SHEET} pick={(k) => (chosen = k)} />
+      {#if reading}
+        <div class="detail-nav">
+          <button class="back-to-list" aria-label={`${t('Back')} · ${t('Items')}`}
+            bind:this={detailBack} onclick={closeItem}>◀ {t('Items')}</button>
+          {#if comparison.length}
+            <button onclick={() => (comparing = true)} aria-haspopup="dialog">
+              {phrase('Compare')} {comparison.length}/2
+            </button>
+          {/if}
+        </div>
+      {/if}
+      <Detail {data} {item} {lang} {t} sheet={SHEET} pick={chooseItem}
+        compare={toggleComparison} {comparison} initialRecordId={chosenRecord}
+        onVariantChange={(record, index) => { chosenRecord = index > 0 ? record.record_id : null; }} />
+      {#if reading}{@render languageIssue()}{/if}
     </div>
   </main>
+  {#if comparison.length && !reading}
+    <div class="comparison-bar">
+      <span class="comparison-names">{comparison.map(comparisonName).join(' · ')}</span>
+      <button onclick={() => (comparing = true)} aria-haspopup="dialog">
+        {phrase('Compare')} {comparison.length}/2
+      </button>
+    </div>
+  {/if}
+  {#if comparing}
+    <Comparison entries={comparison} {data} {lang} {t} sheet={SHEET} change={updateComparison}
+      remove={removeComparison} dismiss={() => (comparing = false)} />
+  {/if}
+  {#if !reading}{@render languageIssue()}{/if}
 {/if}
 
 <style>
   :global(body) { overflow: hidden; }
 
-  .failed {
-    margin: 3rem auto;
-    max-width: 34rem;
-    color: var(--dim);
-    text-align: center;
+  .comparison-bar button, .detail-nav button, .pagination button {
+    color: var(--hot);
+    background: #0e0912;
+    border: 1px solid var(--edge);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font: inherit;
+    cursor: pointer;
   }
+  .comparison-bar button:hover, .detail-nav button:hover, .pagination button:hover:not(:disabled) {
+    border-color: var(--hot);
+  }
+  .with-comparison { bottom: 45px; }
+  .comparison-bar {
+    display: flex;
+    position: fixed;
+    inset: auto 0 0;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    height: 45px;
+    padding: 0 12px;
+    background: var(--panel);
+    border-top: 1px solid var(--edge);
+    z-index: 6;
+  }
+  .comparison-names {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--dim);
+    font-size: 12px;
+  }
+  .comparison-bar button { flex: none; font-size: 13px; }
 
   header {
     position: fixed;
     inset: 0 0 auto 0;
     height: 52px;
     display: grid;
-    grid-template-columns: 1fr minmax(0, 32rem) 1fr;
+    grid-template-columns: minmax(max-content, 1fr) minmax(12rem, 32rem) minmax(max-content, 1fr);
     align-items: center;
     gap: 10px;
     padding: 0 12px;
@@ -591,6 +716,7 @@
     cursor: pointer;
   }
   .clear:hover { color: var(--hot); border-color: var(--hot); }
+  .clear-icon { display: none; }
   header select {
     flex: none;
     color: inherit;
@@ -617,6 +743,18 @@
 
   .middle { display: flex; flex-direction: column; min-height: 0; }
   .cols { flex: none; }
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 6px 8px;
+    border-top: 1px solid var(--edge);
+    color: var(--dim);
+    font-size: 12px;
+  }
+  .pagination button { padding: 4px 8px; }
+  .pagination button:disabled { cursor: default; opacity: .46; }
 
   .filters, .list {
     overflow-y: auto;
@@ -777,7 +915,7 @@
   .cols .from { flex: 0 1 14rem; min-width: 0; text-align: right; }
   .cols .odds { flex: none; width: 6rem; text-align: right; }
 
-  .list { margin: 0; padding: 6px 0 24px; list-style: none; }
+  .list { flex: 1; margin: 0; padding: 6px 0 24px; list-style: none; }
   .list li { padding: 0 8px; }
   .list li button {
     width: 100%;
@@ -861,40 +999,53 @@
      list while it is open, and each of the three gets the whole width when it
      is the one being read. */
   @media (max-width: 55rem) {
-    main { grid-template-columns: minmax(0, 1fr); }
+    main { top: 90px; grid-template-columns: minmax(0, 1fr); }
     .only-narrow { display: inline-flex; align-items: center; }
 
     .filters {
       position: fixed;
-      inset: 52px 0 0 0;
+      inset: 90px 0 0 0;
       z-index: 4;
       background: #100a13;
       border-right: 0;
     }
     .filters.shut { display: none; }
 
-    .detail {
+    .detail { display: none; }
+    .reading .detail {
       display: block;
       position: fixed;
-      inset: 52px 0 0 0;
-      z-index: 3;
+      inset: 0;
+      z-index: 7;
       overflow-y: auto;
       overscroll-behavior: contain;
       background: #100a13;
     }
-    /* nothing picked, nothing to cover the list with */
-    main:not(.picked) .detail { display: none; }
-    .back-to-list {
-      margin: 10px 0 0 12px;
+    .with-comparison .filters { bottom: 45px; }
+    .detail-nav {
+      display: flex;
+      position: sticky;
+      z-index: 2;
+      top: 0;
+      justify-content: space-between;
+      padding: 7px 12px;
+      border-bottom: 1px solid var(--edge);
+      background: var(--panel);
     }
-
-    /* The three tracks want 32rem for the middle one alone, which is wider than
-       the phone. A row again there, and the search takes what is left of it —
-       `width: 100%` in a row is 100% of the header, which laid the search over
-       the buttons on both sides of it. */
-    header { display: flex; gap: 6px; padding: 0 8px; }
-    header input[type='search'] { flex: 1; width: auto; }
-    .side { flex: none; }
+    .detail-nav button { font-size: 13px; }
+    header {
+      height: 90px;
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-rows: auto auto;
+      gap: 5px;
+      padding: 6px 8px;
+    }
+    header input[type='search'] { grid-area: 2 / 1 / 3 / -1; width: 100%; }
+    .side { gap: 5px; }
+    .side.end { grid-area: 1 / 2; }
+    .clear { padding-inline: 5px; }
+    .clear-icon { display: inline; }
+    .clear-label { display: none; }
     header .count { display: none; }
   }
   /* the box that sets it, built to stand as tall as the picker beside it */

@@ -1,12 +1,16 @@
 <script>
-  import { KIND, asset, called, load, nameOf, recall, zoneDropOdds } from './lib/map.js';
-  import { speak } from './lib/lang.js';
+  import { tick } from 'svelte';
+  import { KIND, called, load, mapDocument, nameOf, recall, remember, zoneDropOdds } from './lib/map.js';
+  import { mapMessages } from './lib/map-messages.js';
+  import { buildSourceIndex, canonicalMapItem, isShelfSource, itemSources, searchItems, searchText } from './lib/source-search.js';
+  import { catalogueLanguage, preferredUiLanguage } from './lib/ui-language.svelte.js';
   import { talk } from './lib/say.js';
   import WorldMap from './WorldMap.svelte';
   import Sidebar from './Sidebar.svelte';
   import Tooltip from './Tooltip.svelte';
   import ItemCard from './ItemCard.svelte';
   import ItemSheet from './ItemSheet.svelte';
+  import LanguageNotice from './LanguageNotice.svelte';
   import BossBar from './BossBar.svelte';
   import { bridgeConfig, createMapBridge } from './lib/map-bridge.js';
 
@@ -15,27 +19,25 @@
   let mapBridge = null;
 
   let data = $state(null);
-  let failed = $state(null);
-  let lang = $state('en');
+  let failed = $state(false);
+  let retrying = $state(false);
+  const preferredLanguage = preferredUiLanguage();
+  const startup = mapMessages(preferredLanguage);
+  const language = catalogueLanguage('map');
+  const lang = $derived(language.current);
+  const loading = $derived(language.pending);
 
   const t = $derived(data ? talk(lang, data.words) : (s) => s);
 
-  let active = $state(null);      // clicked, and stays put
-  let hovered = $state(null);     // under the pointer
-  // The sidebar's search. It opens on whatever the address was handed — a card
-  // in the codex links here by name, and the same box that finds an item by
-  // hand lights every zone it drops in.
+  let active = $state(null);
+  let hovered = $state(null);
   let query = $state(recall('find') ?? '');
-  let peek = $state(null);        // the item under the pointer in the menu
-  let reading = $state(null);     // the item whose card is open over the map
-  // What was clicked on the boss bar. A zone and a source are both "what is
-  // pinned in the panel", so opening one closes the other rather than stacking
-  // two cards nobody asked to read at once.
-  let source = $state(null);
-  // and a zone clicked on the map takes the panel back from the bar
-  $effect(() => {
-    if (active) source = null;
-  });
+  let linkedItem = $state(null);
+  let rarity = $state(null);
+  let peek = $state(null);
+  let reading = $state(null);
+  let pickedSource = $state(null);
+  let dismissedQuery = $state(null);
   let at = $state({ x: 0, y: 0 });
   // Only a phone reads this. There the panel is 238 px of a 393 px screen and
   // the map is what is left, so it comes over the map when it is wanted and is
@@ -43,7 +45,123 @@
   // the rule that hides it lives in a media query.
   let panel = $state(false);
   let map = $state(null);
-  let boss = $state(null);      // the boss under the pointer on the shelf
+  let sidebar = $state(null);
+  let searchControl = $state(null);
+  let boss = $state(null);
+  const narrowScreen = matchMedia('(max-width: 46rem)');
+  let narrow = $state(narrowScreen.matches);
+  const drawerOpen = $derived(narrow && panel);
+  let drawerTrigger = null;
+  let drawerFocus = 'close';
+  let itemTrigger = null;
+
+  const search = $derived(searchText(query));
+  const items = $derived(data ? Object.entries(data.items) : []);
+  const exactLink = $derived(linkedItem?.query === search ? linkedItem : null);
+  const results = $derived.by(() => {
+    if (!exactLink) return searchItems(items, search, rarity);
+    const item = data.items[exactLink.name];
+    if (rarity && rarity !== item.rarity) return { rows: [], exact: null };
+    return { rows: [[exactLink.name, item]], exact: exactLink.name };
+  });
+  const index = $derived(data ? buildSourceIndex(data) : null);
+  const searchTargets = $derived(index && (search || rarity)
+    ? itemSources(index, results.rows.map(([name]) => name)) : null);
+  const targets = $derived(searchTargets ?? (index && peek ? itemSources(index, [peek.name]) : null));
+  const exactSources = $derived(results.exact ? index?.get(results.exact) : null);
+  const suggested = $derived(!mirror && !active && search !== dismissedQuery && exactSources?.rooms.size === 0
+    && exactSources.sources.size === 1 ? exactSources.sources.values().next().value : null);
+  const source = $derived(pickedSource ?? suggested);
+  const sourceChoices = $derived(search && searchTargets ? [
+    ...data.nodes.filter((node) => searchTargets.rooms.has(node.room)).map((node) => ({
+      key: node.room, label: nameOf(node, lang), selected: active?.room === node.room,
+      pick: () => chooseRoom(active?.room === node.room ? null : node, true),
+    })),
+    ...[...searchTargets.sources].map((name) => ({
+      key: name, label: called(data.bosses[name], name, lang), selected: source === name,
+      pick: () => chooseSource(name),
+    })),
+  ] : []);
+
+  function chooseRoom(node, focus = false) {
+    active = node;
+    if (!node) {
+      dismissedQuery = search;
+      return;
+    }
+    pickedSource = null;
+    boss = null;
+    peek = null;
+    showPanel();
+    if (focus) map?.focusOn(node);
+  }
+
+  function dismissSource() {
+    pickedSource = null;
+    boss = null;
+    dismissedQuery = search;
+  }
+
+  function chooseSource(name) {
+    if (pickedSource === name) {
+      dismissSource();
+      return;
+    }
+    pickedSource = name;
+    active = null;
+    hovered = null;
+    boss = null;
+    peek = null;
+    showPanel();
+  }
+
+  function showPanel(focus = 'close') {
+    if (!panel && narrow) {
+      drawerTrigger = document.activeElement;
+      drawerFocus = focus;
+    }
+    panel = true;
+  }
+
+  function focusSearch() {
+    if (narrow && !panel) showPanel('search');
+    else sidebar?.focus('search');
+  }
+
+  async function closePanel() {
+    panel = false;
+    peek = null;
+    await tick();
+    const trigger = drawerTrigger instanceof HTMLElement && drawerTrigger !== document.body && drawerTrigger.isConnected
+      ? drawerTrigger : searchControl;
+    trigger?.focus({ preventScroll: true });
+    drawerTrigger = null;
+    drawerFocus = 'close';
+  }
+
+  function openItem(name, trigger) {
+    peek = null;
+    itemTrigger = trigger;
+    reading = name;
+  }
+
+  async function closeItem() {
+    const trigger = itemTrigger;
+    reading = null;
+    itemTrigger = null;
+    await tick();
+    if (trigger?.isConnected) trigger.focus({ preventScroll: true });
+    else sidebar?.focus('search');
+  }
+
+  $effect(() => {
+    const onChange = (event) => { narrow = event.matches; };
+    narrowScreen.addEventListener('change', onChange);
+    return () => narrowScreen.removeEventListener('change', onChange);
+  });
+  $effect(() => {
+    if (drawerOpen && sidebar) sidebar.focus(drawerFocus);
+  });
 
   $effect(() => {
     if (!data || !map) return;
@@ -55,7 +173,8 @@
         map.applyCamera(state.camera);
         active = data.nodes.find(n => n.room === state.selection.roomId) ?? null;
         query = state.presentation.query;
-        source = state.presentation.source;
+        linkedItem = null;
+        pickedSource = active ? null : state.presentation.source;
         await pickLang(state.presentation.lang);
       },
     });
@@ -64,95 +183,59 @@
   });
   $effect(() => { active?.room; query; lang; source; mapBridge?.changed(); });
   $effect(() => { if (mapConfig && query.length > 256) query = query.slice(0, 256); });
-
-  /**
-   * Everything that drops the item under the pointer in the menu.
-   *
-   * A zone is only one of the ways a thing falls. Reading an item that comes off
-   * a boss or out of a chest, the map answered with nothing at all — and the
-   * answer was there to give, on the shelf beside it or on the dungeon at the
-   * end of an act, since the act bosses stand on the map now.
-   */
-  const from = $derived.by(() => {
-    if (!data || !peek) return null;
-    const who = new Set(
-      Object.entries(data.bosses)
-        .filter(([, b]) => b.drops.some((d) => d.item === peek.name))
-        .map(([name]) => name),
-    );
-    const codes = new Set(data.items[peek.name]?.zones ?? []);
-    const rooms = new Set(
-      data.nodes
-        .filter((n) => (n.code && codes.has(n.code)) || (n.boss && who.has(n.boss)) || n.reference_drops?.includes(peek.name))
-        .map((n) => n.room),
-    );
-    return { who, rooms };
+  $effect(() => {
+    if (data && !mirror) remember({ find: query.trim(), item: exactLink?.key, source: pickedSource, room: active?.room });
+  });
+  $effect(() => {
+    if (dismissedQuery !== null && search !== dismissedQuery) dismissedQuery = null;
+    if (linkedItem && !exactLink) linkedItem = null;
   });
 
-  /** Which markers the search or the studied item lights up. */
-  const matches = $derived.by(() => {
-    if (!data) return null;
-    if (from) return from.rooms;
-    const q = query.trim().toLowerCase();
-    if (q.length < 2) return null;
-    return new Set(
-      data.nodes.filter((n) => n.drops.some((name) => name.includes(q))).map((n) => n.room),
-    );
-  });
+  const pickLang = (want) => language.pick(data, want, !mirror);
 
-  /**
-   * The language, remembered between visits.
-   *
-   * Reading a map in a language you did not choose is a small thing to have to
-   * fix on every visit. A stored choice wins over the browser's, because it was
-   * made here and on purpose; the browser's is only the opening guess. Both are
-   * checked against what the game actually ships before being believed.
-   *
-   * In a try, because storage throws outright in a browser told to refuse it
-   * rather than merely coming back empty.
-   */
-  const KEPT = 'hs-map.lang';
-  const remembered = () => {
+  async function loadMap() {
     try {
-      return localStorage.getItem(KEPT);
+      const d = await load(retrying);
+      if (!Array.isArray(d?.langs) || !Array.isArray(d.nodes) || !d.items || !d.bosses || !d.map) {
+        throw new Error('Invalid map data');
+      }
+      await language.prepare(d);
+      const sourceKey = recall('source');
+      const roomKey = recall('room');
+      if (!mirror) {
+        const key = recall('item');
+        const exactItem = canonicalMapItem(d.items, key);
+        if (exactItem) {
+          query = called(d.items[exactItem], exactItem, lang);
+          linkedItem = { key, name: exactItem, query: searchText(query) };
+        }
+        if (Object.hasOwn(d.bosses, sourceKey) && isShelfSource(d.bosses[sourceKey])) pickedSource = sourceKey;
+        else active = d.nodes.find((node) => node.room === roomKey) ?? null;
+        panel = Boolean(active || pickedSource || query.trim());
+      }
+      data = d;
+      failed = false;
+      if (active) {
+        await tick();
+        if (active) map?.focusOn(active);
+      }
+      if (retrying && !drawerOpen) {
+        await tick();
+        searchControl?.focus({ preventScroll: true });
+      }
     } catch {
-      return null;
-    }
-  };
-
-  // map.json carries English; the other ten are a file each, fetched when they
-  // are picked. `lang` moves only once the names are on the records, so the map
-  // is never half in one language and half in another — see src/lib/lang.js.
-  let loading = $state(null);
-
-  async function pickLang(want) {
-    if (want === lang || !data) return;
-    loading = want;
-    try {
-      await speak(data, 'map', want);
-      lang = want;
-    } catch {
-      // the page is whole and readable in the language it is in; taking it down
-      // to an error because a second file did not arrive would be the worse
-      // answer, and the picker snapping back is what says the switch failed
+      failed = true;
     } finally {
-      loading = null;
+      retrying = false;
     }
   }
 
-  load()
-    .then(async (d) => {
-      // the game ships eleven languages; the stored choice first, else the
-      // browser's, and English if neither is one of them
-      const want = remembered() || (navigator.language || 'en').slice(0, 2).toLowerCase();
-      const first = d.langs.includes(want) ? want : 'en';
-      // before the first paint, so the map is never drawn in English and then
-      // relabelled a moment later
-      if (first !== 'en') await speak(d, 'map', first).catch(() => {});
-      data = d;
-      lang = first;
-    })
-    .catch((e) => (failed = e));
+  loadMap();
+
+  function retry() {
+    retrying = true;
+    loadMap();
+  }
 
 
   /**
@@ -164,22 +247,21 @@
    * the window, and a hidden thing that covers the window is a bug waiting.
    */
   $effect(() => {
-    if (data) document.getElementById('boot')?.remove();
-  });
-
-  $effect(() => {
-    if (!data) return;
-    try {
-      localStorage.setItem(KEPT, lang);
-    } catch {
-      // a browser that will not store it still shows the map
-    }
+    if (data || failed) document.getElementById('boot')?.remove();
   });
 
   function onkeydown(e) {
-    if (mirror) return;
+    if (mirror || reading || e.defaultPrevented) return;
+    if (e.key === 'Tab' && drawerOpen) sidebar?.trapTab(e);
+    if (e.key === '/' && !e.ctrlKey && !e.altKey && !e.metaKey && !e.target.closest?.('input, select, textarea, [contenteditable]')) {
+      e.preventDefault();
+      focusSearch();
+    }
     if (e.key !== 'Escape') return;
-    if (active) active = null;
+    e.preventDefault();
+    if (drawerOpen) closePanel();
+    else if (active) chooseRoom(null);
+    else if (source) dismissSource();
     else query = '';
   }
 
@@ -196,6 +278,10 @@
 
 <svelte:window onkeydown={onkeydown} onpointermove={track} onresize={() => mapBridge?.changed()} />
 
+{#snippet languageIssue()}
+  <LanguageNotice {lang} failure={language.failure} retry={pickLang} dismiss={language.dismiss} />
+{/snippet}
+
 <!-- The title bar was a strip of chrome across a map that is only 800px tall to
      begin with. Its two controls earn their place; the words did not. -->
 {#snippet controls()}
@@ -211,25 +297,31 @@
     {/each}
   </select>
   <button type="button" onclick={() => { active = null; map.fit(); }}>{t('Fit')}</button>
-  <a class="go" href={asset('codex.html')} draggable="false">{t('Items')} ▶</a>
-  <a class="go" href={asset('skills.html')} draggable="false">{t('Skills')} ▶</a>
-  <a class="go" href={asset('bounty.html')} draggable="false">{t('Bounties')} ▶</a>
-  <button type="button" class="only-narrow" class:on={panel} onclick={() => (panel = !panel)}>
-    {panel ? '✕' : '☰'}
-  </button>
+  <a class="go" href={mapDocument('codex.html')} draggable="false">{t('Items')} ▶</a>
+  <a class="go" href={mapDocument('skills.html')} draggable="false">{t('Skills')} ▶</a>
+  <a class="go" href={mapDocument('bounty.html')} draggable="false">{t('Bounties')} ▶</a>
+  <span class="only-narrow search-slot" aria-hidden="true"></span>
 {/snippet}
 
 {#if failed}
-  <p class="broke">The map data would not load.<br><code>{failed.message}</code></p>
+  <section class="broke" lang={preferredLanguage === 'sp' ? 'es' : preferredLanguage}>
+    <p role="status">{retrying ? startup.loading : startup.unavailable}</p>
+    <button type="button" disabled={retrying} onclick={retry}>{startup.retry}</button>
+  </section>
 {:else if data}
   <div class="app" inert={mirror}>
-    <main>
-      <WorldMap bind:this={map} {data} {lang} bind:active bind:hovered {matches} onview={() => mapBridge?.changed()} />
+    <main inert={drawerOpen}>
+      <button type="button" class="search-access" bind:this={searchControl} aria-label={t('Find an item…')}
+        aria-controls="map-sidebar" aria-expanded={narrow ? panel : undefined} onclick={focusSearch}>
+        <span class="search-label">{t('Find an item…')}</span><span class="only-narrow" aria-hidden="true">☰</span>
+      </button>
+      <WorldMap bind:this={map} {data} {lang} bind:active={() => active, (node) => chooseRoom(node)} bind:hovered
+        matches={targets?.rooms ?? null} onview={() => mapBridge?.changed()} />
 
 
       <!-- hover shows it by the cursor; clicking puts the same list in the
            panel, where it stays and can be read -->
-      {#if boss}
+      {#if boss && boss !== source}
         {@const b = data.bosses[boss]}
         <Tooltip
           {data}
@@ -266,30 +358,34 @@
         {data}
         {lang}
         bind:hovered={boss}
-        lit={from?.who ?? null}
+        lit={targets?.sources ?? null}
+        selected={source}
         {controls}
-        pick={(name) => {
-          source = source === name ? null : name;
-          if (source) active = null;
-        }}
+        pick={chooseSource}
       />
+
+      {#if !drawerOpen}{@render languageIssue()}{/if}
 
     </main>
 
     {#if peek && !reading}
-      <ItemCard {data} name={peek.name} {lang} top={peek.top} />
+      <ItemCard {data} {index} name={peek.name} {lang} top={peek.top} />
     {/if}
-    <ItemSheet name={reading} {lang} onclose={() => (reading = null)} />
+    {#if reading}
+      <ItemSheet name={reading} title={called(data.items[reading], reading, lang)} {lang}
+        itemKey={data.items[reading]?.key} recordId={data.items[reading]?.record_id} onclose={closeItem} />
+    {/if}
 
     <!-- The drawer covers the button that opened it, so the way out is the
          map: a tap anywhere off the panel puts it away. Only ever there on a
          narrow screen — on a wide one the panel is a column and never covers
          anything. -->
-    {#if panel}
-      <button class="scrim only-narrow" aria-label={t('Close')} onclick={() => (panel = false)}></button>
+    {#if drawerOpen}
+      <button type="button" class="scrim" tabindex="-1" aria-label={mapMessages(lang).close} onclick={closePanel}></button>
     {/if}
-    <Sidebar {data} {lang} {panel} bind:query bind:peek bind:active bind:source
-             open={(name) => (reading = name)} />
+    <Sidebar bind:this={sidebar} {data} {lang} panel={drawerOpen} {narrow} bind:query bind:peek bind:rarity {active} {source}
+      rows={results.rows} {sourceChoices} closeRoom={() => chooseRoom(null)} closeSource={dismissSource}
+      {closePanel} open={openItem} {languageIssue} />
   </div>
 {/if}
 
@@ -299,13 +395,13 @@
      `overflow`: without it the drawer is laid out against the viewport rather
      than against this box, and an overflow it does not belong to cannot clip
      it — the page still scrolled 308 px to the right of itself. */
-  .app { position: relative; display: flex; height: 100%; overflow: hidden; }
+  .app { position: relative; display: flex; height: 100%; overflow: clip; }
 
   main {
     position: relative;
     flex: 1;
     min-width: 0;
-    overflow: hidden;
+    overflow: clip;
   }
 
 
@@ -340,6 +436,8 @@
 
 
   .only-narrow { display: none; }
+  .search-access { position: absolute; z-index: 12; top: 8px; right: 10px; }
+  .search-access:not(:focus-visible) { clip-path: inset(50%); }
 
   .scrim {
     position: absolute;
@@ -358,10 +456,14 @@
      the handle. */
   @media (max-width: 46rem) {
     .only-narrow { display: inline-flex; align-items: center; }
-    .scrim.only-narrow { display: block; }
+    .search-slot { width: 31px; }
+    .search-access { top: 26px; min-height: 31px; }
+    .search-access:not(:focus-visible) { clip-path: none; }
+    .search-label { display: none; }
   }
 
-  .broke { padding: 3rem; color: var(--rar-satanic); }
-  .broke code { color: var(--dim); }
+  .broke { display: grid; height: 100%; place-content: center; justify-items: center; padding: 1.5rem; }
+  .broke p { margin: 0 0 .75rem; color: var(--ink); }
+  .broke button:disabled { cursor: progress; opacity: .6; }
 
 </style>

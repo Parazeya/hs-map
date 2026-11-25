@@ -290,7 +290,7 @@ export function createScene({ data, base, over, stage, asset, onFail, onCount })
       // One way. The transition is declared inside `.node.faded`, so adding the
       // class eases the marker back over .15s and removing it takes the
       // declaration away with it and the opacity snaps.
-      const dim = matches && !hit;
+      const dim = matches && !hit && n.room !== onRoom;
       s.fade.set(dim ? 0.45 : 1, now, dim ? 150 : 0);
       // the flourish is added and removed rather than faded, and its two
       // seconds start when it is added — that is what {#if on || hit || lit} did
