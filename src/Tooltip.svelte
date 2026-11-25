@@ -1,5 +1,5 @@
 <script>
-  import { asset, baseOddsLabel, called, figure, odds, titleCase, withMF } from './lib/map.js';
+  import { asset, called, figure, odds, titleCase, withMF } from './lib/map.js';
   import { mf } from './lib/mf.svelte.js';
   import { talk } from './lib/say.js';
   import ItemIcon from './ItemIcon.svelte';
@@ -123,7 +123,6 @@
           <span class="odds">
             {odds(row.odds) || '—'}
             {#if mf.value > 0 && row.odds}<span class="mine">({figure(withMF(row.odds, mf.value))})</span>{/if}
-            {#if row.oddsBasis === 'base'}<span class="odds-basis">{baseOddsLabel(lang)}</span>{/if}
           </span>
         </li>
       {/each}
@@ -236,7 +235,6 @@
      a row's gap apart. Same size, same tabular digits; only the colour differs,
      because the brackets alone are not enough to keep them apart at a glance. */
   .odds { flex: none; color: var(--dim); font-size: 12px; font-variant-numeric: tabular-nums; }
-  .odds-basis { margin-inline-start: .25em; font-size: 10px; white-space: nowrap; }
   /* A margin and not a space in the markup: Svelte trims whitespace at the
      edge of an {#if} block, so the literal one between the two figures went
      missing and they read as a single run of digits. */

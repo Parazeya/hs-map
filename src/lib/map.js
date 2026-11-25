@@ -79,13 +79,6 @@ export function zoneDropOdds(node, name, items) {
   return { odds: null, oddsBasis: null };
 }
 
-const BASE_ODDS = {
-  en: 'Base', fi: 'Perus', pt: 'Base', ru: 'Базовый', zh: '基础', ja: '基本',
-  ko: '기본', de: 'Basis', fr: 'De base', sp: 'Base', pl: 'Bazowa',
-};
-
-export const baseOddsLabel = (lang) => BASE_ODDS[lang] ?? BASE_ODDS.en;
-
 /** "1 in 46k" — a drop rate is a denominator, and a bare 46750 says nothing. */
 /**
  * The same odds for a reader carrying `mf` percent of magic find.
