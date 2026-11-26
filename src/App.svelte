@@ -369,7 +369,7 @@
     </main>
 
     {#if peek && !reading}
-      <ItemCard {data} {index} name={peek.name} {lang} top={peek.top} />
+      <ItemCard {data} {index} name={peek.name} {lang} top={peek.top} selectedRoom={active?.room} />
     {/if}
     {#if reading}
       <ItemSheet name={reading} title={called(data.items[reading], reading, lang)} {lang}

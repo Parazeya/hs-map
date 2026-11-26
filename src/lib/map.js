@@ -87,7 +87,10 @@ export const titleCase = (s) => s.replace(/(^|[\s([-])\p{Ll}/gu, (c) => c.toUppe
 
 export function zoneDropOdds(node, name, items) {
   const { chase, rate } = items[name] ?? {};
-  if (!node.reference_drops?.includes(name) && Number.isFinite(chase) && chase > 0) {
+  if (node.reference_drops?.includes(name)) {
+    const previous = node.reference_drop_odds?.[name];
+    if (Number.isFinite(previous) && previous > 0) return { odds: previous, oddsBasis: 'reference-zone' };
+  } else if (Number.isFinite(chase) && chase > 0) {
     return { odds: chase, oddsBasis: 'zone' };
   }
   if (Number.isFinite(rate) && rate > 0) return { odds: rate, oddsBasis: 'base' };

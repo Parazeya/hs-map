@@ -5,6 +5,7 @@
   import { talk } from './lib/say.js';
   import { ITEM_GRADES } from './lib/source-search.js';
   import ItemIcon from './ItemIcon.svelte';
+  import OddsValue from './OddsValue.svelte';
 
   let {
     data,
@@ -61,6 +62,7 @@
   const BOX = 76;
   const boss = $derived(active?.boss ? data.bosses[active.boss] : null);
   const pinned = $derived(source ? data.bosses[source] : null);
+  const zoneRows = $derived((active?.drops ?? []).map(name => ({ name, ...zoneDropOdds(active, name, data.items) })));
 
   /**
    * One row of the list: the pointer shows what it drops for, a click opens it.
@@ -195,27 +197,25 @@
 
       {#if boss}{@render whoever(active.boss, boss, true)}{/if}
 
-      {#if active.drops.length === 0}
+      {#if zoneRows.length === 0}
         <p class="note">
           {t('No drops listed.')}
         </p>
       {:else}
         <ul class="rows">
-          {#each active.drops as name (name)}
+          {#each zoneRows as { name, odds: rate, oddsBasis } (name)}
             {@const item = data.items[name] ?? {}}
-            {@const chance = zoneDropOdds(active, name, data.items)}
             <li class:lit={peek?.name === name} {...row(name)}>
               <ItemIcon {item} sheet={data.sheet} />
               <span class="name {cls(item.rarity)}">{called(item, name, lang)}</span>
               {#if item.inferno}<span class="inferno">INF</span>{/if}
-              <span class="odds">
-                {odds(chance.odds, lang) || '—'}
-                {#if mf.value > 0 && chance.odds}<span class="mine">({figure(withMF(chance.odds, mf.value))})</span>{/if}
-              </span>
+              <span class="odds"><OddsValue {rate} {lang} reference={oddsBasis === 'reference-zone'} empty="—" /></span>
             </li>
           {/each}
         </ul>
-        {#if active.drops.every((name) => zoneDropOdds(active, name, data.items).oddsBasis === 'zone')}
+        {#if zoneRows.some(row => row.oddsBasis === 'reference-zone')}
+          <p class="foot">≈ {messages.estimatedOdds}</p>
+        {:else if zoneRows.every(row => row.oddsBasis === 'zone')}
           <p class="foot">{t('the odds are for standing in this zone')}</p>
         {/if}
       {/if}

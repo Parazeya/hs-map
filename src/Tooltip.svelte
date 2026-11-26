@@ -1,8 +1,9 @@
 <script>
-  import { asset, called, figure, odds, titleCase, withMF } from './lib/map.js';
-  import { mf } from './lib/mf.svelte.js';
+  import { asset, called } from './lib/map.js';
+  import { mapMessages } from './lib/map-messages.js';
   import { talk } from './lib/say.js';
   import ItemIcon from './ItemIcon.svelte';
+  import OddsValue from './OddsValue.svelte';
 
   let { data, title, subtitle, rows, at, foot = null, boss = null, lang = 'en' } = $props();
 
@@ -118,16 +119,14 @@
           <span class="tier">{data.tiers[(it.tier ?? 1) - 1] ?? '?'}</span>
           <span class="name r-{String(it.rarity ?? 'common').toLowerCase()}">{called(it, row.name, lang)}</span>
           {#if row.inferno}<span class="inferno">INF</span>{/if}
-          <!-- and, beside it, what those odds are for whoever is reading: the
-               same figure divided by the magic find they said they carry -->
           <span class="odds">
-            {odds(row.odds, lang) || '—'}
-            {#if mf.value > 0 && row.odds}<span class="mine">({figure(withMF(row.odds, mf.value))})</span>{/if}
+            <OddsValue rate={row.odds} {lang} reference={row.oddsBasis === 'reference-zone'} empty="—" />
           </span>
         </li>
       {/each}
     </ul>
     {#if hidden > 0}<p class="foot">…{t('and')} {hidden} {t('more')}</p>{/if}
+  {#if shown.some(row => row.oddsBasis === 'reference-zone')}<p class="foot">≈ {mapMessages(lang).estimatedOdds}</p>{/if}
     {#if foot}<p class="foot">{foot}</p>{/if}
   {/if}
 
@@ -238,5 +237,4 @@
   /* A margin and not a space in the markup: Svelte trims whitespace at the
      edge of an {#if} block, so the literal one between the two figures went
      missing and they read as a single run of digits. */
-  .mine { color: #e8c860; margin-left: .45em; }
 </style>

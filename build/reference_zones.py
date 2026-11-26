@@ -24,7 +24,7 @@ def _rarity(value):
 
 
 def merge_map(items, nodes, reference):
-    """Append historical edges for current identities with no stated location."""
+    """Append historical edges and retain matching old odds only on those edges."""
     by_location = {(node["room"], node.get("code")): node for node in nodes}
     added = 0
     for zone in reference["zones"]:
@@ -42,6 +42,11 @@ def merge_map(items, nodes, reference):
                 continue
             node["drops"].append(name)
             node.setdefault("reference_drops", []).append(name)
+            old_rate, old_chase = row.get("rate"), row.get("chase")
+            current_rate = item.get("rate")
+            if (type(old_rate) is int and old_rate > 0 and type(current_rate) is int and current_rate == old_rate
+                    and type(old_chase) is int and old_chase > 0):
+                node.setdefault("reference_drop_odds", {})[name] = old_chase
             present.add(name)
             added += 1
     return added

@@ -13,7 +13,22 @@ const labels = {
   pl: ['Nie udało się wczytać mapy.', 'Spróbuj ponownie', 'Wczytywanie mapy…', 'Miejsca zdobycia', 'Nie znaleziono przedmiotów.', 'Zamknij', 'Pokaż więcej'],
 };
 
+const estimatedOdds = {
+  en: 'Estimated zone odds',
+  fi: 'Arvioitu pudotusmahdollisuus alueella',
+  pt: 'Chance estimada na zona',
+  ru: 'Оценка шанса для зоны',
+  zh: '区域掉率估算',
+  ja: 'ゾーンの推定ドロップ率',
+  ko: '지역 예상 드롭 확률',
+  de: 'Geschätzte Dropchance im Gebiet',
+  fr: 'Chance de butin estimée dans la zone',
+  sp: 'Probabilidad estimada en la zona',
+  pl: 'Szacowana szansa w strefie',
+};
+
 export function mapMessages(lang) {
   const [unavailable, retry, loading, sources, emptyItems, close, showMore] = labels[lang] ?? labels.en;
-  return { unavailable, retry, loading, sources, emptyItems, close, showMore };
+  return { unavailable, retry, loading, sources, emptyItems, close, showMore,
+    estimatedOdds: estimatedOdds[lang] ?? estimatedOdds.en };
 }

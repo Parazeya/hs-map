@@ -1,11 +1,12 @@
 <script>
-  import { called, figure, nameOf, odds, withMF } from './lib/map.js';
-  import { mf } from './lib/mf.svelte.js';
+  import { called, nameOf, zoneDropOdds } from './lib/map.js';
+  import { mapMessages } from './lib/map-messages.js';
   import { places, talk } from './lib/say.js';
   import { itemSourceDetails } from './lib/source-search.js';
   import ItemIcon from './ItemIcon.svelte';
+  import OddsValue from './OddsValue.svelte';
 
-  let { data, index, name, lang, top } = $props();
+  let { data, index, name, lang, top, selectedRoom = null } = $props();
 
   const it = $derived(data.items[name] ?? {});
   const cls = $derived('r-' + String(it.rarity ?? 'common').toLowerCase());
@@ -17,6 +18,15 @@
   );
 
   const locations = $derived(itemSourceDetails(data, index, name));
+  const rooms = $derived(locations.rooms.map(node => {
+    const chance = node.drops.includes(name) ? zoneDropOdds(node, name, data.items) : null;
+    return { node, chance: chance?.oddsBasis === 'base' ? null : chance };
+  }));
+  const shownRooms = $derived([...rooms].sort((a, b) =>
+    Number(b.node.room === selectedRoom) - Number(a.node.room === selectedRoom)
+    || Number(Boolean(b.chance?.odds)) - Number(Boolean(a.chance?.odds)),
+  ).slice(0, 7));
+  const showOwnZone = $derived(it.chase > 0 && !rooms.some(({ chance }) => chance?.oddsBasis === 'zone'));
 
   // pinned to the menu's edge, level with the row, and kept inside the window
   const y = $derived(Math.max(8, Math.min(top - 20, innerHeight - 340)));
@@ -35,16 +45,18 @@
     </div>
   </header>
 
-  <dl>
-    {#if it.rate}
-      <dt>{t('anywhere')}</dt>
-      <dd>{odds(it.rate, lang)}{#if mf.value > 0 && it.rate}<span class="mine">({figure(withMF(it.rate, mf.value))})</span>{/if}</dd>
-    {/if}
-    {#if it.chase}
-      <dt>{t('in its own zone')}</dt>
-      <dd>{odds(it.chase, lang)}{#if mf.value > 0 && it.chase}<span class="mine">({figure(withMF(it.chase, mf.value))})</span>{/if}</dd>
-    {/if}
-  </dl>
+  {#if it.rate || showOwnZone}
+    <dl>
+      {#if it.rate}
+        <dt>{t('anywhere')}</dt>
+        <dd><OddsValue rate={it.rate} {lang} /></dd>
+      {/if}
+      {#if showOwnZone}
+        <dt>{t('in its own zone')}</dt>
+        <dd><OddsValue rate={it.chase} {lang} /></dd>
+      {/if}
+    </dl>
+  {/if}
 
   {#if locations.sources.length}
     <h4>{t('drops from')}</h4>
@@ -56,9 +68,22 @@
     <ul>{#each it.places as p (p)}<li>{place(p)}</li>{/each}</ul>
   {/if}
 
-  {#if locations.rooms.length}
+  {#if shownRooms.length}
     <h4>{t('on the map')}</h4>
-    <ul class="zones">{#each locations.rooms as n (n.room)}<li>{nameOf(n, lang)}</li>{/each}</ul>
+    <ul class="zones">
+      {#each shownRooms as { node, chance } (node.room)}
+        <li class="room">
+          <span>{nameOf(node, lang)}</span>
+          {#if chance?.odds}
+            <span class="odds"><OddsValue rate={chance.odds} {lang} reference={chance.oddsBasis === 'reference-zone'} /></span>
+          {/if}
+        </li>
+      {/each}
+    </ul>
+    {#if rooms.length > shownRooms.length}<p class="foot">…{t('and')} {rooms.length - shownRooms.length} {t('more')}</p>{/if}
+    {#if shownRooms.some(({ chance }) => chance?.oddsBasis === 'reference-zone')}
+      <p class="foot">≈ {mapMessages(lang).estimatedOdds}</p>
+    {/if}
   {/if}
 </div>
 
@@ -117,6 +142,9 @@
   ul { margin: 0; padding: 0; list-style: none; }
   li { font-size: 12px; color: var(--ink); }
   .zones li { color: var(--hot); }
+  .room { display: flex; justify-content: space-between; gap: 8px; }
+  .odds { color: var(--ink); }
+  .foot { color: var(--dim); font-size: 11px; margin: 4px 0 0; }
 
   .r-satanic { color: var(--rar-satanic); }
   .r-heroic { color: var(--rar-heroic); }
@@ -129,6 +157,4 @@
   @media (max-width: 900px) {
     .card { display: none; }
   }
-  /* the same odds for whoever is reading; see mf.svelte.js */
-  .mine { color: #e8c860; margin-left: .45em; }
 </style>

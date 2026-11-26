@@ -1,29 +1,39 @@
 <script>
   import { withMF } from '../lib/map.js';
   import { mf } from '../lib/mf.svelte.js';
-  import { dropLocations, dropOdds, itemMapLink } from './farm.js';
+  import OddsValue from '../OddsValue.svelte';
+  import { dropLocationRows, dropOdds, itemMapLink } from './farm.js';
   import { codexPhrase } from './phrases.js';
 
   let { item, lang, data, t } = $props();
-  const sources = $derived(dropLocations(item, lang, data));
+  const sources = $derived(dropLocationRows(item, lang, data));
   const link = $derived(itemMapLink(item));
+  const currentZoneOdds = $derived(sources.some(source => source.rate > 0 && !source.reference));
   const odds = $derived([
     ...(item.rate > 0 ? [{ key: 'Drop rate', rate: item.rate }] : []),
-    ...(item.chase > 0 && item.chase !== item.rate ? [{ key: 'In its zone', rate: item.chase }] : []),
+    ...(!currentZoneOdds && item.chase > 0 && item.chase !== item.rate ? [{ key: 'In its zone', rate: item.chase }] : []),
   ]);
   const phrase = (text) => codexPhrase(lang, text);
 </script>
+
+{#snippet sourceList(rows)}
+  <ul>
+    {#each rows as { name, rate, reference } (name)}
+      <li><span>{name}</span>{#if rate > 0}<OddsValue {rate} {lang} {reference} />{/if}</li>
+    {/each}
+  </ul>
+{/snippet}
 
 {#if sources.length || odds.length}
   <section class="summary" aria-label={t('Drop location')}>
     {#if sources.length}
       <div class="sources">
         <h2>{t('Drop location')}</h2>
-        <p>{sources.slice(0, 2).join(' · ')}</p>
+        {@render sourceList(sources.slice(0, 2))}
         {#if sources.length > 2}
           <details>
             <summary>{phrase('More sources')} ({sources.length - 2})</summary>
-            <ul>{#each sources.slice(2) as source, index (index)}<li>{source}</li>{/each}</ul>
+            {@render sourceList(sources.slice(2))}
           </details>
         {/if}
       </div>
@@ -67,7 +77,9 @@
   .adjusted { display: inline-block; margin-left: .35em; color: #e8c860; font-size: 12px; }
   details { margin-top: 3px; }
   details summary { cursor: pointer; }
-  ul { margin: 4px 0 0; padding-left: 1.1em; }
+  ul { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+  li { display: flex; justify-content: space-between; gap: 8px; }
+  details ul { margin-top: 4px; }
   a { justify-self: start; color: var(--hot); font-size: 12px; text-decoration: none; }
   a:hover { text-decoration: underline; }
 </style>

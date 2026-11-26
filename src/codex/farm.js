@@ -4,7 +4,7 @@ import { places } from '../lib/say.js';
 
 const sourceIdentity = name => name.replace(/\s*\(Inferno[^)]*\)\s*$/i, '').toLowerCase();
 
-export function dropLocations(item, lang = 'en', data) {
+export function dropLocationRows(item, lang = 'en', data) {
   const place = places(lang, data?.words, name => data?.places?.[name]?.[lang]);
   const declared = [
     ...(item?.places ?? []),
@@ -12,13 +12,22 @@ export function dropLocations(item, lang = 'en', data) {
   ];
   const seen = new Set(declared.map(sourceIdentity));
   const shelves = (item?.map_sources?.shelves ?? []).filter(source => !seen.has(sourceIdentity(source)));
-  const named = [...declared, ...shelves].map(place);
-  const rooms = (item?.map_sources?.rooms ?? []).map(room => {
-    const name = data?.map_rooms?.[room];
-    return name?.[lang] || name?.en;
-  }).filter(Boolean);
-  return [...new Set([...named, ...rooms])];
+  const rows = new Map();
+  for (const source of [...declared, ...shelves]) {
+    const name = place(source);
+    rows.set(name, { name });
+  }
+  for (const room of item?.map_sources?.rooms ?? []) {
+    const names = data?.map_rooms?.[room];
+    const name = names?.[lang] || names?.en;
+    if (!name) continue;
+    const chance = item.map_sources.room_odds?.[room];
+    if (!rows.has(name) || (chance && !rows.get(name).rate)) rows.set(name, { name, ...chance });
+  }
+  return [...rows.values()];
 }
+
+export const dropLocations = (item, lang, data) => dropLocationRows(item, lang, data).map(row => row.name);
 
 export const dropOdds = (n, lang) => n > 0
   ? formatDropOdds(lang, figure(n))

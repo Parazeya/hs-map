@@ -27,6 +27,11 @@ class CatalogueSourcesTests(unittest.TestCase):
         self.assertIn('Act_04_05', codex['items']['gloves_frostbitten_necrosis']['map_sources']['rooms'])
         self.assertIn('Dungeon Chest', codex['items']['amulets_signet_of_kadosh']['map_sources']['shelves'])
         self.assertNotIn('map_sources', codex['items']['keys_ancient_key'])
+        ak47 = codex['items']['w_gun_ak47']
+        self.assertNotIn('chase', ak47)
+        self.assertEqual(ak47['map_sources']['room_odds']['Act_07_05'], {'rate': 167360, 'reference': True})
+        rugal = codex['items']['belts_rugals_sash_of_undertaking']
+        self.assertEqual(rugal['map_sources']['room_odds']['Act_04_03'], {'rate': 155817})
         before = json.dumps([world, codex], sort_keys=True)
         catalogue_sources.attach(world['items'], world['nodes'], world['bosses'], world['places'], codex)
         self.assertEqual(json.dumps([world, codex], sort_keys=True), before)
@@ -40,6 +45,28 @@ class CatalogueSourcesTests(unittest.TestCase):
         catalogue_sources.attach(items, [{'room': 'example', 'drops': ['sample']}], {}, {}, codex)
         self.assertEqual(items, {'sample': {'rarity': 'Satanic'}})
         self.assertTrue(all('map_sources' not in row for row in codex['items'].values()))
+
+    def test_room_odds_require_a_drop_row_with_its_own_chance(self):
+        items = {'sample': {'rarity': 'Satanic', 'rate': 500, 'chase': 100, 'zones': ['code-only']}}
+        nodes = [
+            {'room': 'current', 'drops': ['sample']},
+            {'room': 'old', 'drops': ['sample'], 'reference_drops': ['sample'],
+             'reference_drop_odds': {'sample': 125}},
+            {'room': 'old-without-rate', 'drops': ['sample'], 'reference_drops': ['sample']},
+            {'room': 'boss-only', 'drops': [], 'boss': 'Boss'},
+            {'room': 'unlisted', 'drops': [], 'code': 'code-only'},
+        ]
+        shelves = {
+            'Boss': {'drops': [{'item': 'sample'}]},
+            'Chest': {'kind': 'source', 'drops': [{'item': 'sample'}]},
+        }
+        codex = {'items': {'first': {'record_id': 'a', 'names': {'en': 'Sample'}, 'rarity': 'Satanic'}}}
+        catalogue_sources.attach(items, nodes, shelves, {}, codex)
+        self.assertEqual(codex['items']['first']['map_sources'], {
+            'rooms': ['current', 'old', 'old-without-rate', 'boss-only', 'unlisted'],
+            'room_odds': {'current': {'rate': 100}, 'old': {'rate': 125, 'reference': True}},
+            'shelves': ['Chest'],
+        })
 
     def test_socket_options_use_the_canonical_japanese_gem_name(self):
         data = BUILD.parent / 'public' / 'data'

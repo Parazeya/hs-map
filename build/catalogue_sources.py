@@ -54,6 +54,7 @@ def match(alias, item, candidates):
 def attach(items, nodes, shelves, places, codex):
     """Use map rows as published, preserving native/reference data boundaries."""
     rooms_by_item = defaultdict(list)
+    odds_by_item = defaultdict(dict)
     shelves_by_item = defaultdict(list)
     rooms_by_code = defaultdict(list)
     room_names = {}
@@ -62,8 +63,18 @@ def attach(items, nodes, shelves, places, codex):
         if node.get("code"):
             rooms_by_code[node["code"]].append(room)
         room_names[room] = node.get("name") or {"en": room}
+        reference_drops = set(node.get("reference_drops", []))
+        reference_odds = node.get("reference_drop_odds", {})
         for alias in node.get("drops", []):
             rooms_by_item[alias].append(room)
+            if alias in reference_drops:
+                rate = reference_odds.get(alias)
+                if type(rate) is int and rate > 0:
+                    odds_by_item[alias][room] = {"rate": rate, "reference": True}
+            else:
+                rate = items.get(alias, {}).get("chase")
+                if type(rate) is int and rate > 0:
+                    odds_by_item[alias][room] = {"rate": rate}
         for drop in shelves.get(node.get("boss"), {}).get("drops", []):
             rooms_by_item[drop["item"]].append(room)
 
@@ -100,6 +111,8 @@ def attach(items, nodes, shelves, places, codex):
             if rooms:
                 record["map_sources"]["rooms"] = rooms
                 used_rooms.update(rooms)
+            if room_odds := odds_by_item.get(alias):
+                record["map_sources"]["room_odds"] = room_odds
             if sources:
                 record["map_sources"]["shelves"] = sources
 
